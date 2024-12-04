@@ -1,0 +1,4 @@
+{
+  "client_type": "oidc_client_validator",
+  "auth_server": "__auth_server__"
+}

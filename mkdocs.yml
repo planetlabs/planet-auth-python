@@ -1,0 +1,56 @@
+site_name: Planet Auth Library
+site_description: Planet Auth Library
+site_url: https://planet.com/
+# TODO: enable strict docs
+strict: false
+
+#watch:
+#  - src
+
+theme:
+    name: 'material'
+    logo: img/logo.svg
+    favicon: img/logo.svg
+
+plugins:
+  - search:
+      indexing: 'full'
+  - macros:
+      include_dir: 'docs/examples'
+      on_error_fail: true
+  - autorefs
+  - mkdocstrings:
+      handlers:
+        python:
+#          paths: [src/planet]
+          options:
+            show_root_heading: true
+            inherited_members: true
+            show_root_members_full_path: true
+            show_object_full_path: true
+            show_source: false
+            show_bases: true
+            # show_inheritance_diagram: true
+            # show_submodules: true
+            filters:
+              - "!^_"  # exclude all members starting with _
+              - "^__init__$"  # but always include __init__ modules and methods
+
+repo_name: platform-auth/planet-auth-python
+repo_url: https://hello.planet.com/code/platform-auth/planet-auth-python
+#edit_uri: ""
+
+nav:
+    - Introduction: 'index.md'
+    - CLI Reference:
+      - plauth: 'cli-plauth.md'
+    - Configuration: 'configuration.md'
+    - API Reference: 'api.md'
+    - Examples: 'examples.md'
+    - Changelog: 'changelog.md'
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - mkdocs-click
+  - admonition

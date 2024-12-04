@@ -1,0 +1,5 @@
+{
+    "client_type": "planet_legacy",
+    "legacy_auth_endpoint": "https://api.planet.com/v0/auth/login",
+    "api_key": "_optional_to_eliminate_need_to_do_login_"
+}

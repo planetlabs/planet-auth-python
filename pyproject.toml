@@ -1,0 +1,143 @@
+## ###########################################################################
+## Project and Build
+## ###########################################################################
+[project]
+name = "planet-auth"
+requires-python = ">=3.9"
+# FIXME tool.setuptools.dynamic doesn't seem to work with building wheels.
+#       I end up with version 0.0.0 with no dependencies.
+#       The dependencies I can live with since need to manage frozen and
+#       unfrozen lists anyway. But, I really want to use the version.txt
+#       and/or the generated version-with-buildnum.txt file.
+# dynamic = ["version", "dependencies", "optional-dependencies"]
+version = "2.0.0"
+description = "Planet Auth Utility Code"
+readme = "README.md"
+authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: Apache Software License",
+]
+keywords = []
+dependencies = [
+    # Base dependnecies for planet_auth
+    "httpx", # TODO: move into an optional dependency
+    "pyjwt[crypto]",
+    "pyqrcode",
+    "requests",
+    "setuptools", # for pkg_resources
+    "strenum",
+    # "sops", No longer maintained!
+
+    # Additional dependencies for planet_auth_utils (could make optional)
+    "click",
+    "prompt_toolkit",
+]
+
+[project.optional-dependencies]
+build = [
+]
+doc = [
+    "mkdocs",
+    "mkdocstrings[python]",
+    "mkdocs-click",
+    "mkdocs-material",
+    "mkdocs-macros-plugin"
+]
+example = [
+    "flask",
+    "planet-auth-config >= 2.0.0"
+]
+test = [
+    "black",
+    "coverage[toml]",
+    "mypy",
+    "nox",
+    "pyflakes",
+    "pylint",
+#    "pylint[spelling]",  ## TODO
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "validators",
+]
+internal = [
+    "planet-auth-config >= 2.0.0",
+]
+
+[project.scripts]
+plauth = "planet_auth_utils.commands.cli.main:plauth_cmd_group"
+
+[build-system]
+requires = ["setuptools>=62.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+#[tool.setuptools.dynamic]
+# version = {file = "version.txt"}
+# version = {file = "version-with-buildnum.txt"}
+
+## ###########################################################################
+## Testing
+## ###########################################################################
+[tool.coverage.run]
+# Note: Coverage seems to break step debugging in PyCharm.
+source = [
+    "planet_auth",
+    "planet_auth_utils",
+    # "tests",
+]
+branch = true
+
+[tool.coverage.report]
+# skip_covered = true
+show_missing = true
+fail_under = 75
+
+[tool.pytest.ini_options] # ignored if pytest.ini exists
+# addopts = "--cov-report=term"
+addopts = "--cov -rxXs --numprocesses=auto"
+testpaths = [
+    "tests/test_planet_auth/unit",
+    # "tests/test_planet_auth/live_service",
+    "tests/test_planet_auth_utils/unit",
+]
+
+## ###########################################################################
+## Formatting and Linting
+## ###########################################################################
+[tool.black]
+line-length = 119
+extend-exclude = "/docs/"
+
+[tool.mypy]
+# packages = "planet_auth"
+files = "src,docs"
+# PEP 484 now says optional should be explicit.  TODO: change code and remove this mypy config
+implicit_optional = true
+
+[tool.pylint.main]
+disable = [
+    "format",  # We use black for formatting, so disable all formatting checks
+    "fixme",  # Don't fail our build for TODO/FIXME comments.
+    #
+    "broad-exception-caught",
+    "consider-using-f-string",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "too-few-public-methods",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "unused-argument",
+    #
+    "C", # convention, for programming standard violation
+    "R", # refactor, for bad code smell
+    # "W", # warning, for python specific problems
+    # "E", # error, for probable bugs in the code
+    # "F", # fatal, if an error occurred which prevented pylint from doing
+    "protected-access"
+]
+
+#[tool.pylint.format]
+#max-line-length = 119

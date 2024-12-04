@@ -1,0 +1,5 @@
+{
+  "client_type": "planet_legacy",
+  "legacy_auth_endpoint": "__legacy_auth_endpoint__",
+  "api_key": "__utest_legacy_api_key_in_client_config_file__"
+}

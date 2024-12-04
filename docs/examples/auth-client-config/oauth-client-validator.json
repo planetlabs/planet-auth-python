@@ -1,0 +1,4 @@
+{
+  "client_type": "oidc_client_validator",
+  "auth_server": "https://account.planet.com/oauth2/aus2enhwueFYRb50S4x7"
+}

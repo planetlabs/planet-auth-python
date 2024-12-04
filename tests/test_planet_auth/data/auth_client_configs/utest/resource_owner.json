@@ -1,0 +1,8 @@
+{
+    "client_type": "oidc_resource_owner",
+    "auth_server": "__auth_server__",
+    "client_id": "__client_id__",
+    "username": "__username__",
+    "password": "__password__",
+    "scopes": []
+}

@@ -1,0 +1,3 @@
+recursive-include src/planet_auth/oidc/resources *
+include src/planet_auth/py.typed
+prune **/__pycache__
