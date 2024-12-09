@@ -1,0 +1,152 @@
+name: Tests
+
+on: [push, pull_request]
+
+# permissions: {}
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  black_formatting:
+    name: Black Format Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Python Black'
+        run: |
+          nox -s black-lint
+
+  pytest_all:
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: "Nox: Pytest ${{ matrix.python-version }}"
+        run: |
+          nox -s pytest-${{ matrix.python-version }}
+
+  semgrep_src:
+    name: Semgrep Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Semgrep - src'
+        run: |
+          nox -s semgrep_src
+
+  mypy_all:
+    name: MyPy - All
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: MyPy"
+        run: |
+          nox -s mypy
+
+  pyflakes_src:
+    name: Pyflakes - src
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pyflakes - src"
+        run: |
+          nox -s pyflakes_src
+
+  pyflakes_examples:
+    name: Pyflakes - examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pyflakes - examples"
+        run: |
+          nox -s pyflakes_examples
+
+  pyflakes_test:
+    name: Pyflakes - tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pyflakes - tests"
+        run: |
+          nox -s pyflakes_tests
+
+  pylint_src:
+    name: Pylint - src
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pylint - src"
+        run: |
+          nox -s pylint_src
+
+  pylint_examples:
+    name: Pylint - examples
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pylint - examples"
+        run: |
+          nox -s pylint_examples
+
+  pylint_test:
+    name: Pylint - tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Nox: Pylint - tests"
+        run: |
+          nox -s pylint_tests

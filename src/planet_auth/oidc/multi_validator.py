@@ -225,7 +225,7 @@ class OidcMultiIssuerValidator:
     def _select_validator(self, token) -> Auth:
         # WARNING: Treat unverified token claims like toxic waste.
         #          Nothing can be trusted until the token is verified.
-        unverified_decoded_token = jwt.decode(token, options={"verify_signature": False})
+        unverified_decoded_token = jwt.decode(token, options={"verify_signature": False})  # nosemgrep
         issuer = unverified_decoded_token.get("iss")
         if not issuer:
             # PyJWT does not seem to raise if the issuer is explicitly None, even when

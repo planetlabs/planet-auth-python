@@ -14,7 +14,7 @@
 
 import getpass
 import http.server
-import importlib.resources as pkg_resources
+import importlib.resources as pkg_resources  # nosemgrep
 
 from http import HTTPStatus
 from urllib.parse import urlparse, parse_qs, urlencode

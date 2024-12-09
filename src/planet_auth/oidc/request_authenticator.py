@@ -64,7 +64,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
             self._credential.load()
 
         access_token_str = self._credential.access_token()
-        unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})
+        unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})  # nosemgrep
         iat = unverified_decoded_atoken.get("iat") or 0
         exp = unverified_decoded_atoken.get("exp") or 0
         # refresh at the 3/4 life

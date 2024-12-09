@@ -36,7 +36,7 @@ def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
     module_name, _, class_name = builtin_provider_fq_class_name.rpartition(".")
     if module_name and class_name:
         try:
-            builtin_provider_module = importlib.import_module(module_name)
+            builtin_provider_module = importlib.import_module(module_name)  # nosemgrep - WARNING - See below
             if class_name not in builtin_provider_module.__dict__:
                 logger.warning(
                     "Error loading built-in provider. Module %s does not contain class %s.",
@@ -63,6 +63,10 @@ def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
 
 def _load_builtins() -> BuiltinConfigurationProviderInterface:
     # Highest priority : injected
+    # WARNING: This environment variable is highly sensitive.
+    #     Undermining it can undermine client or service security.
+    #     It is a convenience for seamless developer experience, but maybe
+    #     we should not be so eager to please.
     builtin_provider = _load_builtins_worker(os.getenv(EnvironmentVariables.AUTH_BUILTIN_PROVIDER))
     if builtin_provider:
         return builtin_provider

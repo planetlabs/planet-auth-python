@@ -37,29 +37,33 @@ dependencies = [
 
 [project.optional-dependencies]
 build = [
+    "build",
+    "simple503",
+    "twine",
 ]
-doc = [
+docs = [
     "mkdocs",
     "mkdocstrings[python]",
     "mkdocs-click",
     "mkdocs-material",
     "mkdocs-macros-plugin"
 ]
-example = [
+examples = [
     "flask",
-    "planet-auth-config >= 2.0.0"
+    # "planet-auth-config >= 2.0.0"
 ]
-test = [
+tests = [
     "black",
     "coverage[toml]",
     "mypy",
     "nox",
     "pyflakes",
     "pylint",
-#    "pylint[spelling]",  ## TODO
+    # "pylint[spelling]",  ## TODO
     "pytest",
     "pytest-cov",
     "pytest-xdist",
+    "semgrep",
     "validators",
 ]
 internal = [

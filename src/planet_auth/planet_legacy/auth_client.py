@@ -149,7 +149,7 @@ class PlanetLegacyAuthClient(AuthClient):
 
         # The token is signed with a symmetric key.  The client does not
         # possess this key, and cannot verify the JWT.
-        decoded_jwt = jwt.decode(token_jwt, options={"verify_signature": False})
+        decoded_jwt = jwt.decode(token_jwt, options={"verify_signature": False})  # nosemgrep
         api_key = decoded_jwt.get("api_key")
         if not api_key:
             raise PlanetLegacyAuthClientException(

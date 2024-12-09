@@ -7,7 +7,7 @@ from functools import wraps
 from typing import List, Optional
 
 import planet_auth
-import planet_auth_config
+import planet_auth_config  # type: ignore
 
 #############################################################################
 # Logging Configuration

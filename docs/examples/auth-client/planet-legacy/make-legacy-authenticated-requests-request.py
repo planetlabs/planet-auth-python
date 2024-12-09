@@ -1,7 +1,7 @@
-import planet_auth_config
-
 import requests
+
 from planet_auth import Auth
+import planet_auth_config  # type: ignore
 
 
 def main():

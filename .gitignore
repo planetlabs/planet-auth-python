@@ -1,7 +1,7 @@
 *.build*
 .coverage*
 coverage.xml
-coverage-dist.xml
+coverage-*.xml
 dist
 .DS_Store
 *.egg-info
@@ -11,6 +11,7 @@ mypy.xml
 pip-wheel-metadata
 pytest.xml
 pytest-*.xml
+semgrep-*.xml
 site
 *.venv
 venv*
