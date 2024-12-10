@@ -1,6 +1,6 @@
 name: Publish Release
 
-# FIXME: How can I restrict actually publishing a releae to specific users/tags/branches?
+# FIXME: How can I restrict actually publishing a release to specific users/tags/branches?
 
 on:
   workflow_call:
