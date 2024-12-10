@@ -1,0 +1,19 @@
+name: Publish Release
+
+# FIXME: How can I restrict actually publishing a releae to specific users/tags/branches?
+
+on:
+  workflow_call:
+  #workflow_run:
+  #  workflows: ["Release Trigger"]
+  #  types: ["completed"]
+  #  branches:
+  #    - 'releases/**'
+  #    - 'main'
+  #    - 'carl/**'  # FIXME: Remove.  This is for testing/development.
+  #     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:

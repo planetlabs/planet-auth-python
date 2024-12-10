@@ -1,5 +1,4 @@
-name: Release Pipeline
-
+name: Build Release Artifacts
 
 on:
   workflow_dispatch:
@@ -11,6 +10,7 @@ on:
   #    - 'releases/**'
   #    - 'main'
   #    - 'carl/**'  # FIXME: Remove.  This is for testing/development.
+  #     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
 env:
   PYTHON_VERSION: "3.13"
@@ -18,7 +18,6 @@ env:
 jobs:
   build-wheel:
     name: Build Wheel packages
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -30,6 +29,16 @@ jobs:
       - name: 'Nox: Build Wheel'
         run: |
           nox -s build_wheel
+      - name: Save Artifacts - Wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: planet-auth-wheel
+          path: dist/planet_auth*.whl
+      - name: Save Artifacts - Source Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: planet-auth-src-targz
+          path: dist/planet_auth*.tar.gz
 
   build-docs:
     name: Build MKDocs Documentation
@@ -56,6 +65,18 @@ jobs:
         uses: ./.github/actions/python-common-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Download Wheel Package
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-wheel
+      - name: Download Source Package
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-src-targz
+      - name: 'Test Debug step'
+        run: |
+          ls -la dist
+          false
       - name: 'Nox: Publish to PyPi'
         run: |
           nox -s release_pypi
