@@ -53,6 +53,11 @@ jobs:
       - name: 'Nox: Build MKDocs'
         run: |
           nox -s mkdocs_build
+      - name: Save Artifacts - MkDocs
+        uses: actions/upload-artifact@v4
+        with:
+          name: planet-auth-mkdocs-site
+          path: site/**
 
   release-pypi:
     name: Release package to PyPi
@@ -69,12 +74,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: planet-auth-wheel
+          path: dist
       - name: Download Source Package
         uses: actions/download-artifact@v4
         with:
           name: planet-auth-src-targz
+          path: dist
       - name: 'Test Debug step'
         run: |
+          ls -la .
           ls -la dist
           false
       - name: 'Nox: Publish to PyPi'
@@ -92,6 +100,16 @@ jobs:
         uses: ./.github/actions/python-common-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Download Built Documentations
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-mkdocs-site
+          path: site
+      - name: 'Test Debug step'
+        run: |
+          ls -la .
+          ls -la site
+          false
       - name: 'Nox: Publish to ReadTheDocs'
         run: |
           nox -s release_readthedocs
