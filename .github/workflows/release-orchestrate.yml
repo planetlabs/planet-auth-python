@@ -6,7 +6,7 @@ name: Release Orchestration
 # TODO: watch for releasing the same version more than once
 
 on:
-  push:  # Just for testing  FIXME: Remove this.
+  # push:  # Just for testing  FIXME: Remove this.
   workflow_dispatch:
     inputs:
       test_input:
