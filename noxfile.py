@@ -11,6 +11,8 @@ _ALL_PYTHON = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 @nox.session(python=_ALL_PYTHON)
 def pytest(session):
+    # Force a test for pipeline testing
+    assert False
     session.install("-e", ".[test]")
 
     options = session.posargs
