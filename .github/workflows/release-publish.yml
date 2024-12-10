@@ -17,3 +17,10 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
+  dummy:
+    name: Dummy
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Dummy'
+        run: |
+          /bin/true

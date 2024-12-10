@@ -1,5 +1,6 @@
 name: Release Orchestration
 
+
 # TODO: Tag and branch
 # TODO: insure we can only release from privileged branches/tags
 # TODO: watch for releasing the same version more than once
@@ -24,7 +25,7 @@ jobs:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
     needs: test
-  # publish:
-  #   name: "Publish "
-  #   uses: ./.github/workflows/release-publish.yml
-  #   needs: package
+  publish:
+    name: "Publish Release Artifacts"
+    uses: ./.github/workflows/release-publish.yml
+    needs: package
