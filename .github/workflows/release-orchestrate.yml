@@ -6,6 +6,7 @@ name: Release Orchestration
 # TODO: watch for releasing the same version more than once
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       test_input:
