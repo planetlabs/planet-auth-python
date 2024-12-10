@@ -1,0 +1,76 @@
+name: Release Pipeline
+
+
+on:
+  workflow_dispatch:
+  workflow_call:
+  #workflow_run:
+  #  workflows: ["Release Trigger"]
+  #  types: ["completed"]
+  #  branches:
+  #    - 'releases/**'
+  #    - 'main'
+  #    - 'carl/**'  # FIXME: Remove.  This is for testing/development.
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  build-wheel:
+    name: Build Wheel packages
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Build Wheel'x
+        run: |
+          nox -s build_wheel
+
+  build-docs:
+    name: Build MKDocs Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Build MKDocs'
+        run: |
+          nox -s mkdocs_build
+
+  release-pypi:
+    name: Release package to PyPi
+    runs-on: ubuntu-latest
+    needs: build-wheel
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Publish to PyPi'
+        run: |
+          nox -s release_pypi
+
+  release-readthedocs:
+    name: Release documentation to readthedocs.com
+    runs-on: ubuntu-latest
+    needs: build-docs
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: Publish to ReadTheDocs'
+        run: |
+          nox -s release_readthedocs

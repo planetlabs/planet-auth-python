@@ -4,13 +4,8 @@
 [project]
 name = "planet-auth"
 requires-python = ">=3.9"
-# FIXME tool.setuptools.dynamic doesn't seem to work with building wheels.
-#       I end up with version 0.0.0 with no dependencies.
-#       The dependencies I can live with since need to manage frozen and
-#       unfrozen lists anyway. But, I really want to use the version.txt
-#       and/or the generated version-with-buildnum.txt file.
-# dynamic = ["version", "dependencies", "optional-dependencies"]
-version = "2.0.0"
+dynamic = ["version"]
+# version = "X.X.X"
 description = "Planet Auth Utility Code"
 readme = "README.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
@@ -52,7 +47,7 @@ examples = [
     "flask",
     # "planet-auth-config >= 2.0.0"
 ]
-tests = [
+test = [
     "black",
     "coverage[toml]",
     "mypy",
@@ -66,6 +61,9 @@ tests = [
     "semgrep",
     "validators",
 ]
+dev = [
+    "planet-auth[test, docs, build]",
+]
 internal = [
     "planet-auth-config >= 2.0.0",
 ]
@@ -77,8 +75,8 @@ plauth = "planet_auth_utils.commands.cli.main:plauth_cmd_group"
 requires = ["setuptools>=62.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-#[tool.setuptools.dynamic]
-# version = {file = "version.txt"}
+[tool.setuptools.dynamic]
+version = {file = "version.txt"}
 # version = {file = "version-with-buildnum.txt"}
 
 ## ###########################################################################
