@@ -60,11 +60,3 @@ jobs:
         with:
           name: planet-auth-mkdocs-site
           path: site/**
-
-  dummy-fail:
-    name: Dummy fail
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'False'
-        run: |
-          /bin/false
