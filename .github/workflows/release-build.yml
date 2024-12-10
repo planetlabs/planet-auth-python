@@ -27,7 +27,7 @@ jobs:
         uses: ./.github/actions/python-common-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Nox: Build Wheel'x
+      - name: 'Nox: Build Wheel'
         run: |
           nox -s build_wheel
 
