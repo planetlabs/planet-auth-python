@@ -1,5 +1,7 @@
 name: Build Release Artifacts
 
+# FIXME: How can I restrict actually publishing a release to specific users/tags/branches?  (Could someone call this workflow from a rogue branch?)
+
 on:
   workflow_dispatch:
   workflow_call:
@@ -50,7 +52,7 @@ jobs:
         uses: ./.github/actions/python-common-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Nox: Build MKDocs'
+      - name: 'Nox: MKDocs Build'
         run: |
           nox -s mkdocs_build
       - name: Save Artifacts - MkDocs
@@ -59,57 +61,10 @@ jobs:
           name: planet-auth-mkdocs-site
           path: site/**
 
-  release-pypi:
-    name: Release package to PyPi
+  dummy-fail:
+    name: Dummy fail
     runs-on: ubuntu-latest
-    needs: build-wheel
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Download Wheel Package
-        uses: actions/download-artifact@v4
-        with:
-          name: planet-auth-wheel
-          path: dist
-      - name: Download Source Package
-        uses: actions/download-artifact@v4
-        with:
-          name: planet-auth-src-targz
-          path: dist
-      - name: 'Test Debug step'
+      - name: 'False'
         run: |
-          ls -la .
-          ls -la dist
-          false
-      - name: 'Nox: Publish to PyPi'
-        run: |
-          nox -s release_pypi
-
-  release-readthedocs:
-    name: Release documentation to readthedocs.com
-    runs-on: ubuntu-latest
-    needs: build-docs
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Download Built Documentations
-        uses: actions/download-artifact@v4
-        with:
-          name: planet-auth-mkdocs-site
-          path: site
-      - name: 'Test Debug step'
-        run: |
-          ls -la .
-          ls -la site
-          false
-      - name: 'Nox: Publish to ReadTheDocs'
-        run: |
-          nox -s release_readthedocs
+          /bin/false

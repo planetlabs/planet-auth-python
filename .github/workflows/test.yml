@@ -154,3 +154,20 @@ jobs:
       - name: "Nox: Pylint - tests"
         run: |
           nox -s pylint_tests
+
+  mkdocs_check:
+    # FIXME: Since there is no difference between "build" and "check" for the docs,
+    #        this is redundant with the release workflow.  Still, we want to provide
+    #        the feedback about bad docs in the "test" workflow, upstream of release.
+    name: MkDocs - check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-common-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: MKDocs Build'
+        run: |
+          nox -s mkdocs_build
