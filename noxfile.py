@@ -111,7 +111,7 @@ def _publish_pypi(session, repo_url, token):
         "twine",
         "upload",
         "--non-interactive",
-        "--verbose",
+        # "--verbose",
         "--username",
         "__token__",
         "--password",

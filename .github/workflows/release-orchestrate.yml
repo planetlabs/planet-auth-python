@@ -4,6 +4,7 @@ name: Release Orchestration
 # TODO: Tag and branch
 # TODO: insure we can only release from privileged branches/tags
 # TODO: watch for releasing the same version more than once
+# TODO: figure out when we only publish to test, and when we go live
 
 on:
   # push:  # Just for testing  FIXME: Remove this.
@@ -20,7 +21,7 @@ env:
 
 jobs:
   test:
-    name: "Prerelease Test"
+    name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
   package:
     name: "Build Release Artifacts"

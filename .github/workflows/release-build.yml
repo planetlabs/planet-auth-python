@@ -1,18 +1,8 @@
 name: Build Release Artifacts
 
-# FIXME: How can I restrict actually publishing a release to specific users/tags/branches?  (Could someone call this workflow from a rogue branch?)
-
 on:
   workflow_dispatch:
   workflow_call:
-  #workflow_run:
-  #  workflows: ["Release Trigger"]
-  #  types: ["completed"]
-  #  branches:
-  #    - 'releases/**'
-  #    - 'main'
-  #    - 'carl/**'  # FIXME: Remove.  This is for testing/development.
-  #     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
 env:
   PYTHON_VERSION: "3.13"
