@@ -127,17 +127,17 @@ def _publish_pypi(session, repo_url, token):
 
 @nox.session(python=_DEFAULT_PYTHON)
 def pkg_publish_pypi_prod(session):
-    token = os.getenv("PYPI_API_TOKEN")
+    token = os.getenv("NOX_PYPI_API_TOKEN")
     if not token:
-        sys.exit("PYPI_API_TOKEN must be set in the environment with the PyPi access token")
+        sys.exit("NOX_PYPI_API_TOKEN must be set in the environment with the PyPi access token")
     _publish_pypi(session, "https://upload.pypi.org/legacy", token)
 
 
 @nox.session(python=_DEFAULT_PYTHON)
 def pkg_publish_pypi_test(session):
-    token = os.getenv("PYPI_API_TOKEN")
+    token = os.getenv("NOX_PYPI_API_TOKEN")
     if not token:
-        sys.exit("PYPI_API_TOKEN must be set in the environment with the PyPi access token")
+        sys.exit("NOX_PYPI_API_TOKEN must be set in the environment with the PyPi access token")
     _publish_pypi(session, "https://test.pypi.org/legacy/", token)
 
 

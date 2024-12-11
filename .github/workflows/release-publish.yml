@@ -46,7 +46,7 @@ jobs:
           path: dist
       - name: 'Nox: Publish to PyPi'
         env:
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
+          NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
         run: |
           printenv
           nox -s pkg_publish_pypi_test
