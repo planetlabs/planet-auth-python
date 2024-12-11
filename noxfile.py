@@ -7,7 +7,7 @@ nox.options.stop_on_first_error = True
 nox.options.reuse_existing_virtualenvs = False
 
 # Default sessions
-nox.options.sessions = ["black-lint", "pytest"]
+nox.options.sessions = ["black_lint", "pytest"]
 
 _DEFAULT_PYTHON = "3.13"
 _ALL_PYTHON = ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -31,7 +31,7 @@ def semgrep_src(session):
     session.run("semgrep", "scan", "--strict", "--verbose", "--error", "src")
 
 
-@nox.session(name="black-lint", python=_DEFAULT_PYTHON)
+@nox.session(python=_DEFAULT_PYTHON)
 def black_lint(session):
     session.install("-e", ".[test]")
     session.run("black", "--verbose", "--check", "--diff", "--color", ".")
@@ -144,7 +144,7 @@ def pkg_publish_pypi_test(session):
 @nox.session(python=_DEFAULT_PYTHON)
 def mkdocs_build(session):
     session.install("-e", ".[docs]")
-    session.run("mkdocs", "-v", "build", "--clean",)
+    session.run("mkdocs", "-v", "build", "--clean")
 
 
 @nox.session(python=_DEFAULT_PYTHON)

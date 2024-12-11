@@ -24,7 +24,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Nox: Python Black'
         run: |
-          nox -s black-lint
+          nox -s black_lint
 
   pytest_all:
     name: PyTest with Python ${{ matrix.python-version }}
