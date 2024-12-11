@@ -144,13 +144,13 @@ def pkg_publish_pypi_test(session):
 @nox.session(python=_DEFAULT_PYTHON)
 def mkdocs_build(session):
     session.install("-e", ".[docs]")
-    session.run("mkdocs", "--clean", "-v", "build")
+    session.run("mkdocs", "-v", "build", "--clean",)
 
 
 @nox.session(python=_DEFAULT_PYTHON)
 def mkdocs_serve(session):
     session.install("-e", ".[docs]")
-    session.run("mkdocs", "--clean", "-v", "serve")
+    session.run("mkdocs", "-v", "serve")
 
 
 @nox.session(python=_DEFAULT_PYTHON)
