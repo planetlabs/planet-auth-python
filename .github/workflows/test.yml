@@ -27,7 +27,7 @@ jobs:
           nox -s black-lint
 
   pytest_all:
-    name: Test Python ${{ matrix.python-version }}
+    name: PyTest with Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
