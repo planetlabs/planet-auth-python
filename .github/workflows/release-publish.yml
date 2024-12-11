@@ -17,9 +17,10 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  release-pypi:
-    name: Release package to PyPi
+  release-pypi-test:
+    name: Release package to PyPi (Test)
     runs-on: ubuntu-latest
+    # environment: staging
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -44,12 +45,19 @@ jobs:
           # run-id: '${{ github.run_id }}'
           path: dist
       - name: 'Nox: Publish to PyPi'
+        env:
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
         run: |
-          nox -s release_pypi
+          nox -s pkg_publish_pypi_test
+
+  #release-pypi-production:
+  #  name: Release package to PyPi (Production)
+  #  TODO: Copy-pasta-replace the above when all settled.
 
   release-readthedocs:
     name: Release documentation to readthedocs.com
     runs-on: ubuntu-latest
+    # environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,4 +75,4 @@ jobs:
           path: site
       - name: 'Nox: Publish to ReadTheDocs'
         run: |
-          nox -s release_readthedocs
+          nox -s mkdocs_publish_readthedocs

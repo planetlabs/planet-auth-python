@@ -18,8 +18,8 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  build-wheel:
-    name: Build Wheel packages
+  build-packages:
+    name: Build Distribution Packages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -28,9 +28,12 @@ jobs:
         uses: ./.github/actions/python-common-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Nox: Build Wheel'
+      - name: 'Nox: Build Packages'
         run: |
-          nox -s build_wheel
+          nox -s pkg_build_wheel
+      - name: 'Nox: Check Packages'
+        run: |
+          nox -s pkg_check
       - name: Save Artifacts - Wheel
         uses: actions/upload-artifact@v4
         with:
@@ -43,7 +46,7 @@ jobs:
           path: dist/planet_auth*.tar.gz
 
   build-docs:
-    name: Build MKDocs Documentation
+    name: Build Documentation Packages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
