@@ -4,6 +4,10 @@ name: Publish Release
 
 on:
   workflow_call:
+    secrets:
+      PYPI_API_TOKEN:
+      PYPI_API_TOKEN_TEST:
+
   #workflow_run:
   #  workflows: ["Release Trigger"]
   #  types: ["completed"]

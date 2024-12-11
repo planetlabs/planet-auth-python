@@ -30,6 +30,6 @@ jobs:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
     needs: package
-    secrets:
-      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
+    #secrets:
+    #  PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+    #  PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
