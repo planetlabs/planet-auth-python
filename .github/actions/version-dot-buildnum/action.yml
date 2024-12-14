@@ -21,10 +21,11 @@ runs:
   steps:
     - name: "Prepare build version file"
       shell: bash
-      # TODO: Squash build_variant "release" to ""
+      # TODO: Squash build_variant "release" to "", and omit the "-"
       # TODO: Detect branch for consideration of constructing a build_variant automatically?
       run: |
+        # version_timestamp=$(date +%s)
         version_timestamp=$(printf '%x' $(date +%s))
         version_invariant=$(head -1 version.txt  | tr -d '\n')
-        printf "${version_invariant}.${{ inputs.build-variant }}${version_timestamp}" > version-with-buildnum.txt
+        printf "${version_invariant}.${{ inputs.build-variant }}-${version_timestamp}" > version-with-buildnum.txt
         echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"
