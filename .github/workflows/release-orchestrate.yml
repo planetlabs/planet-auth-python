@@ -10,7 +10,7 @@ on:
   # push:  # Just for testing  FIXME: Remove this.
   workflow_dispatch:
     inputs:
-      workflow_build_variant:
+      workflow-build-variant:
         description: "Build Variant"
         type: choice
         default: "dev"
@@ -24,11 +24,14 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  generate_build_number:
+  generate-build-number:
     name: "Generate build number"
-    uses: ./.github/actions/version-dot-buildnum
-    with:
-      build_variant: ${{ inputs.workflow_build_variant }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Generate version-with-buildnum.txt file"
+        uses: ./.github/actions/version-dot-buildnum
+        with:
+          build-variant: ${{ inputs.workflow-build-variant }}
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
