@@ -30,3 +30,8 @@ runs:
       shell: bash
       run: |
         pip install --upgrade nox
+
+    - name: "Build Environment"
+      shell: bash
+      run: |
+        printenv | sort

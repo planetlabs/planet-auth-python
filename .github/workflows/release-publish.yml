@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Download Wheel Package
@@ -40,8 +40,14 @@ jobs:
       - name: 'Nox: Publish to PyPi'
         env:
           NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
+        # TODO: re-enable. Disabled for pipeline development - nox -s pkg_publish_pypi_test
         run: |
-          nox -s pkg_publish_pypi_test
+          false
+
+  # TODO: Add a check some place to refuse to publish an already published version.
+  # TODO: Gate actual prod deployment on a manual approval to bonk.
+  # TODO: Drop a tag for what we actually ship.
+  # TODO: can/should we automatically bump the branch invariant version number after a release?
 
   #release-pypi-production:
   #  name: Release package to PyPi (Production)
@@ -55,7 +61,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Download Built Documentations

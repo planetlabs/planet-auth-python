@@ -1,0 +1,30 @@
+name: 'Generate a version-with-buildnum.txt file'
+description: |
+  Generate a version-with-buildnum.txt file that contains the version with
+  a build number appended.  The version.txt file is used to obtain the branch
+  invariant portion of the package version.  To that, the build number and
+  any appropriate variants are appended.  The build number will be unique
+  (within reason) and increasing so that within a lineage the full version
+  number encodes relative position of any build.  Repository hashes are not
+  used since they neither encode encode relative position nor are they
+  unique upon rebuild.
+
+inputs:
+  build_variant:
+    description: 'Build Variant'
+    required: true
+
+# outputs:
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Prepare build version file"
+      shell: bash
+      # TODO: Squash build_variant "release" to ""
+      # TODO: Detect branch for consideration of constructing a build_variant automatically?
+      run: |
+        version_timestamp=$(printf '%x' $(date +%s))
+        version_invariant=$(head -1 version.txt  | tr -d '\n')
+        printf "${version_invariant}.${{ build_variant }}${version_timestamp}" > version-with-buildnum.txt
+        echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"

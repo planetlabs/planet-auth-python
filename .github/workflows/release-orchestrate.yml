@@ -10,16 +10,25 @@ on:
   # push:  # Just for testing  FIXME: Remove this.
   workflow_dispatch:
     inputs:
-      test_input:
-        description: "Workflow test user input"
-        type: string
-        required: true
-        default: "test input default value"
+      workflow_build_variant:
+        description: "Build Variant"
+        type: choice
+        default: "dev"
+        options:
+          - dev
+          - alpha
+          - beta
+          - release
 
 env:
   PYTHON_VERSION: "3.13"
 
 jobs:
+  generate_build_number:
+    name: "Generate build number"
+    uses: ./.github/actions/version-dot-buildnum
+    with:
+      build_variant: ${{ inputs.workflow_build_variant }}
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml

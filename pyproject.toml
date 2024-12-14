@@ -76,8 +76,8 @@ requires = ["setuptools>=62.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
-version = {file = "version.txt"}
-# version = {file = "version-with-buildnum.txt"}
+# version = {file = "version.txt"}
+version = {file = "version-with-buildnum.txt"}
 
 ## ###########################################################################
 ## Testing

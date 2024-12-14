@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Nox: Build Packages'
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Nox: MKDocs Build'
