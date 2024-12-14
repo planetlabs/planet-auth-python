@@ -5,6 +5,7 @@ name: Release Orchestration
 # TODO: insure we can only release from privileged branches/tags
 # TODO: watch for releasing the same version more than once
 # TODO: figure out when we only publish to test, and when we go live
+# TODO: drop permissions here when calling children
 
 on:
   # push:  # Just for testing  FIXME: Remove this.
@@ -40,7 +41,7 @@ jobs:
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
-    needs: test
+    needs: [test, generate-build-number]
   publish:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
