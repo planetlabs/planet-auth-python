@@ -28,6 +28,8 @@ jobs:
     name: "Generate build number"
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
       - name: "Generate version-with-buildnum.txt file"
         uses: ./.github/actions/version-dot-buildnum
         with:
