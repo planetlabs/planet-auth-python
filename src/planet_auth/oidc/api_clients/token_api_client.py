@@ -75,6 +75,7 @@ class TokenApiClient(OidcApiClient):
                 else:
                     raise oe
             if sleep_counter < timeout:
+                # FIXME: a weakness here is we are not counting the time spent in the HTTP call against the timeout.
                 time.sleep(poll_interval)
                 sleep_counter += poll_interval
             else:

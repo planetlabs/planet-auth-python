@@ -86,3 +86,8 @@ def background(f):
             raise TypeError("Task must be a callable")
 
     return wrapped
+
+
+def mock_sleep_skip(seconds):
+    # TODO: a fancier mock would also advance freezegun time.
+    pass
