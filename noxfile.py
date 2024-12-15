@@ -39,7 +39,7 @@ def semgrep_src(session):
     session.run("semgrep", "scan", "--strict", "--verbose", "--error", "src")
 
 
-@nox.session(name="black-lint", python=_DEFAULT_PYTHON)
+@nox.session(python=_DEFAULT_PYTHON)
 def black_lint(session):
     session.install("-e", ".[tests]")
     session.run("black", "--verbose", "--check", "--diff", "--color", ".")
