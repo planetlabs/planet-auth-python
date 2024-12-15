@@ -23,7 +23,7 @@ from planet_auth.oidc.auth_clients.device_code_flow import (
     DeviceCodeAuthClientException,
 )
 from tests.test_planet_auth.unit.auth.util import StubOidcClientConfig, StubOidcAuthClient
-from tests.test_planet_auth.util import tdata_resource_file_path
+from tests.test_planet_auth.util import tdata_resource_file_path, mock_sleep_skip
 
 TEST_AUTH_SERVER = "https://blackhole.unittest.planet.com/fake_authserver"
 TEST_CLIENT_ID = "fake_test_client_id"
@@ -86,6 +86,7 @@ class DeviceCodeNoClientAuthTest(unittest.TestCase):
             )
         )
 
+    @mock.patch("time.sleep", mock_sleep_skip)
     @mock.patch(
         "planet_auth.oidc.api_clients.token_api_client.TokenApiClient.poll_for_token_from_device_code",
         mocked_tokenapi_from_device_code,
@@ -108,6 +109,7 @@ class DeviceCodeNoClientAuthTest(unittest.TestCase):
         self.assertIsInstance(test_result, FileBackedOidcCredential)
         # self.assertEqual(MOCK_TOKEN, test_result.data())
 
+    @mock.patch("time.sleep", mock_sleep_skip)
     @mock.patch(
         "planet_auth.oidc.api_clients.token_api_client.TokenApiClient.poll_for_token_from_device_code",
         mocked_tokenapi_from_device_code,

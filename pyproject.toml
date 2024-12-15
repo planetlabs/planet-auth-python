@@ -55,6 +55,7 @@ examples = [
 tests = [
     "black",
     "coverage[toml]",
+    "freezegun",
     "mypy",
     "nox",
     "pyflakes",

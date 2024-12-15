@@ -3,7 +3,19 @@ import nox
 nox.options.stop_on_first_error = True
 nox.options.reuse_existing_virtualenvs = False
 
-nox.options.sessions = ["test", "lint"]
+# Default sessions - all tests, but not packaging
+nox.options.sessions = [
+    "black_lint",
+    "pytest",
+    "semgrep_src",
+    "mypy",
+    "pyflakes_src",
+    "pyflakes_examples",
+    "pyflakes_tests",
+    "pylint_src",
+    "pylint_examples",
+    "pylint_tests",
+]
 
 _DEFAULT_PYTHON = "3.13"
 _ALL_PYTHON = ["3.9", "3.10", "3.11", "3.12", "3.13"]

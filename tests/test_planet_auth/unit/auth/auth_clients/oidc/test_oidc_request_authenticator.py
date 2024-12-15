@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 
 import pathlib
 import tempfile
-import time
+import freezegun
 import unittest
 
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
@@ -164,7 +164,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         # pre_request_hook()
         under_test.pre_request_hook()
 
-    def test_happy_path_1(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_happy_path_1(self, frozen_time):
         # The first API call should trigger a token load from disk.
         # If the token is current, the auth client should be untouched.
         under_test = self.under_test_happy_path()
@@ -185,13 +186,14 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
 
         # When the token reaches the 3/4 life, the authenticator should
         # attempt a token refresh
-        time.sleep(((3 * TEST_TOKEN_TTL) / 4) + 2)
+        frozen_time.tick(((3 * TEST_TOKEN_TTL) / 4) + 2)
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
         access_token_t3 = under_test._credential.access_token()
         self.assertNotEqual(access_token_t1, access_token_t3)
 
-    def test_happy_path_1_in_memory(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_happy_path_1_in_memory(self, frozen_time):
         # The first API call should trigger a token load from disk.
         # If the token is current, the auth client should be untouched.
         under_test = self.under_test_happy_path_in_memory()
@@ -212,24 +214,26 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
 
         # When the token reaches the 3/4 life, the authenticator should
         # attempt a token refresh
-        time.sleep(((3 * TEST_TOKEN_TTL) / 4) + 2)
+        frozen_time.tick(((3 * TEST_TOKEN_TTL) / 4) + 2)
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
         access_token_t3 = under_test._credential.access_token()
         self.assertNotEqual(access_token_t1, access_token_t3)
 
-    def test_happy_path_2(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_happy_path_2(self, frozen_time):
         # The first API call should trigger a token load.
         # If the token is past the refresh time, a token refresh should be
         # attempted before the first use
         under_test = self.under_test_happy_path()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
         self.mock_api_call(under_test)
         self.assertIsNotNone(under_test._credential.data())
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
 
-    def test_refresh_fails(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_refresh_fails(self, frozen_time):
         # Refresh could fail.  If it does, this should be buried and we
         # should try to carry on with the token we have.
         # (this is why we refresh before expiry, so transient failures
@@ -242,7 +246,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertEqual(0, under_test._auth_client.refresh.call_count)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
@@ -250,7 +254,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
 
         self.assertEqual(access_token_t1, access_token_t2)
 
-    def test_no_refresh_token(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_no_refresh_token(self, frozen_time):
         # if we have no refresh token, what happens when we expect to
         # refresh? It's not expected that a user use the refreshing
         # authenticator when not using a refresh token (there is another
@@ -265,14 +270,15 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         access_token_t1 = under_test._credential.access_token()
         self.assertEqual(0, under_test._auth_client.refresh.call_count)
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
         access_token_t2 = under_test._credential.access_token()
         self.assertEqual(access_token_t1, access_token_t2)
 
-    def test_no_auth_client(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_no_auth_client(self, frozen_time):
         # when no auth client is provided, just authenticate with what we
         # have.
         under_test = self.under_test_no_auth_client()
@@ -280,7 +286,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.mock_api_call(under_test)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         access_token_t2 = under_test._credential.access_token()
@@ -304,7 +310,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
 
-    def test_out_of_band_update_1(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_out_of_band_update_1(self, frozen_time):
         # Out of band credential update.  We expect the refresher to reload
         # the credential file without attempting a refresh.
         under_test = self.under_test_happy_path()
@@ -315,7 +322,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertEqual(0, under_test._auth_client.refresh.call_count)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         credential_t1 = under_test._credential
         oob_credential = self.stub_auth_client.refresh(credential_t1.refresh_token())
@@ -330,7 +337,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertNotEqual(access_token_t1, access_token_t2)
         self.assertEqual(access_token_oob, access_token_t2)
 
-    def test_out_of_band_update_2(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_out_of_band_update_2(self, frozen_time):
         # Out of band credential update.  Something updated the credential
         # on disk underneath us. We expect the refresher to reload
         # the credential file without attempting a refresh.
@@ -348,7 +356,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         oob_credential.save()
         access_token_oob = oob_credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         # The new token is outside TTL, even after the token is reloaded, this
         # should be detected and a refresh should still occur.
@@ -358,7 +366,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertNotEqual(access_token_t1, access_token_t2)
         self.assertNotEqual(access_token_oob, access_token_t2)
 
-    def test_side_band_update_credential(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_side_band_update_credential(self, frozen_time):
         # a side-band update of the credential should reset our "refresh at" time,
         # cascading behavior from there.  Where the above happens when someone
         # modifies a credential on disk, this happens when something in memory
@@ -378,7 +387,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertEqual(0, under_test._auth_client.refresh.call_count)
 
         # Get the sideband credential when we would have expected a refresh to probe behavior.
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
         sideband_credential_path = self.tmp_dir_path / "test_sideband.json"
         sideband_credential = self.mock_auth_login_and_command_initialize(
             credential_path=sideband_credential_path, auth_client=self.stub_auth_client
@@ -461,7 +470,8 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         # pre_request_hook()
         under_test.pre_request_hook()
 
-    def test_refresh_token_calls_refresh(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_refresh_token_calls_refresh(self, frozen_time):
         under_test = self.under_test_with_refresh_token()
 
         self.assertIsNone(under_test._credential.data())
@@ -471,7 +481,7 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertEqual(0, under_test._auth_client.login.call_count)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
@@ -479,7 +489,8 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         access_token_t2 = under_test._credential.access_token()
         self.assertNotEqual(access_token_t1, access_token_t2)
 
-    def test_no_refresh_token_calls_login(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_no_refresh_token_calls_login(self, frozen_time):
         under_test = self.under_test_without_refresh_token()
 
         self.assertIsNone(under_test._credential.data())
@@ -489,7 +500,7 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         self.assertEqual(0, under_test._auth_client.login.call_count)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         self.assertEqual(0, under_test._auth_client.refresh.call_count)
@@ -497,7 +508,8 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         access_token_t2 = under_test._credential.access_token()
         self.assertNotEqual(access_token_t1, access_token_t2)
 
-    def test_no_auth_client(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_no_auth_client(self, frozen_time):
         # when no auth client is provided, just authenticate with what we
         # have.
         under_test = self.under_test_no_auth_client()
@@ -505,7 +517,7 @@ class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
         self.mock_api_call(under_test)
         access_token_t1 = under_test._credential.access_token()
 
-        time.sleep(TEST_TOKEN_TTL + 2)
+        frozen_time.tick(TEST_TOKEN_TTL + 2)
 
         self.mock_api_call(under_test)
         access_token_t2 = under_test._credential.access_token()
