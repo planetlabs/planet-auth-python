@@ -18,6 +18,11 @@ jobs:
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Build Number
+        uses: actions/download-artifact@v4
+        with:
+          name: version-with-buildnum-file
+          path: version-with-buildnum.txt
       - name: 'Nox: Build Packages'
         run: |
           nox -s pkg_build_wheel

@@ -2,7 +2,7 @@ name: Release Orchestration
 
 
 # TODO: Tag and branch
-# TODO: insure we can only release from privileged branches/tags
+# TODO: insure we can only release from privileged branches/tags?
 # TODO: watch for releasing the same version more than once
 # TODO: figure out when we only publish to test, and when we go live
 # TODO: drop permissions here when calling children
@@ -19,6 +19,7 @@ on:
           - dev
           - alpha
           - beta
+          - rc
           - release
 
 env:
