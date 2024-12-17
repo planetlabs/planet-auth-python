@@ -25,6 +25,7 @@ jobs:
           path: version-with-buildnum.txt.generated_pipeline_artifact
       - name: "Finalize Build Number"
         run: |
+          find . -ls
           cp -f version-with-buildnum.txt.generated_pipeline_artifact version-with-buildnum.txt
       - name: 'Nox: Build Packages'
         run: |
