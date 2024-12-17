@@ -12,48 +12,51 @@ jobs:
     name: Build Distribution Packages
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: "Checkout code"
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Build Number
+      - name: "Pull Build Number"
         uses: actions/download-artifact@v4
         with:
           name: version-with-buildnum-file
-          path: version-with-buildnum.txt
+          path: version-with-buildnum.txt.generated_pipeline_artifact
+      - name: "Finalize Build Number"
+        run: |
+          cp -f version-with-buildnum.txt.generated_pipeline_artifact version-with-buildnum.txt
       - name: 'Nox: Build Packages'
         run: |
           nox -s pkg_build_wheel
       - name: 'Nox: Check Packages'
         run: |
           nox -s pkg_check
-      - name: Save Artifacts - Wheel
+      - name: "Save Artifacts - Wheel"
         uses: actions/upload-artifact@v4
         with:
           name: planet-auth-wheel
           path: dist/planet_auth*.whl
-      - name: Save Artifacts - Source Package
+      - name: "Save Artifacts - Source Package"
         uses: actions/upload-artifact@v4
         with:
           name: planet-auth-src-targz
           path: dist/planet_auth*.tar.gz
 
   build-docs:
-    name: Build Documentation Packages
+    name: "Build Documentation Packages"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: "Checkout code"
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: 'Nox: MKDocs Build'
+      - name: "Nox: MKDocs Build"
         run: |
           nox -s mkdocs_build
-      - name: Save Artifacts - MkDocs
+      - name: "Save Artifacts - MkDocs"
         uses: actions/upload-artifact@v4
         with:
           name: planet-auth-mkdocs-site
