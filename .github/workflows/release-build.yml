@@ -22,11 +22,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: version-with-buildnum-file
-          path: version-with-buildnum.txt.generated_pipeline_artifact
+          path: version-with-buildnum.artifact
       - name: "Finalize Build Number"
         run: |
-          find . -ls
-          cp -f version-with-buildnum.txt.generated_pipeline_artifact version-with-buildnum.txt
+          cp -f version-with-buildnum.artifact/version-with-buildnum.txt version-with-buildnum.txt
       - name: 'Nox: Build Packages'
         run: |
           nox -s pkg_build_wheel
