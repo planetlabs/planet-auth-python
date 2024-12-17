@@ -29,6 +29,8 @@ jobs:
   generate-build-number:
     name: "Generate build number"
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,8 +43,9 @@ jobs:
         # tag uniqueness serves as a synchronization mechanism to prevent
         # multiple releases of the same version.
         run: |
+          printenv | sort
+          git config --list --show-origin
           git tag -a -m "test tag comment" "test-tag-from-cicd-carl1"
-
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
