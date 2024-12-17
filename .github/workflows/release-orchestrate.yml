@@ -33,9 +33,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: "Generate version-with-buildnum.txt file"
-        uses: ./.github/actions/version-dot-buildnum
+        uses: ./.github/actions/version-dot-buildnum-generate
         with:
           build-variant: ${{ inputs.workflow-build-variant }}
+      - name: "Tag repository"
+        # Tagging is part of the build number generation in part because
+        # tag uniqueness serves as a synchronization mechanism to prevent
+        # multiple releases of the same version.
+        run: |
+          git tag -a -m "test tag comment" "test-tag-from-cicd-carl1"
+
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
