@@ -4,11 +4,9 @@ permissions:
   actions: read
   contents: read
 
-# TODO: Tag and branch
+# TODO: Should we also branch a release?
 # TODO: insure we can only release from privileged branches/tags?
-# TODO: watch for releasing the same version more than once
 # TODO: figure out when we only publish to test, and when we go live
-# TODO: drop permissions here when calling children
 
 on:
   # push:  # Just for testing  FIXME: Remove this.
@@ -50,6 +48,7 @@ jobs:
         # multiple releases of the same version.
         run: |
           set -x
+          echo "DEBUG: ${{ join(steps.gen-buildnum.outputs.*, '\n') }}"
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
           git config --list --show-origin
