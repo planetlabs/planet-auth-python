@@ -26,12 +26,12 @@ jobs:
         uses: ./.github/actions/version-dot-buildnum-fetch
         with:
           version-file: version-with-buildnum.txt
-      - name: 'Nox: Check Packages'
-        run: |
-          nox -s pkg_check
       - name: 'Nox: Build Packages'
         run: |
           nox -s pkg_build_wheel
+      - name: 'Nox: Check Packages'
+        run: |
+          nox -s pkg_check
       - name: "Save Artifacts - Wheel"
         uses: actions/upload-artifact@v4
         with:
