@@ -2,6 +2,11 @@ name: Publish Release
 
 on:
   workflow_call:
+    # inputs:
+    #   version-with-buildnumber:
+    #     required: true
+    #     type: string
+    #     description: "The fully qualified unique version build number."
     secrets:
       PYPI_API_TOKEN:
       PYPI_API_TOKEN_TEST:
@@ -10,44 +15,45 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  release-checkpoint:
-    name: Final Release Checkpoint
-    runs-on: ubuntu-latest
-    # environment: staging
-    # TODO: ask the user to approve the release
-    # TODO: Add a check some place to refuse to publish an already published version.
-    #      (do this when generating the build number, I think. Move the tag here, too? But I like tagging after tests pass to minimize noise.)
-    # TODO: Gate actual prod deployment on a manual approval to bonk.
-    # TODO: can/should we automatically bump the branch invariant version number after a release?
-    # FIXME: do we need the code?
-    # FIXME: Checkbox/select/approave each release artifact?
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Prepare common Python build environment
-        uses: ./.github/actions/python-build-env-setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Record Release Tag
-        run: |
-          false
-          git tag -a -m "comment" "build-release-tag"
-          git tag -a -m "comment" "final-release-tag" (if release)
-          git push origin "build-release-tag"
-          git push origin "final-release-tag" (if release)
+  # release-checkpoint:
+  #   name: "Final Release Checkpoint"
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     actions: read
+  #     contents: write
+  #   # TODO: Gate actual prod deployment on a manual approval to bonk.
+  #   steps:
+  #     # - name: "Checkout code"
+  #     #   uses: actions/checkout@v4
+  #     # - name: "Prepare common Python build environment"
+  #     #   uses: ./.github/actions/python-build-env-setup
+  #     #   with:
+  #     #     python-version: ${{ env.PYTHON_VERSION }}
+  #     - name: "Record Release Tag"
+  #       # While we drop tags at the beginning of the release pipeline, we also record
+  #       # that we published the release here at the end of the release pipeline.
+  #       # Tests could fail, and this should record that difference between attempting
+  #       # a release, and publishing a release.
+  #       run: |
+  #         set -x
+  #         git config --global user.email "planet-auth-python-github-cicd@planet.com"
+  #         git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
+  #         git tag -a -m "test tag comment" "release-${{inputs.version-with-buildnumber}}"
+  #         git push origin                  "release-${{inputs.version-with-buildnumber}}"
+
   release-pypi-test:
-    name: Release package to PyPi (Test)
-    needs: release-checkpoint
+    name: "Release package to PyPi (Test)"
+    # needs: release-checkpoint
     runs-on: ubuntu-latest
     # environment: staging
     steps:
-      - name: Checkout code
+      - name: "Checkout code"
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Download Wheel Package
+      - name: "Download Wheel Package"
         uses: actions/download-artifact@v4
         with:
           name: planet-auth-wheel
@@ -55,7 +61,7 @@ jobs:
           # repository: '${{ github.repository }}'
           # run-id: '${{ github.run_id }}'
           path: dist
-      - name: Download Source Package
+      - name: "Download Source Package"
         uses: actions/download-artifact@v4
         with:
           name: planet-auth-src-targz
@@ -63,30 +69,57 @@ jobs:
           # repository: '${{ github.repository }}'
           # run-id: '${{ github.run_id }}'
           path: dist
-      - name: 'Nox: Publish to PyPi'
+      - name: 'Nox: Publish to PyPi (Test)'
         env:
           NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
-        # TODO: re-enable. Disabled for pipeline development - nox -s pkg_publish_pypi_test
         run: |
           false
+          # TODO: re-enable. Disabled for pipeline development
+          # nox -s pkg_publish_pypi_test
 
-  #release-pypi-production:
-  #  name: Release package to PyPi (Production)
-  #  TODO: Copy-pasta-replace the above when all settled.
-
-  release-readthedocs:
-    name: Release documentation to readthedocs.com
-    needs: release-checkpoint
+  release-pypi-production:
+    name: "Release package to PyPi (Production)"
+    # needs: release-checkpoint
     runs-on: ubuntu-latest
-    # environment: production
+    # environment: staging
     steps:
-      - name: Checkout code
+      - name: "Checkout code"
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Download Built Documentations
+      - name: "Download Wheel Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-wheel
+          path: dist
+      - name: "Download Source Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-src-targz
+          path: dist
+      - name: "Nox: Publish to PyPi (Production)"
+        env:
+          NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          false
+          # TODO: re-enable. Disabled for pipeline development
+          # nox -s pkg_publish_pypi_prod
+
+  release-readthedocs:
+    name: "Release documentation to readthedocs.com"
+    # needs: release-checkpoint
+    runs-on: ubuntu-latest
+    # environment: production
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+      - name: "Prepare common Python build environment"
+        uses: ./.github/actions/python-build-env-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Download Built Documentations"
         uses: actions/download-artifact@v4
         with:
           name: planet-auth-mkdocs-site
@@ -94,6 +127,6 @@ jobs:
           # repository: '${{ github.repository }}'
           # run-id: '${{ github.run_id }}'
           path: site
-      - name: 'Nox: Publish to ReadTheDocs'
+      - name: "Nox: Publish to ReadTheDocs"
         run: |
           nox -s mkdocs_publish_readthedocs

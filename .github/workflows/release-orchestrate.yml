@@ -4,9 +4,7 @@ permissions:
   actions: read
   contents: read
 
-# TODO: Should we also branch a release?
 # TODO: insure we can only release from privileged branches/tags?
-# TODO: figure out when we only publish to test, and when we go live
 
 on:
   # push:  # Just for testing  FIXME: Remove this.
@@ -36,9 +34,9 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Checkout code
+      - name: "Checkout code"
         uses: actions/checkout@v4
-      - name: "Generate version-with-buildnum.txt file"
+      - name: "Generate unique version and build numbers"
         id: gen-buildnum
         uses: ./.github/actions/version-dot-buildnum-generate
         with:
@@ -49,10 +47,8 @@ jobs:
         # multiple releases of the same version.
         run: |
           set -x
-          echo "DEBUG: ${{ join(steps.gen-buildnum.outputs.*, '\n') }}"
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
-          git config --list --show-origin
           if [ "${{ steps.gen-buildnum.outputs.variant-raw }}" = "release" ]
           then
             git tag -a -m "test tag comment for final release" "${{steps.gen-buildnum.outputs.version}}"
@@ -63,7 +59,7 @@ jobs:
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
-    needs: generate-build-number # Doesn't really need it, but gates the pipeline
+    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time.
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
@@ -71,7 +67,9 @@ jobs:
   publish:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
-    needs: package
+    needs: [package, generate-build-number]
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
+    # with:
+    #   version-with-buildnumber: ${{needs.generate-build-number.outputs.version-with-buildnum}}
