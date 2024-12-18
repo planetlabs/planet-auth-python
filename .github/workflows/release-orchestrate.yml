@@ -40,7 +40,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: "Generate version-with-buildnum.txt file"
-        id: gen-build-num
+        id: gen-buildnum
         uses: ./.github/actions/version-dot-buildnum-generate
         with:
           build-variant: ${{ inputs.workflow-build-variant }}
@@ -53,13 +53,13 @@ jobs:
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
           git config --list --show-origin
-          if [ "${{ steps.gen-build-num.outputs.variant-raw }}" = "release" ]
+          if [ "${{ steps.gen-buildnum.outputs.variant-raw }}" = "release" ]
           then
-            git tag -a -m "test tag comment" "${{steps.gen-build-num.outputs.version}}"
-            git push origin                  "${{steps.gen-build-num.outputs.version}}"
+            git tag -a -m "test tag comment for final release" "${{steps.gen-buildnum.outputs.version}}"
+            git push origin                                    "${{steps.gen-buildnum.outputs.version}}"
           fi
-          git tag -a -m "test tag comment" "${{steps.gen-build-num.outputs.version-with-buildnum}}"
-          git push origin                  "${{steps.gen-build-num.outputs.version-with-buildnum}}"
+          git tag -a -m "test tag comment" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git push origin                  "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml

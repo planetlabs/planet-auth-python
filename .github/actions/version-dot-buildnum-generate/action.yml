@@ -39,8 +39,20 @@ inputs:
 
 outputs:
   version-with-buildnum:
-    description: 'Version with variant build number appended'
+    description: 'Full version with variant build number appended'
     value: ${{ steps.generate-version-with-buildnum.output.version-with-buildnum }}
+  version:
+    description: 'Just the simple branch invariant version'
+    value: ${{ steps.generate-version-with-buildnum.output.version }}
+  buildnum:
+    description: 'Just the generated build number'
+    value: ${{ steps.generate-version-with-buildnum.output.buildnum }}
+  variant-normal:
+    description: 'Normalized build variant string'
+    value: ${{ steps.generate-version-with-buildnum.output.variant-normal }}
+  variant-raw:
+    description: 'Raw build variant string (same as input)'
+    value: ${{ steps.generate-version-with-buildnum.output.variant-raw }}
 
 runs:
   using: "composite"
