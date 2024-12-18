@@ -58,6 +58,7 @@ jobs:
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
+    needs: generate-build-number # Doesn't really need it, but gates the pipeline
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
