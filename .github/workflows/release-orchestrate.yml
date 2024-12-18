@@ -12,7 +12,7 @@ on:
   # push:  # Just for testing  FIXME: Remove this.
   workflow_dispatch:
     inputs:
-      workflow-build-variant:
+      build-variant:
         description: "Build Variant"
         type: choice
         default: "dev"
@@ -42,7 +42,7 @@ jobs:
         id: gen-buildnum
         uses: ./.github/actions/version-dot-buildnum-generate
         with:
-          build-variant: ${{ inputs.workflow-build-variant }}
+          build-variant: ${{ inputs.build-variant }}
       - name: "Tag repository"
         # Tagging is part of the build number generation in part because
         # tag uniqueness serves as a synchronization mechanism to prevent
