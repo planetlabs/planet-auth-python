@@ -29,8 +29,8 @@ jobs:
   generate-build-number:
     name: "Generate build number"
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    # permissions:
+    #   contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
