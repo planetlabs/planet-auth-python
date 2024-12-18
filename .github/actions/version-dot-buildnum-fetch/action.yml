@@ -21,5 +21,5 @@ runs:
       run: |
         if [ -n "${{ inputs.version-file }}" ]
         then
-          cp -f version-with-buildnum.artifact/version-with-buildnum.txt {{ inputs.version-file }}
+          cp -f version-with-buildnum.artifact/version-with-buildnum.txt ${{ inputs.version-file }}
         fi
