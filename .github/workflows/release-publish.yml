@@ -1,5 +1,9 @@
 name: Publish Release
 
+permissions:
+  actions: read
+  contents: read
+
 on:
   workflow_call:
     # inputs:

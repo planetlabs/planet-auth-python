@@ -1,5 +1,9 @@
 name: Build Release Artifacts
 
+permissions:
+  actions: read
+  contents: read
+
 on:
   workflow_dispatch:
   workflow_call:
