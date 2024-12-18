@@ -76,7 +76,9 @@ runs:
         build_timestamp_b10=$(date +%s)                                # Time based build number - Base 10
         build_timestamp_b16=$(printf '%x' ${build_timestamp_b10})      # Time based build number - Base 16 - More compact, but might be interpreted as a non-digit
         build_timestamp_bx16=$(printf '0x%x' ${build_timestamp_b10})   # As above, with leading '0x' so it's never not seen as hex (but is less compact)
-        version_buildnum=${build_timestamp_bx16}
+        # Python packaging doesn't like the "x" in the build number build numbers (even though it makes it less ambigious)
+        # Reverting to base 10 for now.  *sigh*
+        version_buildnum=${build_timestamp_b10}
 
         # Putting it all together
         printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
