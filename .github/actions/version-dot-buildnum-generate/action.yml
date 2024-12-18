@@ -53,7 +53,7 @@ runs:
         version_invariant=$(head -1 version.txt  | tr -d '\n')
 
         # "pre-release" in semver
-        if [ "X${{ inputs.build-variant }}" = "Xrelease" ]
+        if [ "${{ inputs.build-variant }}" = "release" ]
         then
             version_variant=""
         else
@@ -69,6 +69,10 @@ runs:
         printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
         echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"
         echo "version-with-buildnum=$(cat version-with-buildnum.txt)" >> $GITHUB_OUTPUT
+        echo "version=$(cat version.txt)" >> $GITHUB_OUTPUT
+        echo "buildnum=${version_buildnum}" >> $GITHUB_OUTPUT
+        echo "variant-normal=${version_variant}" >> $GITHUB_OUTPUT
+        echo "variant-raw=${{ inputs.build-variant }}" >> $GITHUB_OUTPUT
     - name: Save Artifacts - version-with-buildnum.txt
       uses: actions/upload-artifact@v4
       with:

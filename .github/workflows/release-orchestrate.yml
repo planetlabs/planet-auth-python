@@ -1,5 +1,7 @@
 name: Release Orchestration
 
+permissions:
+  contents: read
 
 # TODO: Tag and branch
 # TODO: insure we can only release from privileged branches/tags?
@@ -37,6 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: "Generate version-with-buildnum.txt file"
+        id: gen-build-num
         uses: ./.github/actions/version-dot-buildnum-generate
         with:
           build-variant: ${{ inputs.workflow-build-variant }}
@@ -46,15 +49,16 @@ jobs:
         # multiple releases of the same version.
         run: |
           set -x
-          printenv | sort
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
           git config --list --show-origin
-          git tag -l
-          git tag -a -m "test tag comment" "test-tag-from-cicd-carl2"
-          git tag -l
-          git push origin "test-tag-from-cicd-carl2"
-          git tag -l
+          if [ "${{ steps.gen-build-num.outputs.variant-raw }}" = "release" ]
+          then
+            git tag -a -m "test tag comment" "${{steps.gen-build-num.outputs.version}}"
+            git push origin                  "${{steps.gen-build-num.outputs.version}}"
+          fi
+          git tag -a -m "test tag comment" "${{steps.gen-build-num.outputs.version-with-buildnum}}"
+          git push origin                  "${{steps.gen-build-num.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
