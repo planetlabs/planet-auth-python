@@ -29,6 +29,10 @@ jobs:
   generate-build-number:
     name: "Generate build number"
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      repository-projects: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -46,6 +50,7 @@ jobs:
           printenv | sort
           git config --list --show-origin
           git tag -a -m "test tag comment" "test-tag-from-cicd-carl1"
+          git push origin "test-tag-from-cicd-carl1"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
