@@ -1,6 +1,7 @@
 name: Release Orchestration
 
 permissions:
+  actions: read
   contents: read
 
 # TODO: Tag and branch
