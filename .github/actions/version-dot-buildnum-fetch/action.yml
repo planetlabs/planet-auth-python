@@ -1,0 +1,25 @@
+name: 'Pull generated version and build number'
+description: |
+  Pull generated build number artifacts.
+
+inputs:
+  version-file:
+    description: |
+      file to save the version and build number file for the local build.
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Pull Build Version"
+      uses: actions/download-artifact@v4
+      with:
+        name: version-with-buildnum-file
+        path: version-with-buildnum.artifact
+    - name: "Install Build Version File"
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version-file }}" ]
+        then
+          cp -f version-with-buildnum.artifact/version-with-buildnum.txt ${{ inputs.version-file }}
+        fi

@@ -5,9 +5,7 @@ inputs:
   python-version:
     description: 'Python version to use'
     required: true
-    default: 3.13
-
-# outputs:
+    default: "3.13"
 
 runs:
   using: "composite"
@@ -30,3 +28,8 @@ runs:
       shell: bash
       run: |
         pip install --upgrade nox
+
+    - name: "Build Environment"
+      shell: bash
+      run: |
+        printenv | sort

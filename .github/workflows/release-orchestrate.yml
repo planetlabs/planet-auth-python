@@ -1,0 +1,75 @@
+name: Release Orchestration
+
+permissions:
+  actions: read
+  contents: read
+
+# TODO: insure we can only release from privileged branches/tags?
+
+on:
+  # push:  # Just for testing  FIXME: Remove this.
+  workflow_dispatch:
+    inputs:
+      build-variant:
+        description: "Build Variant"
+        type: choice
+        default: "dev"
+        options:
+          - dev
+          - alpha
+          - beta
+          - rc
+          - release
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  generate-build-number:
+    name: "Generate build number"
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+      - name: "Generate unique version and build numbers"
+        id: gen-buildnum
+        uses: ./.github/actions/version-dot-buildnum-generate
+        with:
+          build-variant: ${{ inputs.build-variant }}
+      - name: "Tag repository"
+        # Tagging is part of the build number generation in part because
+        # tag uniqueness serves as a synchronization mechanism to prevent
+        # multiple releases of the same version.
+        run: |
+          set -x
+          git config --global user.email "planet-auth-python-github-cicd@planet.com"
+          git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
+          if [ "${{ steps.gen-buildnum.outputs.variant-raw }}" = "release" ]
+          then
+            git tag -a -m "test tag comment for final release" "${{steps.gen-buildnum.outputs.version}}"
+            git push origin                                    "${{steps.gen-buildnum.outputs.version}}"
+          fi
+          git tag -a -m "test tag comment" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git push origin                  "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+  test:
+    name: "Prerelease Tests"
+    uses: ./.github/workflows/test.yml
+    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time.
+  package:
+    name: "Build Release Artifacts"
+    uses: ./.github/workflows/release-build.yml
+    needs: [test, generate-build-number]
+  publish:
+    name: "Publish Release Artifacts"
+    uses: ./.github/workflows/release-publish.yml
+    needs: [package, generate-build-number]
+    secrets:
+      PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
+    # with:
+    #   version-with-buildnumber: ${{needs.generate-build-number.outputs.version-with-buildnum}}
