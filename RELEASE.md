@@ -3,9 +3,9 @@
 *Planet maintainers only*
 
 Releasing consists of publishing new packages to PyPi and ReadTheDocs, and
-is automated using Github Workflows and Actions.  Once initiated, the 
-release pipeline will automatically take care of building, testing, tagging,
-and publishing the release.
+is automated using Github workflows, actions, and webhooks.  Once initiated,
+the release orchestration pipeline will automatically take care of building,
+testing, tagging, and publishing the release.
 
 ## Versions and Stability
 
@@ -16,8 +16,11 @@ changes (like documentation).
 
 ## Release Workflow
 
-Releases should generally be published from the main branch, which should be
-kept stable.
+The `main` branch is intended to be kept stable with the most up-to-date
+feature set, and should normally be the branch used for new feature releases.
+Patch branches may be necessary when the need to fix older versions arises.
+
+To release a new version, complete the following steps:
 
 1. Create a release branch off of `main` that bumps the version number in
    [version.txt](./version.txt), and updates the
@@ -26,7 +29,7 @@ kept stable.
    create a PR to merge the release branch into `main`.
 3. Ensure that all tests are passing on `main` branch after all merges.
 4. Determine the type of release that should be performed.  This will be passed
-   to the release workflow as the `build-variant` argument:
+   to the release workflow pipeline as the `build-variant` argument:
    * `release` - The final build for a new release version.
    * `rc` - A candidate for the final release.
    * `beta` - A beta release.
@@ -37,7 +40,7 @@ kept stable.
    * The release pipeline may be initiated by the `gh` CLI as follows:
      ```bash
      gh workflow run .github/workflows/release-orchestrate.yml -f build-variant=_selected_release_variation_
-   * ```
+     ```
 
 ## Local Publishing
 

@@ -1,6 +1,6 @@
 name: Publish Release
 
-# TODO: create a github release?
+# TODO: create a github release. This is needed to trigger webhooks.
 
 permissions:
   actions: read
@@ -113,26 +113,27 @@ jobs:
           # TODO: re-enable. Disabled for pipeline development
           # nox -s pkg_publish_pypi_prod
 
-  release-readthedocs:
-    name: "Release documentation to readthedocs.com"
-    # needs: release-checkpoint
-    runs-on: ubuntu-latest
-    # environment: production
-    steps:
-      - name: "Checkout code"
-        uses: actions/checkout@v4
-      - name: "Prepare common Python build environment"
-        uses: ./.github/actions/python-build-env-setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: "Download Built Documentations"
-        uses: actions/download-artifact@v4
-        with:
-          name: planet-auth-mkdocs-site
-          # github-token: ${{ secrets.GH_PAT }}
-          # repository: '${{ github.repository }}'
-          # run-id: '${{ github.run_id }}'
-          path: site
-      - name: "Nox: Publish to ReadTheDocs"
-        run: |
-          nox -s mkdocs_publish_readthedocs
+  # Read the docs is published via webhook GitHub webhook
+  # release-readthedocs:
+  #   name: "Release documentation to readthedocs.com"
+  #   # needs: release-checkpoint
+  #   runs-on: ubuntu-latest
+  #   # environment: production
+  #   steps:
+  #     - name: "Checkout code"
+  #       uses: actions/checkout@v4
+  #     - name: "Prepare common Python build environment"
+  #       uses: ./.github/actions/python-build-env-setup
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+  #     - name: "Download Built Documentations"
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: planet-auth-mkdocs-site
+  #         # github-token: ${{ secrets.GH_PAT }}
+  #         # repository: '${{ github.repository }}'
+  #         # run-id: '${{ github.run_id }}'
+  #         path: site
+  #     - name: "Nox: Publish to ReadTheDocs"
+  #       run: |
+  #         nox -s mkdocs_publish_readthedocs

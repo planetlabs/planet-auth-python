@@ -167,5 +167,9 @@ def mkdocs_serve(session):
 @nox.session(python=_DEFAULT_PYTHON)
 def mkdocs_publish_readthedocs(session):
     session.install("-e", ".[build, docs]")
-    # TODO
+    # TODO - Manual doc publushing
+    print(
+        "ERROR: Read The Docs publishing not implemented in the noxfile."
+        "  Documentation publishing is triggered via GitHub webhook."
+    )
     assert False
