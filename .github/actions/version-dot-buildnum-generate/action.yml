@@ -1,0 +1,95 @@
+name: 'Generate a version-with-buildnum.txt file'
+description: |
+  Generate a version string that includes a generated build number and build
+  variant appended.  The version.txt file is used to obtain the branch
+  invariant portion of the full version.  The generated build number will
+  be unique (within reason) and increasing so that within a lineage the full
+  version number encodes relative position of any build.  The generated build
+  number is not guaranteed to be sequential.
+  
+  The current implementation uses a time based build number.  Sequence numbers
+  from the CI/CD system were also considered, and can work just as well.
+  Repository hashes were not used since they neither encode the relative
+  build position nor are they unique upon rebuild.
+  
+  The generated version is output both as a job output string and as a
+  build artifact file that contains the same.
+  
+  This action assumes it is working with a Semantic Versioning version
+  number. The form of the final, full version number is
+    <branch invariant version>.<build number>-<build variant>
+  
+  References:
+    https://semver.org/
+    https://packaging.python.org/en/latest/specifications/version-specifiers/
+
+# TODO: Detect branch for consideration of constructing a build_variant automatically?
+#       Unless we have a strict branching/release policy, this may never be possible.
+# TODO: add support for epochs (e.g. "<epoch>!" prefix)
+# TODO: add support for local variants (e.g. "+<local variant>" suffix)
+# TODO: Can/should we *also* encode the SHA?  While I dislike its lack of sequence
+#       or uniqueness, it *does* encode useful information.
+
+inputs:
+  build-variant:
+    description: |
+      Build variant. E.g. "dev", "beta", "rc", etc. Use the keyword "release" for
+      production releases that should not specify a variant.
+    required: true
+
+outputs:
+  version-with-buildnum:
+    description: 'Full version with variant build number appended'
+    value: ${{ steps.generate-version-with-buildnum.outputs.version-with-buildnum }}
+  version:
+    description: 'Just the simple branch invariant version'
+    value: ${{ steps.generate-version-with-buildnum.outputs.version }}
+  buildnum:
+    description: 'Just the generated build number'
+    value: ${{ steps.generate-version-with-buildnum.outputs.buildnum }}
+  variant-normal:
+    description: 'Normalized build variant string'
+    value: ${{ steps.generate-version-with-buildnum.outputs.variant-normal }}
+  variant-raw:
+    description: 'Raw build variant string (same as input)'
+    value: ${{ steps.generate-version-with-buildnum.outputs.variant-raw }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: generate-version-with-buildnum
+      name: "Prepare build version file"
+      shell: bash
+      run: |
+        # Should be closely synonymous with SCM branch
+        version_invariant=$(head -1 version.txt  | tr -d '\n')
+
+        # "pre-release" in semver
+        if [ "${{ inputs.build-variant }}" = "release" ]
+        then
+            version_variant=""
+        else
+            version_variant=${{ inputs.build-variant }}
+        fi
+
+        # Generated build number
+        build_timestamp_b10=$(date +%s)                                # Time based build number - Base 10
+        build_timestamp_b16=$(printf '%x' ${build_timestamp_b10})      # Time based build number - Base 16 - More compact, but might be interpreted as a non-digit
+        build_timestamp_bx16=$(printf '0x%x' ${build_timestamp_b10})   # As above, with leading '0x' so it's never not seen as hex (but is less compact)
+        # Python packaging doesn't like the "x" in the build number build numbers (even though it makes it less ambigious)
+        # Reverting to base 10 for now.  *sigh*
+        version_buildnum=${build_timestamp_b10}
+
+        # Putting it all together
+        printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
+        echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"
+        echo "version-with-buildnum=$(cat version-with-buildnum.txt)" | tee -a $GITHUB_OUTPUT
+        echo "version=$(cat version.txt)" | tee -a $GITHUB_OUTPUT
+        echo "buildnum=${version_buildnum}" | tee -a $GITHUB_OUTPUT
+        echo "variant-normal=${version_variant}" | tee -a $GITHUB_OUTPUT
+        echo "variant-raw=${{ inputs.build-variant }}" | tee -a $GITHUB_OUTPUT
+    - name: Save Artifacts - version-with-buildnum.txt
+      uses: actions/upload-artifact@v4
+      with:
+        name: version-with-buildnum-file
+        path: version-with-buildnum.txt

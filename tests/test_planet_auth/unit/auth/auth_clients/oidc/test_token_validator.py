@@ -15,7 +15,7 @@
 import json
 import jwt.utils
 import secrets
-import time
+import freezegun
 import unittest
 from unittest.mock import MagicMock
 
@@ -447,13 +447,14 @@ class TestTokenValidator(unittest.TestCase):
                 token_str=access_token, issuer=self.token_builder_1.issuer, audience="extra_audience_3"
             )
 
-    def test_access_token_expired(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_access_token_expired(self, frozen_time):
         # QE TC2
         under_test = self.under_test_1
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=3
         )
-        time.sleep(5)
+        frozen_time.tick(5)
         with self.assertRaises(ExpiredTokenException):
             under_test.validate_token(
                 access_token,
@@ -631,7 +632,8 @@ class TestTokenValidator(unittest.TestCase):
         with self.assertRaises(InvalidTokenException):
             under_test.validate_id_token(id_token, issuer=self.token_builder_1.issuer, client_id="test_client_id")
 
-    def test_min_jwks_fetch_interval(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_min_jwks_fetch_interval(self, frozen_time):
         under_test = self.under_test_2
         token_known_signer = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
@@ -680,7 +682,7 @@ class TestTokenValidator(unittest.TestCase):
         # t4 - after the interval has passed, a we should reload for any
         # request.  If a miss comes in before the next interval, it should not
         # trigger a reload.  Also, it's not automatic, it's on demand.
-        time.sleep(self.MIN_JWKS_FETCH_INTERVAL + 2)
+        frozen_time.tick(self.MIN_JWKS_FETCH_INTERVAL + 2)
         self.assertEqual(1, under_test._jwks_client.jwks.call_count)
         under_test.validate_token(
             token_known_signer,

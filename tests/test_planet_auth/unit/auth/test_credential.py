@@ -13,10 +13,12 @@
 # limitations under the License.
 
 import copy
+import datetime
+import os
 import pathlib
 import shutil
 import tempfile
-import time
+import freezegun
 import unittest
 import pytest
 
@@ -29,6 +31,11 @@ from tests.test_planet_auth.util import tdata_resource_file_path
 # It's just that FileBackedJsonObject was initially written for credential
 # handling, and then we expended its use.
 class TestCredential(unittest.TestCase):
+    def setUp(self):
+        # The interactions of freezegun and the filesystem mtimes have been... quirky.
+        # This seems to help.
+        os.environ["TZ"] = "UTC"
+
     def test_set_data_asserts_valid(self):
         under_test = Credential(data=None, file_path=None)
         with self.assertRaises(FileBackedJsonObjectException):
@@ -127,11 +134,20 @@ class TestCredential(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             under_test.lazy_reload()
 
-    def test_lazy_reload_reload_behavior(self):
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_lazy_reload_reload_behavior(self, frozen_time):
         tmp_dir = tempfile.TemporaryDirectory()
         test_path = pathlib.Path(tmp_dir.name) / "lazy_reload_test.json"
         shutil.copyfile(tdata_resource_file_path("keys/base_test_credential.json"), test_path)
 
+        # Freezegun doesn't seem to extend to file system recorded times,
+        # so monkey-patch that throughout the test, too.
+        # t0 - test prep
+        t0 = datetime.datetime.now(tz=datetime.timezone.utc)
+        os.utime(test_path, (t0.timestamp(), t0.timestamp()))
+
+        # t1 - object under test created
+        frozen_time.tick(2)
         under_test = Credential(data=None, file_path=None)
 
         # test that it doesn't load until asked for
@@ -140,21 +156,28 @@ class TestCredential(unittest.TestCase):
         test_key_value = under_test.lazy_get("test_key")
         self.assertEqual("test_value", test_key_value)
 
-        # test that changing the file DOES trigger a reload.
+        # t2 - update the backing file via sideband.
+        # Check that changing the file DOES trigger a reload.
+        # (We use a separate instance of Credential as a convenient writer to the test file.)
         new_test_data = copy.deepcopy(under_test.data())
         new_test_data["test_key"] = "new_data"
         new_credential = Credential(data=new_test_data, file_path=test_path)
-        time.sleep(2)
+        t2 = frozen_time.tick(2)
         new_credential.save()
+        os.utime(test_path, (t2.timestamp(), t2.timestamp()))
 
+        # t3 - reload the time sometime later.
+        # Check to make sure we now have the new data, and that the load time was updated
+        t3 = frozen_time.tick(2)
         under_test.lazy_reload()
         test_key_value = under_test.lazy_get("test_key")
         self.assertEqual("new_data", test_key_value)
+        self.assertEqual(int(t3.timestamp()), under_test._load_time)
 
-        # a subsequent reload when the file has not been modified should
-        # NOT trigger a reload. (peek at the internals to check.)
+        # t4 - lazy reload the file sometime later.
+        # This should NOT trigger a reload, since the file has not changed.
         old_load_time = under_test._load_time
-        time.sleep(2)
+        frozen_time.tick(2)
         under_test.lazy_reload()
         new_load_time = under_test._load_time
         self.assertEqual(old_load_time, new_load_time)

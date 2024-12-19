@@ -1,8 +1,14 @@
 name: Tests
 
-on: [push, pull_request]
+permissions:
+  actions: read
+  contents: read
 
-# permissions: {}
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
 
 env:
   PYTHON_VERSION: "3.13"
@@ -15,15 +21,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Nox: Python Black'
         run: |
-          nox -s black-lint
+          nox -s black_lint
 
   pytest_all:
-    name: Test Python ${{ matrix.python-version }}
+    name: PyTest with Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,7 +38,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ matrix.python-version }}
       - name: "Nox: Pytest ${{ matrix.python-version }}"
@@ -46,7 +52,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: 'Nox: Semgrep - src'
@@ -60,7 +66,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: MyPy"
@@ -74,7 +80,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pyflakes - src"
@@ -88,7 +94,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pyflakes - examples"
@@ -102,7 +108,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pyflakes - tests"
@@ -116,7 +122,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pylint - src"
@@ -130,7 +136,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pylint - examples"
@@ -144,9 +150,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Prepare common Python build environment
-        uses: ./.github/actions/python-common-setup
+        uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: "Nox: Pylint - tests"
         run: |
           nox -s pylint_tests
+
+  mkdocs_check:
+    # FIXME: Since there is no difference between "build" and "check" for the docs,
+    #        this is redundant with the release workflow.  Still, we want to provide
+    #        the feedback about bad docs in the "test" workflow, upstream of release.
+    name: MkDocs - check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-build-env-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: 'Nox: MKDocs Build'
+        run: |
+          nox -s mkdocs_build
