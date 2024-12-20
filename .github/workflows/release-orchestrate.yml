@@ -4,10 +4,7 @@ permissions:
   actions: read
   contents: read
 
-# TODO: insure we can only release from privileged branches/tags?
-
 on:
-  # push:  # Just for testing  FIXME: Remove this.
   workflow_dispatch:
     inputs:
       build-variant:

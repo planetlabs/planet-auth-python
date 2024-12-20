@@ -36,8 +36,8 @@ plugins:
               - "!^_"  # exclude all members starting with _
               - "^__init__$"  # but always include __init__ modules and methods
 
-repo_name: platform-auth/planet-auth-python
-repo_url: https://hello.planet.com/code/platform-auth/planet-auth-python
+repo_name: planetlabs/planet-auth-python
+repo_url: https://github.com/planetlabs/planet-auth-python
 #edit_uri: ""
 
 nav:

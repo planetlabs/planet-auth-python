@@ -7,7 +7,7 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 # version = "X.X.X"
 description = "Planet Auth Utility Code"
-readme = "docs/README-pkg.md"
+readme = "docs/index.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
 license = {file = "LICENSE"}
 classifiers = [
@@ -66,6 +66,8 @@ dev = [
     "planet-auth[test, docs, build]",
 ]
 internal = [
+    # For Planet Engineering internal usage.  These are Planet internal packages,
+    # and will not be generally available.
     "planet-auth-config >= 2.0.0",
 ]
 
