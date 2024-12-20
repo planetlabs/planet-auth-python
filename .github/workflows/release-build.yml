@@ -43,25 +43,28 @@ jobs:
           name: planet-auth-src-targz
           path: dist/planet_auth*.tar.gz
 
-  build-docs:
-    name: "Build Documentation Packages"
-    runs-on: ubuntu-latest
-    steps:
-      - name: "Checkout code"
-        uses: actions/checkout@v4
-      - name: Prepare common Python build environment
-        uses: ./.github/actions/python-build-env-setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      # - name: "Pull Build Number"
-      #   uses: ./.github/actions/version-dot-buildnum-fetch
-      #   with:
-      #     version-file: version-with-buildnum.txt
-      - name: "Nox: MKDocs Build"
-        run: |
-          nox -s mkdocs_build
-      - name: "Save Artifacts - MkDocs"
-        uses: actions/upload-artifact@v4
-        with:
-          name: planet-auth-mkdocs-site
-          path: site/**
+  # Not building this as a release artifact at this time.
+  # Docs are published to ReadTheDocs through other mechanisms.
+  #
+  # build-docs:
+  #   name: "Build Documentation Packages"
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: "Checkout code"
+  #       uses: actions/checkout@v4
+  #     - name: Prepare common Python build environment
+  #       uses: ./.github/actions/python-build-env-setup
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
+  #     # - name: "Pull Build Number"
+  #     #   uses: ./.github/actions/version-dot-buildnum-fetch
+  #     #   with:
+  #     #     version-file: version-with-buildnum.txt
+  #     - name: "Nox: MKDocs Build"
+  #       run: |
+  #         nox -s mkdocs_build
+  #     - name: "Save Artifacts - MkDocs"
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: planet-auth-mkdocs-site
+  #         path: site/**
