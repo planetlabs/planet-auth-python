@@ -1,8 +1,7 @@
 site_name: Planet Auth Library
 site_description: Planet Auth Library
 site_url: https://planet.com/
-# TODO: enable strict docs
-strict: false
+strict: true
 
 #watch:
 #  - src
