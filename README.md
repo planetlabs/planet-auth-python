@@ -5,6 +5,13 @@ and for services.  For clients, it provides means to obtain access tokens that
 can be used to access network services.  For services, it provides tools to
 validate the same access tokens.
 
+This functionality is provided as library functions for developing clients
+and services.  Additionally, a command line utility `plauth` is provided
+for interacting with authentication services from a command shell.  This
+utility is provided both as a stand-alone program, and as a
+[`click`](https://click.palletsprojects.com/) command group designed to be
+integrated into other `click` programs as a sub-command.
+
 The [Planet SDK for Python](https://developers.planet.com/docs/pythonclient/)
 leverages this library, and is pre-configured for the Planet Cloud Service used
 by customers.
