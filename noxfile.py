@@ -32,6 +32,7 @@ def pytest(session):
     if "-k" in options:
         options.append("--no-cov")
     # Default test set selection done in pyproject.toml
+    # session.run("pytest", "--log-cli-level=DEBUG", "-v", *options)
     session.run("pytest", "-v", *options)
 
 

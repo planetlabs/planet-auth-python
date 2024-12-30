@@ -85,21 +85,39 @@ class BuiltinConfigurationProviderInterface(ABC):
 
 
 class EmptyBuiltinProfileConstants(BuiltinConfigurationProviderInterface):
-    # TODO: add "None" type to this implementation.
+    BUILTIN_PROFILE_NAME_NONE = "none"
+
+    NONE_AUTH_CLIENT_CONFIG = {
+        "client_type": "none",
+    }
+
+    _builtin_profile_auth_client_configs = {
+        BUILTIN_PROFILE_NAME_NONE: NONE_AUTH_CLIENT_CONFIG,
+    }
+
+    _builtin_profile_aliases: Dict[str, str] = {}
+
+    _builtin_profile_default_by_client_type = {
+        "none": BUILTIN_PROFILE_NAME_NONE,
+    }
+    _builtin_trust_realms: Dict[str, Optional[List[dict]]] = {
+        "CUSTOM": None,
+    }
+
     def builtin_client_authclient_config_dicts(self) -> Dict[str, dict]:
-        return {}
+        return EmptyBuiltinProfileConstants._builtin_profile_auth_client_configs
 
     def builtin_client_profile_aliases(self) -> Dict[str, str]:
-        return {}
+        return EmptyBuiltinProfileConstants._builtin_profile_aliases
 
-    def builtin_default_profile_by_client_type(self):
-        return {}
+    def builtin_default_profile_by_client_type(self) -> Dict[str, str]:
+        return EmptyBuiltinProfileConstants._builtin_profile_default_by_client_type
 
     def builtin_default_profile(self) -> str:
-        return "__undefined__"
+        return EmptyBuiltinProfileConstants.BUILTIN_PROFILE_NAME_NONE
 
     def builtin_trust_environment_names(self) -> List[str]:
-        return []
+        return list(EmptyBuiltinProfileConstants._builtin_trust_realms.keys())
 
     def builtin_trust_environments(self) -> Dict[str, Optional[List[dict]]]:
-        return {}
+        return EmptyBuiltinProfileConstants._builtin_trust_realms
