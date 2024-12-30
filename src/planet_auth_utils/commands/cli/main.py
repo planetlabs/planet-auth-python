@@ -78,7 +78,7 @@ def embedded_plauth_cmd_group(ctx):
     Embeddable version of the Planet Auth Client root command.
     The embedded command differs from the stand-alone command in that it
     expects the context to be instantiated and options to be handled by
-    the parent command.  See [PlanetAuthFactory.initialize_auth_client_context][]
+    the parent command.  See [planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context][]
     for user-friendly auth client context initialization.
 
     See [examples](/examples/#embedding-the-click-auth-command).

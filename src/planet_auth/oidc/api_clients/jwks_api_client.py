@@ -37,7 +37,7 @@ class JwksApiClient(OidcApiClient):
     def _checked_fetch(self):
         return self._checked_get_json_response(None, None)
 
-    def jwks(self):
+    def jwks(self) -> dict:
         """
         Fetch metadata from the JWKS endpoint.
 
@@ -47,7 +47,7 @@ class JwksApiClient(OidcApiClient):
         """
         return self._checked_fetch()
 
-    def jwks_keys(self):
+    def jwks_keys(self) -> list:
         """
         Fetch keys from the JWKS endpoint.
 

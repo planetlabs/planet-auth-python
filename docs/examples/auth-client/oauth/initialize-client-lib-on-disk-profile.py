@@ -1,8 +1,8 @@
-from planet_auth import Auth
+import planet_auth_utils
 
 
 def main():
-    auth_ctx = Auth.initialize_from_profile(profile="my-custom-profile")
+    auth_ctx = planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context(auth_profile_opt="my-custom-profile")
     print("Auth context initialized from on disk profile {}".format(auth_ctx.profile_name()))
 
 

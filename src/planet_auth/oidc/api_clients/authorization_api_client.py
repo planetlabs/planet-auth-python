@@ -18,6 +18,7 @@ import importlib.resources as pkg_resources  # nosemgrep
 
 from http import HTTPStatus
 from urllib.parse import urlparse, parse_qs, urlencode
+from typing import List
 from webbrowser import open_new
 
 import planet_auth.logging.auth_logger
@@ -139,7 +140,12 @@ class AuthorizationApiClient:
 
     @staticmethod
     def prep_pkce_auth_payload(
-        client_id, redirect_uri, requested_scopes, requested_audiences, pkce_code_challenge, extra
+        client_id: str,
+        redirect_uri: str,
+        requested_scopes: List[str],
+        requested_audiences: List[str],
+        pkce_code_challenge: str,
+        extra: dict,
     ) -> dict:
         """
         Prepare the payload needed to make an authorization request to an
@@ -205,7 +211,13 @@ class AuthorizationApiClient:
         return data
 
     def authcode_from_pkce_auth_request_with_browser_and_callback_listener(
-        self, client_id, redirect_uri, requested_scopes, requested_audiences, pkce_code_challenge, extra
+        self,
+        client_id: str,
+        redirect_uri: str,
+        requested_scopes: List[str],
+        requested_audiences: List[str],
+        pkce_code_challenge: str,
+        extra: dict,
     ) -> str:
         """
         Request an authorization code by launching a web browser directed to the
@@ -244,7 +256,11 @@ class AuthorizationApiClient:
         auth_logger.debug(msg='Setting up listener for auth callback handler with URI "{}"'.format(redirect_uri))
         parsed_redirect_url = urlparse(redirect_uri)
         listen_port = parsed_redirect_url.port if parsed_redirect_url.port else DEFAULT_REDIRECT_LISTEN_PORT
-        if parsed_redirect_url.hostname.lower() != "localhost" and parsed_redirect_url.hostname != "127.0.0.1":
+        if (
+            parsed_redirect_url.hostname
+            and parsed_redirect_url.hostname.lower() != "localhost"
+            and parsed_redirect_url.hostname != "127.0.0.1"
+        ):
             raise AuthorizationApiException(
                 message="Unexpected hostname in auth redirect URI. Expected"
                 ' localhost URI, but received "{}"'.format(redirect_uri)
@@ -286,7 +302,13 @@ class AuthorizationApiClient:
             )
 
     def authcode_from_pkce_auth_request_with_tty_input(
-        self, client_id, redirect_uri, requested_scopes, requested_audiences, pkce_code_challenge, extra
+        self,
+        client_id: str,
+        redirect_uri: str,
+        requested_scopes: List[str],
+        requested_audiences: List[str],
+        pkce_code_challenge: str,
+        extra: dict,
     ) -> str:
         """
         Request an authorization code by prompting the user to visit a

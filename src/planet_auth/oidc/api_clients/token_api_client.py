@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import time
+from typing import Any, List
 
 import planet_auth.logging.auth_logger
 from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException
@@ -83,7 +84,14 @@ class TokenApiClient(OidcApiClient):
                 # indicate they don't want to wait as long as the server is willing to.
                 raise TokenApiException(message="Timeout exceeded")
 
-    def get_token_from_refresh(self, client_id, refresh_token, requested_scopes=None, auth_enricher=None, extra=None):
+    def get_token_from_refresh(
+        self,
+        client_id: str,
+        refresh_token: str,
+        requested_scopes: List[str] = None,
+        auth_enricher: Any = None,
+        extra: dict = None,
+    ) -> dict:
         """
         Obtain tokens using a refresh token.
 
@@ -127,12 +135,12 @@ class TokenApiClient(OidcApiClient):
 
     def get_token_from_client_credentials(
         self,
-        client_id,
-        requested_scopes=None,
-        requested_audiences=None,
-        auth_enricher=None,
-        extra=None,
-    ):
+        client_id: str,
+        requested_scopes: List[str] = None,
+        requested_audiences: List[str] = None,
+        auth_enricher: Any = None,
+        extra: dict = None,
+    ) -> dict:
         """
         Obtain tokens using client credentials and the client credentials grant
         OAuth flow.
@@ -147,7 +155,7 @@ class TokenApiClient(OidcApiClient):
                 that were initially granted to the client.  A scope increase may
                 not be requested during refresh. A scope increase requires a new
                 authorization (login).
-            auth_enricher: Function to layer un the application of client credentials.
+            auth_enricher: Function to layer in the application of client credentials.
             extra: Dict of extra parameters to pass to the token endpoint.
 
         Returns:
@@ -179,13 +187,13 @@ class TokenApiClient(OidcApiClient):
 
     def get_token_from_code(
         self,
-        redirect_uri,
-        client_id,
-        code,
-        code_verifier,
-        auth_enricher=None,
+        redirect_uri: str,
+        client_id: str,
+        code: str,
+        code_verifier: str,
+        auth_enricher: Any = None,
         # extra=None, # This should be in the auth request, not the code redemption.
-    ):
+    ) -> dict:
         """
         Obtain tokens using an authorization code.
 
@@ -212,13 +220,13 @@ class TokenApiClient(OidcApiClient):
 
     def poll_for_token_from_device_code(
         self,
-        client_id,
-        device_code,
-        timeout,
-        poll_interval=5,  # Default poll interval specified in RFC 8628
-        auth_enricher=None,
+        client_id: str,
+        device_code: str,
+        timeout: int,
+        poll_interval: int = 5,  # Default poll interval specified in RFC 8628
+        auth_enricher: Any = None,
         # extra=None,  # This should be in the auth request, not the code redemption.
-    ):
+    ) -> dict:
         """
         Poll for the completion of a device code login.
 
@@ -244,14 +252,14 @@ class TokenApiClient(OidcApiClient):
 
     def get_token_from_password(
         self,
-        client_id,
-        username,
-        password,
-        requested_scopes=None,
-        requested_audiences=None,
-        auth_enricher=None,
-        extra=None,
-    ):
+        client_id: str,
+        username: str,
+        password: str,
+        requested_scopes: List[str] = None,
+        requested_audiences: List[str] = None,
+        auth_enricher: Any = None,
+        extra: dict = None,
+    ) -> dict:
         """
         Obtain tokens using a username and password and the resource owner
         grant OAuth flow.

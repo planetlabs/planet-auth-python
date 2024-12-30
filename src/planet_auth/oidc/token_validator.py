@@ -141,7 +141,15 @@ class TokenValidator:
     @TokenValidatorException.recast(jwt.PyJWTError)
     @InvalidTokenException.recast(jwt.InvalidTokenError)
     @ExpiredTokenException.recast(jwt.ExpiredSignatureError)
-    def validate_token(self, token_str, issuer, audience, required_claims=None, scopes_anyof: list = None, nonce=None):
+    def validate_token(
+        self,
+        token_str: str,
+        issuer: str,
+        audience: str,
+        required_claims: list = None,
+        scopes_anyof: list = None,
+        nonce: str = None,
+    ):
         """
         Validate the provided token string.  Required claims are validated
         for their presence only. It is up to the application to assert

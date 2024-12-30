@@ -20,4 +20,3 @@ it is operating, leaving that for higher level applications to configure.
 The [Planet SDK for Python](https://developers.planet.com/docs/pythonclient/)
 leverages this library, and is pre-configured for the Planet Cloud Service used
 by customers.
-s
