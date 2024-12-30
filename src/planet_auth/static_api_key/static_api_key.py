@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from planet_auth.credential import Credential
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.util import InvalidDataException
 
 
 class FileBackedApiKey(Credential):
@@ -35,11 +35,9 @@ class FileBackedApiKey(Credential):
         """
         super().check_data(data)
         if not data.get("api_key"):
-            raise FileBackedJsonObjectException(message="'api_key' not found in file " + str(self._file_path))
+            raise InvalidDataException(message="'api_key' not found in file " + str(self._file_path))
         if not data.get("bearer_token_prefix"):
-            raise FileBackedJsonObjectException(
-                messae="'bearer_token_prefix' not found in file " + str(self._file_path)
-            )
+            raise InvalidDataException(messae="'bearer_token_prefix' not found in file " + str(self._file_path))
 
     def api_key(self):
         """

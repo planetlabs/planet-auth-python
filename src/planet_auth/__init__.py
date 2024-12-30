@@ -126,6 +126,8 @@ from .oidc.request_authenticator import (
 from .planet_legacy.request_authenticator import PlanetLegacyRequestAuthenticator
 from .static_api_key.request_authenticator import FileBackedApiKeyRequestAuthenticator
 
+from .util import InvalidDataException
+
 __all__ = [
     # Classes
     Auth.__name__,
@@ -158,6 +160,7 @@ __all__ = [
     FileBackedOidcCredential.__name__,
     FileBackedPlanetLegacyApiKey.__name__,
     InvalidAlgorithmTokenException.__name__,
+    InvalidDataException.__name__,
     InvalidArgumentException.__name__,
     InvalidTokenException.__name__,
     OidcAuthClient.__name__,

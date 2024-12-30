@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from planet_auth.credential import Credential
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.util import InvalidDataException
 
 
 class FileBackedPlanetLegacyApiKey(Credential):
@@ -37,13 +37,17 @@ class FileBackedPlanetLegacyApiKey(Credential):
         """
         super().check_data(data)
         if not data.get("key"):
-            raise FileBackedJsonObjectException(message="'key' not found in file " + str(self._file_path))
+            raise InvalidDataException(message="'key' not found in file " + str(self._file_path))
 
     def legacy_api_key(self):
         """
         Get the current API key.
         """
         return self.lazy_get("key")
+
+    # Duck type compatibility with FileBackedApiKey (Static API key)
+    def api_key(self):
+        return self.legacy_api_key()
 
     def legacy_jwt(self):
         """

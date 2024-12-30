@@ -22,7 +22,7 @@ import planet_auth.logging.auth_logger
 from planet_auth.auth_exception import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
-from planet_auth.util import FileBackedJsonObject, FileBackedJsonObjectException
+from planet_auth.util import FileBackedJsonObject, InvalidDataException
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
@@ -32,7 +32,7 @@ class AuthClientException(AuthException):
         super().__init__(**kwargs)
 
 
-class AuthClientConfigException(FileBackedJsonObjectException):
+class AuthClientConfigException(InvalidDataException):  # Audit
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

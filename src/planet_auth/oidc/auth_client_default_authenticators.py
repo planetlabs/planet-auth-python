@@ -62,15 +62,14 @@ class OidcAuthClientWithRefreshingOidcTokenRequestAuthenticator(ABC):
             _credential = FileBackedOidcCredential(credential_file=credential)
         elif isinstance(credential, FileBackedOidcCredential):
             _credential = credential
-        # elif credential is None:
-        #   This makes sense above, since login is permitted and the authenticator
-        #   may obtain an initial credential. The refresh path needs a credential
-        #   with a refresh token to bootstrap operations.  So, this option
-        #   does not make sense here.
-        #
-        #     # An empty, path-less (in memory) credential to start the request authenticator off with.
-        #     # Authenticators are permitted to obtain credentials JIT.
-        #     _credential = FileBackedOidcCredential()
+        elif credential is None:
+            # Does this make sense in this class? A refreshing
+            # request authenticator cannot operate with an
+            # in-memory token that never performed an initial
+            # login.  This sets up a complete initial state,
+            # but this will not work intil the caller calls
+            # update_credential()
+            _credential = FileBackedOidcCredential()
         else:
             raise TypeError(
                 f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedOidcCredential."

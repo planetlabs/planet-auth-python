@@ -65,6 +65,10 @@ class FileBackedJsonObjectException(AuthException):
             return super().__str__()
 
 
+class InvalidDataException(FileBackedJsonObjectException):
+    pass
+
+
 class FileBackedJsonObject:
     """
     A file backed json object for storing information. Base class provides
@@ -195,7 +199,7 @@ class FileBackedJsonObject:
         if not data:
             if data == {}:
                 return
-            raise FileBackedJsonObjectException(
+            raise InvalidDataException(
                 message="None is not valid data for {} type, backed by file '{}'".format(
                     self.__class__.__name__, self._file_path
                 )

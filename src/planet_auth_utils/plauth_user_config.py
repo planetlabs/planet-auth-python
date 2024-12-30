@@ -18,6 +18,7 @@ import logging
 from typing import Optional
 
 from planet_auth.util import FileBackedJsonObject
+from planet_auth.constants import USER_CONFIG_FILE
 
 
 logger = logging.getLogger(__name__)
@@ -31,8 +32,8 @@ class PlanetAuthUserConfig(FileBackedJsonObject):
 
     @staticmethod
     def default_user_config_file():
-        # return Profile.profile_root().joinpath("plauth_conf.json")
-        return pathlib.Path.home().joinpath(".planet.json")
+        # return Profile.profile_root().joinpath(USER_CONFIG_FILE)
+        return pathlib.Path.home().joinpath(USER_CONFIG_FILE)
 
     def __init__(self, data: Optional[dict] = None, file_path: Optional[pathlib.Path] = None):
         if file_path is None:

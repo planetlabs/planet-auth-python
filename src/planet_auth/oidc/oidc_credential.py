@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from planet_auth import Credential
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.util import InvalidDataException
 
 
 class FileBackedOidcCredential(Credential):
@@ -30,7 +30,7 @@ class FileBackedOidcCredential(Credential):
         """
         super().check_data(data)
         if not data.get("access_token") and not data.get("id_token") and not data.get("refresh_token"):
-            raise FileBackedJsonObjectException(
+            raise InvalidDataException(
                 message="'access_token', 'id_token', or 'refresh_token' not found in file {}".format(self._file_path)
             )
 

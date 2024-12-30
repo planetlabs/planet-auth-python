@@ -107,6 +107,16 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         # requests.
         self._token_body = None
 
+    def credential(self):
+        """
+        Return the current credential.
+
+        This may not be the credential the authenticator was constructed with.
+        Request Authenticators are free to refresh credentials depending in the
+        needs of the implementation.
+        """
+        return self._credential
+
 
 class SimpleInMemoryRequestAuthenticator(CredentialRequestAuthenticator):
     # This SimpleInMemoryRequestAuthenticator subclasses from

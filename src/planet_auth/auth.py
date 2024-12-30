@@ -163,12 +163,6 @@ class Auth:
         else:
             token_file_path = None
 
-        # TODO: I think I have some type checking and in-memory operations clean-up
-        #   to do around credential being None.  I may need a way to contract an
-        #   an auth context with a Credential object, or a path to obtaining
-        #   one during operations.  In memory operations for the underlying Authenticators
-        #   and AuthClients was largely done before this Auth class was created to
-        #   provide a more convent top level manager, and this use case I think slipped by.
         request_authenticator = auth_client.default_request_authenticator(credential=token_file_path)  # type: ignore
 
         return Auth(

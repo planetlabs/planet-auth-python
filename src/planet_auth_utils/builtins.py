@@ -76,6 +76,11 @@ def _load_builtins() -> BuiltinConfigurationProviderInterface:
     if builtin_provider:
         return builtin_provider
 
+    # Next priority : Well known implementations (Planet Python SDK)
+    builtin_provider = _load_builtins_worker("planet.auth_builtins._BuiltinConfigurationProvider")
+    if builtin_provider:
+        return builtin_provider
+
     # Fallback : The empty provider
     return EmptyBuiltinProfileConstants()
 

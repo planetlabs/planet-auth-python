@@ -18,5 +18,6 @@ AUTH_CONFIG_FILE_PLAIN = "auth_client.json"
 AUTH_CONFIG_FILE_SOPS = "auth_client.sops.json"
 TOKEN_FILE_PLAIN = "token.json"
 TOKEN_FILE_SOPS = "token.sops.json"
+USER_CONFIG_FILE = ".planet.json"
 X_PLANET_APP = "planet-auth-library-" + pkg_resources.get_distribution("planet-auth").version
 X_PLANET_APP_HEADER = "X-Planet-App"
