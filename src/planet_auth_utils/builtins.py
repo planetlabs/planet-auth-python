@@ -118,12 +118,13 @@ class Builtins:
     @staticmethod
     def dealias_builtin_profile(profile: str) -> Optional[str]:
         Builtins._load_builtin_jit()
-        if Builtins.is_builtin_profile_alias(profile):
-            return Builtins._builtin.builtin_client_profile_aliases().get(profile.lower())
-        elif Builtins.is_builtin_profile(profile):
-            return profile.lower()
-        else:
-            return None
+        _dealiased = profile.lower()
+
+        while Builtins.is_builtin_profile_alias(_dealiased):
+            _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)
+
+        return _dealiased
+
 
     @staticmethod
     def builtin_profile_names() -> List[str]:

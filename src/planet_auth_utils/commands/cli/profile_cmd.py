@@ -275,4 +275,5 @@ def do_show(ctx):
     except Exception:  #  as ex:
         # print(f'User Default: {ex}')
         print("User Default: N/A")
-    print(f"Global Built-in Default: {Builtins.dealias_builtin_profile(Builtins.builtin_default_profile_name())}")
+    # print(f"Global Built-in Default: {Builtins.dealias_builtin_profile(Builtins.builtin_default_profile_name())}")
+    print(f"Global Built-in Default: {Builtins.builtin_default_profile_name()}")

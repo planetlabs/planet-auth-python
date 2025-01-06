@@ -321,4 +321,5 @@ def do_print_access_token(ctx):
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     # Not using object print for token printing. We don't want object quoting and escaping.
     # print_obj(saved_token.access_token())
+    # TODO: refresh if needed.
     print(saved_token.access_token())

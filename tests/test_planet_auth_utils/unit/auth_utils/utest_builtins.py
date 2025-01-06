@@ -115,9 +115,9 @@ class UTestMockBuiltinConfigurationProvider(BuiltinConfigurationProviderInterfac
     BUILTIN_PROFILE_NAME_UTEST_USER_STAGING  = "utest-user-staging"
     BUILTIN_PROFILE_NAME_UTEST_M2M_STAGING   = "utest-m2m-staging"
     # Aliases
-    BUILTIN_PROFILE_NAME_UTEST_PROD          = "utest-prod"
-    BUILTIN_PROFILE_NAME_UTEST_M2M_PROD      = "utest-m2m-prod"
-    BUILTIN_PROFILE_NAME_UTEST_AUTH0_PROD    = "utest-user-prod"
+    BUILTIN_PROFILE_ALIAS_UTEST_PROD          = "utest-prod"
+    BUILTIN_PROFILE_ALIAS_UTEST_M2M_PROD      = "utest-m2m-prod"
+    BUILTIN_PROFILE_ALIAS_UTEST_AUTH0_PROD    = "utest-user-prod"
 
     ##
     ## Profiles that use Planet's old (pre-OAuth) based auth protocol
@@ -129,6 +129,8 @@ class UTestMockBuiltinConfigurationProvider(BuiltinConfigurationProviderInterfac
     ## Misc auth profiles
     ##
     BUILTIN_PROFILE_NAME_NONE    = "none"
+    BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1 = "alias1"
+    BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2 = "alais2"
 
     ##
     ## Default that should be used when no other selection has been made
@@ -151,9 +153,11 @@ class UTestMockBuiltinConfigurationProvider(BuiltinConfigurationProviderInterfac
     }
 
     _builtin_profile_aliases = {
-        BUILTIN_PROFILE_NAME_UTEST_PROD                 : BUILTIN_PROFILE_NAME_UTEST_USER,
-        BUILTIN_PROFILE_NAME_UTEST_M2M_PROD             : BUILTIN_PROFILE_NAME_UTEST_M2M,
-        BUILTIN_PROFILE_NAME_UTEST_AUTH0_PROD           : BUILTIN_PROFILE_NAME_UTEST_USER,
+        BUILTIN_PROFILE_ALIAS_UTEST_PROD                : BUILTIN_PROFILE_NAME_UTEST_USER,
+        BUILTIN_PROFILE_ALIAS_UTEST_M2M_PROD            : BUILTIN_PROFILE_NAME_UTEST_M2M,
+        BUILTIN_PROFILE_ALIAS_UTEST_AUTH0_PROD          : BUILTIN_PROFILE_NAME_UTEST_USER,
+        BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1             : BUILTIN_PROFILE_NAME_UTEST_USER,
+        BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2             : BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1,
     }
 
     _builtin_profile_default_by_client_type = {

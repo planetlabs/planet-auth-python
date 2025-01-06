@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import pytest
+import unittest
 
 from planet_auth_utils.profile import ProfileException
 from planet_auth_utils.builtins import Builtins, BuiltinsException
+from planet_auth_utils.constants import EnvironmentVariables
+
+from tests.test_planet_auth_utils.util import TestWithHomeDirProfiles
+from tests.test_planet_auth_utils.unit.auth_utils.utest_builtins import UTestMockBuiltinConfigurationProvider
 
 # FIXME: We are presuming a particular implementation of the built-in provider interface for these tests.
 #        We should test with sometime self contained in this distribution package.
@@ -46,3 +52,21 @@ class TestBuiltInProfiles:
     # TODO
     # def test_load_custom_builtins(self):
     #     assert isinstance(Builtins._builtin, SomeCustomProviderClass)
+
+
+class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCase):
+    def setUp(self):
+        os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
+            "tests.test_planet_auth_utils.unit.auth_utils.utest_builtins.UTestMockBuiltinConfigurationProvider"
+        )
+        Builtins._builtin = None  # Reset built-in state.
+        self.setUp_testHomeDir()
+
+    def test_deailas_profile(self):
+        under_test_resolved = Builtins.dealias_builtin_profile(UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1)
+        self.assertEqual(under_test_resolved, UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_NAME_UTEST_USER)
+
+
+    def test_nested_deailas_profile(self):
+        under_test_resolved = Builtins.dealias_builtin_profile(UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2)
+        self.assertEqual(under_test_resolved, UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_NAME_UTEST_USER)
