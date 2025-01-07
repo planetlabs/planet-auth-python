@@ -63,10 +63,13 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
         self.setUp_testHomeDir()
 
     def test_deailas_profile(self):
-        under_test_resolved = Builtins.dealias_builtin_profile(UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1)
+        under_test_resolved = Builtins.dealias_builtin_profile(
+            UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_1
+        )
         self.assertEqual(under_test_resolved, UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_NAME_UTEST_USER)
 
-
     def test_nested_deailas_profile(self):
-        under_test_resolved = Builtins.dealias_builtin_profile(UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2)
+        under_test_resolved = Builtins.dealias_builtin_profile(
+            UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2
+        )
         self.assertEqual(under_test_resolved, UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_NAME_UTEST_USER)
