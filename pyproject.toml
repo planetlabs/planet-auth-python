@@ -72,7 +72,7 @@ internal = [
 ]
 
 [project.scripts]
-plauth = "planet_auth_utils.commands.cli.main:plauth_cmd_group"
+plauth = "planet_auth_utils.commands.cli.main:cmd_plauth"
 
 [build-system]
 requires = ["setuptools>=62.0.0", "wheel"]

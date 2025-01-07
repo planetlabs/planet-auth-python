@@ -34,7 +34,7 @@ from .util import recast_exceptions_to_click, print_obj
 
 @click.group("oauth", invoke_without_command=True)
 @click.pass_context
-def oauth_cmd_group(ctx):
+def cmd_oauth(ctx):
     """
     Auth commands specific to OAuth authentication mechanisms.
     """
@@ -46,7 +46,7 @@ def oauth_cmd_group(ctx):
         raise click.ClickException("'oauth' auth command can only be used with OAuth type auth profiles.")
 
 
-@oauth_cmd_group.command("login")
+@cmd_oauth.command("login")
 @opt_open_browser
 @opt_show_qr_code
 @opt_token_scope
@@ -59,7 +59,7 @@ def oauth_cmd_group(ctx):
 @opt_auth_client_secret
 @click.pass_context
 @recast_exceptions_to_click(AuthException)
-def oauth_do_login(
+def cmd_oauth_login(
     ctx,
     scope,
     audience,
@@ -99,11 +99,11 @@ def oauth_do_login(
     print("Login succeeded.")  # Errors should throw.
 
 
-@oauth_cmd_group.command("refresh")
+@cmd_oauth.command("refresh")
 @opt_token_scope
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_refresh(ctx, scope):
+def cmd_oauth_refresh(ctx, scope):
     """
     Obtain a new credential using the saved refresh token.
 
@@ -124,10 +124,10 @@ def do_refresh(ctx, scope):
     saved_token.save()
 
 
-@oauth_cmd_group.command("list-scopes")
+@cmd_oauth.command("list-scopes")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_list_scopes(ctx):
+def cmd_oauth_list_scopes(ctx):
     """
     List available OAuth scopes.
 
@@ -142,10 +142,10 @@ def do_list_scopes(ctx):
         print_obj([])
 
 
-@oauth_cmd_group.command("validate-access-token")
+@cmd_oauth.command("validate-access-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_validate_access_token(ctx):
+def cmd_oauth_validate_access_token_remote(ctx):
     """
     Validate the access token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -162,12 +162,12 @@ def do_validate_access_token(ctx):
     print_obj(validation_json)
 
 
-@oauth_cmd_group.command("validate-access-token-local")
+@cmd_oauth.command("validate-access-token-local")
 @click.pass_context
 @opt_token_audience()
 @opt_token_scope
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_validate_access_token_local(ctx, audience, scope):
+def cmd_oauth_validate_access_token_local(ctx, audience, scope):
     """
     Validate the access token locally.
 
@@ -193,10 +193,10 @@ def do_validate_access_token_local(ctx, audience, scope):
     print_obj(validation_json)
 
 
-@oauth_cmd_group.command("validate-id-token")
+@cmd_oauth.command("validate-id-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_validate_id_token(ctx):
+def cmd_oauth_validate_id_token_remote(ctx):
     """
     Validate the ID token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -213,10 +213,10 @@ def do_validate_id_token(ctx):
     print_obj(validation_json)
 
 
-@oauth_cmd_group.command("validate-id-token-local")
+@cmd_oauth.command("validate-id-token-local")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_validate_id_token_local(ctx):
+def cmd_oauth_validate_id_token_local(ctx):
     """
     Validate the ID token. This command validates the ID token locally,
     checking the token signature and claims against expected values.
@@ -232,10 +232,10 @@ def do_validate_id_token_local(ctx):
     print_obj(validation_json)
 
 
-@oauth_cmd_group.command("validate-refresh-token")
+@cmd_oauth.command("validate-refresh-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_validate_refresh_token(ctx):
+def cmd_oauth_validate_refresh_token_remote(ctx):
     """
     Validate the refresh token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -252,10 +252,10 @@ def do_validate_refresh_token(ctx):
     print_obj(validation_json)
 
 
-@oauth_cmd_group.command("revoke-access-token")
+@cmd_oauth.command("revoke-access-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_revoke_access_token(ctx):
+def cmd_oauth_revoke_access_token(ctx):
     """
     Revoke the access token associated with the current profile.
 
@@ -276,10 +276,10 @@ def do_revoke_access_token(ctx):
     auth_client.revoke_access_token(saved_token.access_token())
 
 
-@oauth_cmd_group.command("revoke-refresh-token")
+@cmd_oauth.command("revoke-refresh-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_revoke_refresh_token(ctx):
+def cmd_oauth_revoke_refresh_token(ctx):
     """
     Revoke the refresh token associated with the current profile.
 
@@ -294,10 +294,10 @@ def do_revoke_refresh_token(ctx):
     auth_client.revoke_refresh_token(saved_token.refresh_token())
 
 
-@oauth_cmd_group.command("userinfo")
+@cmd_oauth.command("userinfo")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_user_info(ctx):
+def cmd_oauth_userinfo(ctx):
     """
     Look up user information from the auth server using the access token.
     """
@@ -310,10 +310,10 @@ def do_user_info(ctx):
     print_obj(userinfo_json)
 
 
-@oauth_cmd_group.command("print-access-token")
+@cmd_oauth.command("print-access-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_print_access_token(ctx):
+def cmd_oauth_print_access_token(ctx):
     """
     Show the OAuth access token used by the currently selected authentication
     profile.

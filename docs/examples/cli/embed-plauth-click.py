@@ -48,7 +48,7 @@ def do_cmd2(ctx):
     print("Payload:\n{}".format(result.text))
 
 
-my_cli_main.add_command(planet_auth_utils.embedded_plauth_cmd_group)
+my_cli_main.add_command(planet_auth_utils.cmd_plauth_embedded)
 
 if __name__ == "__main__":
     my_cli_main()  # pylint: disable=E1120

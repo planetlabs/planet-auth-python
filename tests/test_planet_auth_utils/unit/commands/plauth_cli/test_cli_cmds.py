@@ -16,7 +16,7 @@ import pytest
 
 from click.testing import CliRunner
 
-from planet_auth_utils.commands.cli.main import plauth_cmd_group
+from planet_auth_utils.commands.cli.main import cmd_plauth
 
 
 @pytest.fixture(name="click_cli_runner")
@@ -41,22 +41,22 @@ class TestPlauthCli:
         self._caplog.set_level(100000)
 
     def test_main_no_option_shows_help(self, click_cli_runner):
-        result = click_cli_runner.invoke(plauth_cmd_group)
+        result = click_cli_runner.invoke(cmd_plauth)
         assert 0 == result.exit_code
         assert "Planet authentication utility" in result.stdout
 
     def test_smoke_legacy(self, click_cli_runner):
-        result = click_cli_runner.invoke(plauth_cmd_group, ["legacy"])
+        result = click_cli_runner.invoke(cmd_plauth, ["legacy"])
         assert 0 == result.exit_code
 
     def test_smoke_oauth(self, click_cli_runner):
-        result = click_cli_runner.invoke(plauth_cmd_group, ["oauth"])
+        result = click_cli_runner.invoke(cmd_plauth, ["oauth"])
         assert 0 == result.exit_code
 
     def test_smoke_profile(self, click_cli_runner):
-        result = click_cli_runner.invoke(plauth_cmd_group, ["profile"])
+        result = click_cli_runner.invoke(cmd_plauth, ["profile"])
         assert 0 == result.exit_code
 
     def test_smoke_version(self, click_cli_runner):
-        result = click_cli_runner.invoke(plauth_cmd_group, ["version"])
+        result = click_cli_runner.invoke(cmd_plauth, ["version"])
         assert 0 == result.exit_code

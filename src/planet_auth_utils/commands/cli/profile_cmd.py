@@ -89,7 +89,7 @@ def _dialogue_enter_auth_profile_name():
 
 @click.group("profile", invoke_without_command=True)
 @click.pass_context
-def profile_cmd_group(ctx):
+def cmd_profile(ctx):
     """
     Manage auth profiles.
     """
@@ -114,10 +114,10 @@ def _load_all_on_disk_profiles() -> dict:
     return profiles_dicts
 
 
-@profile_cmd_group.command("list")
+@cmd_profile.command("list")
 @opt_long
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_list(long):
+def cmd_profile_list(long):
     """
     List auth profiles.
     """
@@ -145,11 +145,11 @@ def do_list(long):
         print_obj(profile_names)
 
 
-@profile_cmd_group.command("create")
+@cmd_profile.command("create")
 @opt_sops
 @click.argument("new_profile_name", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_create(sops, new_profile_name):
+def cmd_profile_create(sops, new_profile_name):
     """
     Wizard to create a new authentication profile.
     """
@@ -194,21 +194,21 @@ def do_create(sops, new_profile_name):
     new_auth_client_config.save()
 
 
-@profile_cmd_group.command("edit")
+@cmd_profile.command("edit")
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_edit():
+def cmd_profile_edit():
     """
     Edit an existing profile.
     """
     raise AuthException("Function not implemented")
 
 
-@profile_cmd_group.command("copy")
+@cmd_profile.command("copy")
 @click.argument("src")
 @click.argument("dst")
 @opt_sops
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_copy(sops, src, dst):
+def cmd_profile_copy(sops, src, dst):
     """
     Copy an existing profile to create a new profile.  Only the persistent
     profile configuration will be copied.  User access tokens initialized
@@ -241,10 +241,10 @@ def do_copy(sops, src, dst):
     auth_config.save()
 
 
-@profile_cmd_group.command("set")
+@cmd_profile.command("set")
 @click.argument("selected_profile", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_set(selected_profile):
+def cmd_profile_set(selected_profile):
     """
     Configure the default authentication profile to use when one is not otherwise specified.
     """
@@ -261,10 +261,10 @@ def do_set(selected_profile):
     user_profile_config_file.save()
 
 
-@profile_cmd_group.command("show")
+@cmd_profile.command("show")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_show(ctx):
+def cmd_profile_show(ctx):
     """
     Show the current authentication profiles.
     """

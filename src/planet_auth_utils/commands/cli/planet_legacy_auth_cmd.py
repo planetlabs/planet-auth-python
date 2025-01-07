@@ -28,7 +28,7 @@ from .util import recast_exceptions_to_click
 
 @click.group("legacy", invoke_without_command=True)
 @click.pass_context
-def pllegacy_auth_cmd_group(ctx):
+def cmd_pllegacy(ctx):
     """
     Auth commands specific to Planet legacy authentication mechanisms.
     """
@@ -43,11 +43,11 @@ def pllegacy_auth_cmd_group(ctx):
         )
 
 
-@pllegacy_auth_cmd_group.command("login")
+@cmd_pllegacy.command("login")
 @opt_auth_password
 @opt_auth_username
 @click.pass_context
-def pllegacy_do_login(ctx, username, password):
+def cmd_pllegacy_login(ctx, username, password):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
     """
@@ -59,10 +59,10 @@ def pllegacy_do_login(ctx, username, password):
     print("Login succeeded.")  # Errors should throw.
 
 
-@pllegacy_auth_cmd_group.command("print-api-key")
+@cmd_pllegacy.command("print-api-key")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_print_api_key(ctx):
+def cmd_pllegacy_print_api_key(ctx):
     """
     Show the API Key used by the currently selected authentication profile.
     Auth profiles that do not use API keys will not support this command.
@@ -73,10 +73,10 @@ def do_print_api_key(ctx):
     print(saved_token.legacy_api_key())
 
 
-@pllegacy_auth_cmd_group.command("print-access-token")
+@cmd_pllegacy.command("print-access-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_print_access_token(ctx):
+def cmd_pllegacy_print_access_token(ctx):
     """
     Show the legacy JWT.
     Auth profiles that do not use legacy JWTs will not support this command.

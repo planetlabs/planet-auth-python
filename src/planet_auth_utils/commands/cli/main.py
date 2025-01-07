@@ -38,9 +38,9 @@ from .options import (
     opt_token_file,
     opt_token_scope,
 )
-from .oauth_cmd import oauth_cmd_group
-from .planet_legacy_auth_cmd import pllegacy_auth_cmd_group
-from .profile_cmd import profile_cmd_group
+from .oauth_cmd import cmd_oauth
+from .planet_legacy_auth_cmd import cmd_pllegacy
+from .profile_cmd import cmd_profile
 from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
@@ -50,7 +50,7 @@ from .util import recast_exceptions_to_click, post_login_cmd_helper
 @opt_token_file  # Remove?  The interactions with changing the profile in login are not great.
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def plauth_cmd_group(ctx, loglevel, auth_profile, token_file):
+def cmd_plauth(ctx, loglevel, auth_profile, token_file):
     """
     Planet Auth Utility commands
     """
@@ -68,10 +68,10 @@ def plauth_cmd_group(ctx, loglevel, auth_profile, token_file):
     )
 
 
-@click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
+@click.group("plauth", invoke_without_command=True, help="Embedded PLAuth advanced authentication utility")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def embedded_plauth_cmd_group(ctx):
+def cmd_plauth_embedded(ctx):
     """
     Planet Auth Utility commands
 
@@ -98,15 +98,15 @@ def embedded_plauth_cmd_group(ctx):
         )
 
 
-@plauth_cmd_group.command("version")
-def do_version():
+@cmd_plauth.command("version")
+def cmd_plauth_version():
     """
     Show the version of planet auth components.
     """
     print("planet-auth         : {}".format(pkg_resources.get_distribution("planet-auth").version))
 
 
-@plauth_cmd_group.command("login")
+@cmd_plauth.command("login")
 @opt_open_browser
 @opt_show_qr_code
 @opt_token_scope
@@ -122,7 +122,7 @@ def do_version():
 @opt_sops
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_login(
+def cmd_plauth_login(
     ctx,
     scope,
     audience,
@@ -186,16 +186,16 @@ def do_login(
     )
 
 
-plauth_cmd_group.add_command(oauth_cmd_group)
-plauth_cmd_group.add_command(pllegacy_auth_cmd_group)
-plauth_cmd_group.add_command(profile_cmd_group)
+cmd_plauth.add_command(cmd_oauth)
+cmd_plauth.add_command(cmd_pllegacy)
+cmd_plauth.add_command(cmd_profile)
 
-embedded_plauth_cmd_group.add_command(oauth_cmd_group)
-embedded_plauth_cmd_group.add_command(pllegacy_auth_cmd_group)
-embedded_plauth_cmd_group.add_command(profile_cmd_group)
-embedded_plauth_cmd_group.add_command(do_login)
-embedded_plauth_cmd_group.add_command(do_version)
+cmd_plauth_embedded.add_command(cmd_oauth)
+cmd_plauth_embedded.add_command(cmd_pllegacy)
+cmd_plauth_embedded.add_command(cmd_profile)
+cmd_plauth_embedded.add_command(cmd_plauth_login)
+cmd_plauth_embedded.add_command(cmd_plauth_version)
 
 
 if __name__ == "__main__":
-    plauth_cmd_group()  # pylint: disable=E1120
+    cmd_plauth()  # pylint: disable=E1120

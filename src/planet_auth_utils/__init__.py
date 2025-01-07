@@ -20,7 +20,7 @@ by the underlying auth libraries.
 
 """
 
-from .commands.cli.main import embedded_plauth_cmd_group
+from .commands.cli.main import cmd_plauth_embedded
 from .commands.cli.options import (
     opt_auth_api_key,
     opt_auth_client_id,
@@ -46,7 +46,7 @@ from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
 
 __all__ = [
-    "embedded_plauth_cmd_group",
+    "cmd_plauth_embedded",
     "opt_auth_api_key",
     "opt_auth_client_id",
     "opt_auth_client_secret",
