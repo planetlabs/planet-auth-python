@@ -121,7 +121,7 @@ class Builtins:
         _dealiased = profile.lower()
 
         while Builtins.is_builtin_profile_alias(_dealiased):
-            _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)
+            _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)  # type: ignore
 
         return _dealiased
 
