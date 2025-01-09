@@ -17,7 +17,7 @@ import click
 from planet_auth_utils.constants import EnvironmentVariables
 
 
-def opt_auth_api_key(function):
+def opt_api_key(function):
     """
     Click option for specifying an API key
     """
@@ -33,7 +33,7 @@ def opt_auth_api_key(function):
     return function
 
 
-def opt_auth_client_id(function):
+def opt_client_id(function):
     """
     Click option for specifying an OAuth client ID.
     """
@@ -49,7 +49,7 @@ def opt_auth_client_id(function):
     return function
 
 
-def opt_auth_client_secret(function):
+def opt_client_secret(function):
     """
     Click option for specifying an OAuth client secret.
     """
@@ -65,7 +65,7 @@ def opt_auth_client_secret(function):
     return function
 
 
-def opt_auth_profile(function):
+def opt_profile(function):
     """
     Click option for specifying an auth profile for the
     planet_auth package's click commands.
@@ -90,7 +90,7 @@ def opt_auth_profile(function):
     return function
 
 
-def opt_auth_organization(function):
+def opt_organization(function):
     """
     Click option for specifying an Organization.
     """
@@ -108,7 +108,7 @@ def opt_auth_organization(function):
     return function
 
 
-def opt_auth_project(function):
+def opt_project(function):
     """
     Click option for specifying a project ID.
     """
@@ -130,7 +130,7 @@ def opt_auth_project(function):
 #         to the planet_auth library.  I generally think user IO belongs with the app, and not the
 #         the library, but since the lib also handles things like browser interaction this is not
 #         entirely easy to abstract away.
-def opt_auth_password(function):
+def opt_password(function):
     """
     Click option for specifying a password for the
     planet_auth package's click commands.
@@ -147,7 +147,7 @@ def opt_auth_password(function):
     return function
 
 
-def opt_auth_username(function):
+def opt_username(function):
     """
     Click option for specifying a username for the
     planet_auth package's click commands.
@@ -241,7 +241,7 @@ def opt_token_file(function):
     return function
 
 
-def opt_token_audience(required=False):
+def opt_audience(required=False):
     def decorator(function):
         """
         Click option for specifying an OAuth token audience for the
@@ -266,7 +266,7 @@ def opt_token_audience(required=False):
     return decorator
 
 
-def opt_token_scope(function):
+def opt_scope(function):
     """
     Click option for specifying an OAuth token scope for the
     planet_auth package's click commands.

@@ -22,21 +22,21 @@ from planet_auth import Auth, AuthException
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
 
 from .options import (
-    opt_auth_organization,
-    opt_auth_project,
-    opt_auth_profile,
-    opt_auth_client_id,
-    opt_auth_client_secret,
-    opt_auth_api_key,
-    opt_auth_username,
-    opt_auth_password,
+    opt_organization,
+    opt_project,
+    opt_profile,
+    opt_client_id,
+    opt_client_secret,
+    opt_api_key,
+    opt_username,
+    opt_password,
     opt_loglevel,
     opt_open_browser,
     opt_show_qr_code,
     opt_sops,
-    opt_token_audience,
+    opt_audience,
     opt_token_file,
-    opt_token_scope,
+    opt_scope,
 )
 from .oauth_cmd import cmd_oauth
 from .planet_legacy_auth_cmd import cmd_pllegacy
@@ -46,7 +46,7 @@ from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
 @opt_loglevel
-@opt_auth_profile
+@opt_profile
 @opt_token_file  # Remove?  The interactions with changing the profile in login are not great.
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
@@ -109,16 +109,16 @@ def cmd_plauth_version():
 @cmd_plauth.command("login")
 @opt_open_browser
 @opt_show_qr_code
-@opt_token_scope
-@opt_token_audience()
-@opt_auth_organization
-@opt_auth_project
-@opt_auth_profile
-@opt_auth_client_id
-@opt_auth_client_secret
-@opt_auth_api_key
-@opt_auth_username
-@opt_auth_password
+@opt_scope
+@opt_audience()
+@opt_organization
+@opt_project
+@opt_profile
+@opt_client_id
+@opt_client_secret
+@opt_api_key
+@opt_username
+@opt_password
 @opt_sops
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)

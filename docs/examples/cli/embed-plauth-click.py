@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # TODO: Update (look at current planet SDK)
 @click.group(help="my cli main help message")
-@planet_auth_utils.opt_auth_profile
+@planet_auth_utils.opt_profile
 @planet_auth_utils.opt_token_file
 @click.pass_context
 def my_cli_main(ctx, auth_profile, token_file):

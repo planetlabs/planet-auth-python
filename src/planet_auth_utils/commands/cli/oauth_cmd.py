@@ -18,16 +18,16 @@ import sys
 from planet_auth import AuthException, FileBackedOidcCredential, OidcAuthClient
 
 from .options import (
-    opt_token_scope,
-    opt_token_audience,
+    opt_scope,
+    opt_audience,
     opt_open_browser,
     opt_show_qr_code,
-    opt_auth_organization,
-    opt_auth_password,
-    opt_auth_project,
-    opt_auth_username,
-    opt_auth_client_id,
-    opt_auth_client_secret,
+    opt_organization,
+    opt_password,
+    opt_project,
+    opt_username,
+    opt_client_id,
+    opt_client_secret,
 )
 from .util import recast_exceptions_to_click, print_obj
 
@@ -49,14 +49,14 @@ def cmd_oauth(ctx):
 @cmd_oauth.command("login")
 @opt_open_browser
 @opt_show_qr_code
-@opt_token_scope
-@opt_token_audience()
-@opt_auth_organization
-@opt_auth_project
-@opt_auth_username
-@opt_auth_password
-@opt_auth_client_id
-@opt_auth_client_secret
+@opt_scope
+@opt_audience()
+@opt_organization
+@opt_project
+@opt_username
+@opt_password
+@opt_client_id
+@opt_client_secret
 @click.pass_context
 @recast_exceptions_to_click(AuthException)
 def cmd_oauth_login(
@@ -100,7 +100,7 @@ def cmd_oauth_login(
 
 
 @cmd_oauth.command("refresh")
-@opt_token_scope
+@opt_scope
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_refresh(ctx, scope):
@@ -164,8 +164,8 @@ def cmd_oauth_validate_access_token_remote(ctx):
 
 @cmd_oauth.command("validate-access-token-local")
 @click.pass_context
-@opt_token_audience()
-@opt_token_scope
+@opt_audience()
+@opt_scope
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_access_token_local(ctx, audience, scope):
     """

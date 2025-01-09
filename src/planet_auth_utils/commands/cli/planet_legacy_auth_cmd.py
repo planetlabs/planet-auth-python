@@ -22,7 +22,7 @@ from planet_auth import (
     PlanetLegacyAuthClientConfig,
 )
 
-from .options import opt_auth_password, opt_auth_username
+from .options import opt_password, opt_username
 from .util import recast_exceptions_to_click
 
 
@@ -44,8 +44,8 @@ def cmd_pllegacy(ctx):
 
 
 @cmd_pllegacy.command("login")
-@opt_auth_password
-@opt_auth_username
+@opt_password
+@opt_username
 @click.pass_context
 def cmd_pllegacy_login(ctx, username, password):
     """
