@@ -14,7 +14,7 @@
 
 import click
 import logging
-import pkg_resources
+import importlib.metadata
 import sys
 
 from planet_auth import Auth, AuthException
@@ -103,7 +103,7 @@ def cmd_plauth_version():
     """
     Show the version of planet auth components.
     """
-    print("planet-auth         : {}".format(pkg_resources.get_distribution("planet-auth").version))
+    print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
 
 
 @cmd_plauth.command("login")

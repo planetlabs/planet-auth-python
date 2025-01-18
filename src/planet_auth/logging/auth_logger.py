@@ -15,7 +15,7 @@
 import functools
 import json
 import logging
-import pkg_resources
+import importlib.metadata
 
 from contextlib import suppress
 from typing import Dict
@@ -53,13 +53,14 @@ class AuthLogger:
         self._auth_libraries = self._get_auth_libraries()
 
     def _get_auth_libraries(self):
-        libs = {"planet-auth": pkg_resources.get_distribution("planet-auth").version}
+        libs = {"planet-auth": importlib.metadata.version("planet-auth")}
         for optional_lib in (
             "planet-auth-config",
             "planet-auth-django",
         ):
-            with suppress(pkg_resources.DistributionNotFound):
-                libs[optional_lib] = pkg_resources.get_distribution(optional_lib).version
+            libs[optional_lib] = "N/A"
+            with suppress(importlib.metadata.PackageNotFoundError):
+                libs[optional_lib] = importlib.metadata.version(optional_lib)
         return libs
 
     def _get_py_logger(self):

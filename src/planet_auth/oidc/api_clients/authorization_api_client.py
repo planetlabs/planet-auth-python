@@ -14,7 +14,8 @@
 
 import getpass
 import http.server
-import importlib.resources as pkg_resources  # nosemgrep
+
+import importlib.resources  # nosemgrep
 
 from http import HTTPStatus
 from urllib.parse import urlparse, parse_qs, urlencode
@@ -135,7 +136,7 @@ class AuthorizationApiClient:
             )
         else:
             self._authorization_callback_acknowledgement_response_body = (
-                pkg_resources.files(resources).joinpath("callback_acknowledgement.html").read_text("utf-8")
+                importlib.resources.files(resources).joinpath("callback_acknowledgement.html").read_text("utf-8")
             )
 
     @staticmethod
