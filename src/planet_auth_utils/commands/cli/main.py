@@ -117,8 +117,8 @@ def cmd_plauth_version():
 @opt_client_id
 @opt_client_secret
 @opt_api_key
-@opt_username
-@opt_password
+@opt_username()
+@opt_password()
 @opt_sops
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
@@ -141,7 +141,7 @@ def cmd_plauth_login(
     """
     Perform an initial login, obtain user authorization, and save access
     tokens for the selected authentication profile.  The specific process
-    and supported options depends on the auth method selected.
+    used depends on the selected options and authentication profile.
     """
     extra = {}
     if project:

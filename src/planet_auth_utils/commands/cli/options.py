@@ -130,39 +130,47 @@ def opt_project(function):
 #         to the planet_auth library.  I generally think user IO belongs with the app, and not the
 #         the library, but since the lib also handles things like browser interaction this is not
 #         entirely easy to abstract away.
-def opt_password(function):
-    """
-    Click option for specifying a password for the
-    planet_auth package's click commands.
-    """
-    function = click.option(
-        "--password",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_PASSWORD,
-        help="Password used for authentication.  May not be used by all authentication mechanisms.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+def opt_password(hidden=True):
+    def decorator(function):
+        """
+        Click option for specifying a password for the
+        planet_auth package's click commands.
+        """
+        function = click.option(
+            "--password",
+            type=str,
+            envvar=EnvironmentVariables.AUTH_PASSWORD,
+            help="Password used for authentication.  May not be used by all authentication mechanisms.",
+            default=None,
+            show_envvar=True,
+            show_default=True,
+            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_username(function):
-    """
-    Click option for specifying a username for the
-    planet_auth package's click commands.
-    """
-    function = click.option(
-        "--username",
-        "--email",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_USERNAME,
-        help="Username used for authentication.  May not be used by all authentication mechanisms.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+def opt_username(hidden=True):
+    def decorator(function):
+        """
+        Click option for specifying a username for the
+        planet_auth package's click commands.
+        """
+        function = click.option(
+            "--username",
+            "--email",
+            type=str,
+            envvar=EnvironmentVariables.AUTH_USERNAME,
+            help="Username used for authentication.  May not be used by all authentication mechanisms.",
+            default=None,
+            show_envvar=True,
+            show_default=True,
+            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
+        )(function)
+        return function
+
+    return decorator
 
 
 def opt_loglevel(function):
@@ -264,6 +272,19 @@ def opt_audience(required=False):
         return function
 
     return decorator
+
+
+def opt_refresh(function):
+    """
+    Click option specifying a refresh should be attempted if applicable.
+    """
+    function = click.option(
+        "--refresh/--no-refresh",
+        help="Perform a credential refresh if applicable and is required.",
+        default=True,
+        show_default=True,
+    )(function)
+    return function
 
 
 def opt_scope(function):

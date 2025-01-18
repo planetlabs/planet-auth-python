@@ -69,6 +69,7 @@ from .oidc.auth_clients.auth_code_flow import (
     AuthCodeAuthClientException,
 )
 from .oidc.auth_clients.client_credentials_flow import (
+    ClientCredentialsAuthClientBase,
     ClientCredentialsClientSecretClientConfig,
     ClientCredentialsClientSecretAuthClient,
     ClientCredentialsPubKeyClientConfig,
@@ -126,7 +127,7 @@ from .oidc.request_authenticator import (
 from .planet_legacy.request_authenticator import PlanetLegacyRequestAuthenticator
 from .static_api_key.request_authenticator import FileBackedApiKeyRequestAuthenticator
 
-from .util import InvalidDataException
+from .util import InvalidDataException, FileBackedJsonObject, FileBackedJsonObjectException
 
 __all__ = [
     # Classes
@@ -141,6 +142,7 @@ __all__ = [
     "AuthCodeWithPubKeyClientConfig",
     "AuthCodeAuthClientException",
     "AuthException",
+    "ClientCredentialsAuthClientBase",
     "ClientCredentialsClientSecretAuthClient",
     "ClientCredentialsClientSecretClientConfig",
     "ClientCredentialsPubKeyAuthClient",
@@ -155,6 +157,8 @@ __all__ = [
     "DeviceCodeAuthClientException",
     "Credential",
     "ExpiredTokenException",
+    "FileBackedJsonObject",
+    "FileBackedJsonObjectException",
     "FileBackedApiKey",
     "FileBackedApiKeyRequestAuthenticator",
     "FileBackedOidcCredential",

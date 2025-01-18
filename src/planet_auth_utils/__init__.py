@@ -20,7 +20,37 @@ by the underlying auth libraries.
 
 """
 
-from .commands.cli.main import cmd_plauth_embedded
+from .commands.cli.main import cmd_plauth_embedded, cmd_plauth_login
+from .commands.cli.planet_legacy_auth_cmd import (
+    cmd_pllegacy,
+    cmd_pllegacy_login,
+    cmd_pllegacy_print_api_key,
+    cmd_pllegacy_print_access_token,
+)
+from .commands.cli.oauth_cmd import (
+    cmd_oauth,
+    cmd_oauth_login,
+    cmd_oauth_refresh,
+    cmd_oauth_validate_access_token_local,
+    cmd_oauth_validate_access_token_remote,
+    cmd_oauth_validate_id_token_local,
+    cmd_oauth_validate_id_token_remote,
+    cmd_oauth_validate_refresh_token_remote,
+    cmd_oauth_revoke_access_token,
+    cmd_oauth_revoke_refresh_token,
+    cmd_oauth_userinfo,
+    cmd_oauth_list_scopes,
+    cmd_oauth_print_access_token,
+)
+from .commands.cli.profile_cmd import (
+    cmd_profile,
+    cmd_profile_list,
+    cmd_profile_create,
+    # cmd_profile_edit,
+    cmd_profile_copy,
+    cmd_profile_set,
+    cmd_profile_show,
+)
 from .commands.cli.options import (
     opt_api_key,
     opt_audience,
@@ -33,6 +63,7 @@ from .commands.cli.options import (
     opt_password,
     opt_profile,
     opt_project,
+    opt_refresh,
     opt_scope,
     opt_show_qr_code,
     opt_sops,
@@ -44,9 +75,35 @@ from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
+from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 
 __all__ = [
     "cmd_plauth_embedded",
+    "cmd_plauth_login",
+    "cmd_oauth",
+    "cmd_oauth_login",
+    "cmd_oauth_refresh",
+    "cmd_oauth_validate_access_token_local",
+    "cmd_oauth_validate_access_token_remote",
+    "cmd_oauth_validate_id_token_local",
+    "cmd_oauth_validate_id_token_remote",
+    "cmd_oauth_validate_refresh_token_remote",
+    "cmd_oauth_revoke_access_token",
+    "cmd_oauth_revoke_refresh_token",
+    "cmd_oauth_userinfo",
+    "cmd_oauth_list_scopes",
+    "cmd_oauth_print_access_token",
+    "cmd_pllegacy",
+    "cmd_pllegacy_login",
+    "cmd_pllegacy_print_api_key",
+    "cmd_pllegacy_print_access_token",
+    "cmd_profile",
+    "cmd_profile_list",
+    "cmd_profile_create",
+    # "cmd_profile_edit",
+    "cmd_profile_copy",
+    "cmd_profile_set",
+    "cmd_profile_show",
     "opt_api_key",
     "opt_audience",
     "opt_client_id",
@@ -58,6 +115,7 @@ __all__ = [
     "opt_password",
     "opt_profile",
     "opt_project",
+    "opt_refresh",
     "opt_scope",
     "opt_show_qr_code",
     "opt_sops",
@@ -69,4 +127,5 @@ __all__ = [
     "EnvironmentVariables",
     "PlanetAuthFactory",
     "Profile",
+    "PlanetAuthUserConfig",
 ]

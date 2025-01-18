@@ -147,7 +147,7 @@ class PlanetAuthFactory:
         auth_client_id_opt: Optional[str] = None,
         auth_client_secret_opt: Optional[str] = None,
         auth_api_key_opt: Optional[str] = None,  # Deprecated
-        token_file_opt: Optional[str] = None,  # TODO: Remove, I think.
+        token_file_opt: Optional[str] = None,  # TODO: Remove, but we still depend on it for Planet Legacy use cases.
         save_token_file: bool = True,
     ) -> Auth:
         """

@@ -15,21 +15,37 @@
 import click
 import sys
 
-from planet_auth import AuthException, FileBackedOidcCredential, OidcAuthClient
+from planet_auth import (
+    AuthException,
+    FileBackedOidcCredential,
+    OidcAuthClient,
+    ExpiredTokenException,
+    ClientCredentialsAuthClientBase,
+)
 
 from .options import (
-    opt_scope,
     opt_audience,
+    opt_client_id,
+    opt_client_secret,
     opt_open_browser,
-    opt_show_qr_code,
     opt_organization,
     opt_password,
     opt_project,
+    opt_refresh,
+    opt_scope,
+    opt_show_qr_code,
+    opt_sops,
     opt_username,
-    opt_client_id,
-    opt_client_secret,
 )
-from .util import recast_exceptions_to_click, print_obj
+from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
+
+
+def _check_client_type(ctx):
+    if not isinstance(ctx.obj["AUTH"].auth_client(), OidcAuthClient):
+        raise click.ClickException(
+            f'"oauth" auth commands can only be used with OAuth type auth profiles.'
+            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+        )
 
 
 @click.group("oauth", invoke_without_command=True)
@@ -42,8 +58,7 @@ def cmd_oauth(ctx):
         click.echo(ctx.get_help())
         sys.exit(0)
 
-    if not isinstance(ctx.obj["AUTH"].auth_client(), OidcAuthClient):
-        raise click.ClickException("'oauth' auth command can only be used with OAuth type auth profiles.")
+    _check_client_type(ctx)
 
 
 @cmd_oauth.command("login")
@@ -53,10 +68,11 @@ def cmd_oauth(ctx):
 @opt_audience()
 @opt_organization
 @opt_project
-@opt_username
-@opt_password
+@opt_username()
+@opt_password()
 @opt_client_id
 @opt_client_secret
+@opt_sops
 @click.pass_context
 @recast_exceptions_to_click(AuthException)
 def cmd_oauth_login(
@@ -70,6 +86,7 @@ def cmd_oauth_login(
     password,
     auth_client_id,
     auth_client_secret,
+    sops,
     project,
 ):
     """
@@ -84,7 +101,8 @@ def cmd_oauth_login(
         # a particular organization at login when the user belongs to more than one.
         extra["organization"] = organization
 
-    _ = ctx.obj["AUTH"].login(
+    current_auth_context = ctx.obj["AUTH"]
+    current_auth_context.login(
         requested_scopes=scope,
         requested_audiences=audience,
         allow_open_browser=open_browser,
@@ -97,6 +115,11 @@ def cmd_oauth_login(
         extra=extra,
     )
     print("Login succeeded.")  # Errors should throw.
+    post_login_cmd_helper(
+        override_auth_context=current_auth_context,
+        current_auth_context=current_auth_context,
+        use_sops=sops,
+    )
 
 
 @cmd_oauth.command("refresh")
@@ -312,14 +335,33 @@ def cmd_oauth_userinfo(ctx):
 
 @cmd_oauth.command("print-access-token")
 @click.pass_context
+@opt_refresh
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_print_access_token(ctx):
+def cmd_oauth_print_access_token(ctx, refresh):
     """
     Show the OAuth access token used by the currently selected authentication
     profile.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
+    saved_token.load()
+
+    if refresh:
+        auth_client = ctx.obj["AUTH"].auth_client()
+        try:
+            _ = auth_client.validate_access_token_local(access_token=saved_token.access_token())
+        except ExpiredTokenException:
+            # Client Credentials grant clients do not use a refresh token to refresh,
+            # they re-login, which in their case is not user interactive.
+            if saved_token.refresh_token():
+                new_token = auth_client.refresh(saved_token.refresh_token())
+            elif isinstance(auth_client, ClientCredentialsAuthClientBase):
+                new_token = auth_client.login()
+            else:
+                raise click.ClickException("Cannot refresh expired token")  # pylint: disable=W0707
+
+            saved_token.set_data(new_token.data())
+            saved_token.save()
+
     # Not using object print for token printing. We don't want object quoting and escaping.
     # print_obj(saved_token.access_token())
-    # TODO: refresh if needed.
     print(saved_token.access_token())

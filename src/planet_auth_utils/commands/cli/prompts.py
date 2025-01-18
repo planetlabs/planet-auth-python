@@ -34,6 +34,7 @@ def prompt_change_user_default_profile_if_different(
     except FileNotFoundError:
         saved_profile_name = None  # config_file.effective_conf_value(EnvironmentVariables.AUTH_PROFILE, fallback_value=Builtins.builtin_default_profile_name())
 
+    do_change_default = False
     if saved_profile_name != candidate_profile_name:
         # do_change_default = yes_no_dialog(
         #     title=f'Change user default {EnvironmentVariables.AUTH_PROFILE} saved in {config_file.path()}?',
@@ -47,3 +48,5 @@ def prompt_change_user_default_profile_if_different(
         if do_change_default:
             config_file.update_data({EnvironmentVariables.AUTH_PROFILE: candidate_profile_name})
             config_file.save()
+
+    return do_change_default

@@ -17,6 +17,7 @@ import functools
 import json
 import logging
 
+import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
 
 from planet_auth_utils.builtins import Builtins
@@ -57,25 +58,33 @@ def print_obj(obj):
     print(json_str)
 
 
-def post_login_cmd_helper(override_auth_context, current_auth_context, use_sops):
+def post_login_cmd_helper(override_auth_context: planet_auth.Auth, current_auth_context: planet_auth.Auth, use_sops):
+    override_profile_name = override_auth_context.profile_name()
+    if not override_profile_name:
+        # Can't save to a profile if there is none.  We don't really expect this in the cases
+        # where this is used for the CLI, but this keeps linters happy.
+        return
+
     # If someone performed a login with a non-default profile, it's
-    # reasonable to ask if they intend to change their defaults
-    prompt_change_user_default_profile_if_different(candidate_profile_name=override_auth_context.profile_name())
+    # reasonable to ask if they intend to change their defaults.
+    prompt_change_user_default_profile_if_different(candidate_profile_name=override_profile_name)
 
     # If the client config was created ad-hoc, offer to save it.  If the
     # config was created ad-hoc, the factory does not associate it with
     # a file to support factory use in a context where in memory
-    # operations are desired.
-    if (override_auth_context.profile_name() != current_auth_context.profile_name()) and (
-        not Builtins.is_builtin_profile(override_auth_context.profile_name())
+    # operations are desired.  This util is for helping CLI commands,
+    # we can be more opinionated about what is to be done.
+
+    if (override_profile_name != current_auth_context.profile_name()) and (
+        not Builtins.is_builtin_profile(override_profile_name)
     ):
         if use_sops:
             new_profile_config_file_path = Profile.get_profile_file_path(
-                profile=override_auth_context.profile_name(), filename=AUTH_CONFIG_FILE_SOPS
+                profile=override_profile_name, filename=AUTH_CONFIG_FILE_SOPS
             )
         else:
             new_profile_config_file_path = Profile.get_profile_file_path(
-                profile=override_auth_context.profile_name(), filename=AUTH_CONFIG_FILE_PLAIN
+                profile=override_profile_name, filename=AUTH_CONFIG_FILE_PLAIN
             )
 
         if not new_profile_config_file_path.exists():
