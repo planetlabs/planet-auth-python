@@ -102,6 +102,22 @@ class PlanetAuthFactory:
             profile_name=adhoc_profile_name,
         )
 
+    @staticmethod
+    def _init_from_client_config(
+        client_config: dict,
+        profile_name: str,
+        save_token_file: bool = True,
+    ) -> Auth:
+        token_file_path = PlanetAuthFactory._token_file_path(
+            profile_name=profile_name, overide_path=None, save_token_file=save_token_file
+        )
+
+        return Auth.initialize_from_config_dict(
+            client_config=client_config,
+            token_file=token_file_path,
+            profile_name=profile_name,
+        )
+
     # @staticmethod
     # def _init_context_from_legacy_username_password_key(
     #     username: str,
@@ -293,6 +309,14 @@ class PlanetAuthFactory:
             save_token_file=save_token_file,
             log_fallback_warning=log_fallback_warning,
         )
+
+    @staticmethod
+    def initialize_auth_client_context_with_config(
+        client_config: dict,
+        profile_name: str,
+        save_token_file: bool = True,
+    ) -> Auth:
+        return PlanetAuthFactory._init_from_client_config(client_config, profile_name, save_token_file)
 
     @staticmethod
     def initialize_resource_server_validator(
