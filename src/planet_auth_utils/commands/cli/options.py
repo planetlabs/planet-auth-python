@@ -74,12 +74,12 @@ def opt_profile(function):
         "--auth-profile",
         type=str,
         envvar=EnvironmentVariables.AUTH_PROFILE,
-        help="Select the client profile to use.  Builtins are defined by"
-        " creating a subdirectory ~/.planet/.  Additionally, a number of"
+        help="Select the client profile to use.  User created profiles are "
+        " defined by creating a subdirectory ~/.planet/.  Additionally, a number of"
         ' built-in profiles are understood.  See the "profile list" command'
-        " for built-in profiles.  The auth profile controls how the software"
-        " interacts with Planet authentication services, as well as how it"
-        " authenticates to other Planet APIs.  If this option is not set,"
+        " for defined profiles.  The auth profile controls how the software"
+        " interacts with authentication services, as well as how it"
+        " authenticates to other APIs.  If this option is not set,"
         " a profile will be selected according to environment variables or"
         ' a preference registered with the "profile set" command.',
         default=None,

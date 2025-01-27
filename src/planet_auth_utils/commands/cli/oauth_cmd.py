@@ -117,7 +117,6 @@ def cmd_oauth_login(
     print("Login succeeded.")  # Errors should throw.
     post_login_cmd_helper(
         override_auth_context=current_auth_context,
-        current_auth_context=current_auth_context,
         use_sops=sops,
     )
 
@@ -131,11 +130,8 @@ def cmd_oauth_refresh(ctx, scope):
     Obtain a new credential using the saved refresh token.
 
     It is possible to request a refresh token with scopes that are different
-    than what is currently possessed, but you will never be granted
-    more scopes than what the user has authorized.  This functionality
-    is only supported for authentication mechanisms that support
-    the concepts of separate (short-lived) access tokens and
-    (long-lived) refresh tokens.
+    from what is currently possessed, but you will never be granted
+    more scopes than what the user has authorized.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
@@ -280,18 +276,16 @@ def cmd_oauth_validate_refresh_token_remote(ctx):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_revoke_access_token(ctx):
     """
-    Revoke the access token associated with the current profile.
+    Revoke the current access token.
 
     Revoking the access token does not revoke the refresh token, which will
     remain powerful.
 
     It should be noted that while this command revokes the access token with
     the auth services, access tokens are bearer tokens, and may still be
-    accepted by some service endpoints.  Generally, it should be the case only
-    less sensitive endpoints accept such tokens. High value services
-    (such as admin services) should double verify tokens - insuring that they
-    pass local validation, and checking with the auth provider that they have
-    not been revoked.
+    accepted by some service endpoints. It is up to each service whether
+    access tokens are accepted as bearer tokens, or double verified against
+    the auth services.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
@@ -304,7 +298,7 @@ def cmd_oauth_revoke_access_token(ctx):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_revoke_refresh_token(ctx):
     """
-    Revoke the refresh token associated with the current profile.
+    Revoke the current refresh token.
 
     After the refresh token has been revoked, it will be necessary to login
     again to access other services.  Revoking the refresh token does not
@@ -339,8 +333,7 @@ def cmd_oauth_userinfo(ctx):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_print_access_token(ctx, refresh):
     """
-    Show the OAuth access token used by the currently selected authentication
-    profile.
+    Show the current OAuth access token.  Stale tokens will be automatically refreshed.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     saved_token.load()

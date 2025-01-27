@@ -34,19 +34,26 @@ def prompt_change_user_default_profile_if_different(
     except FileNotFoundError:
         saved_profile_name = None  # config_file.effective_conf_value(EnvironmentVariables.AUTH_PROFILE, fallback_value=Builtins.builtin_default_profile_name())
 
-    do_change_default = False
-    if saved_profile_name != candidate_profile_name:
-        # do_change_default = yes_no_dialog(
-        #     title=f'Change user default {EnvironmentVariables.AUTH_PROFILE} saved in {config_file.path()}?',
-        #     text=f'Current value and user default differ.\nDo you want to change the user default {EnvironmentVariables.AUTH_PROFILE} from "{saved_profile_name}" to "{candidate_profile_name}"?',
-        #     yes_text="Change",
-        #     no_text="Keep",
-        # ).run()
-        do_change_default = click.confirm(
-            text=f'\nCurrent value and user default differ.\nDo you want to change the user default {EnvironmentVariables.AUTH_PROFILE} from "{saved_profile_name}" to "{candidate_profile_name}"? ',
-        )
-        if do_change_default:
-            config_file.update_data({EnvironmentVariables.AUTH_PROFILE: candidate_profile_name})
-            config_file.save()
+    if not saved_profile_name:
+        # Always write a preference if none is saved.
+        # Since CLI options and env vars are higher priority than this file,
+        # it should not cause surprises.
+        do_change_default = True
+    else:
+        do_change_default = False
+        if saved_profile_name != candidate_profile_name:
+            # do_change_default = yes_no_dialog(
+            #     title=f'Change user default {EnvironmentVariables.AUTH_PROFILE} saved in {config_file.path()}?',
+            #     text=f'Current value and user default differ.\nDo you want to change the user default {EnvironmentVariables.AUTH_PROFILE} from "{saved_profile_name}" to "{candidate_profile_name}"?',
+            #     yes_text="Change",
+            #     no_text="Keep",
+            # ).run()
+            do_change_default = click.confirm(
+                text=f'\nCurrent value and user default differ.\nDo you want to change the user default {EnvironmentVariables.AUTH_PROFILE} from "{saved_profile_name}" to "{candidate_profile_name}"? ',
+            )
+
+    if do_change_default:
+        config_file.update_data({EnvironmentVariables.AUTH_PROFILE: candidate_profile_name})
+        config_file.save()
 
     return do_change_default

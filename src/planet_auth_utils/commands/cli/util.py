@@ -58,7 +58,7 @@ def print_obj(obj):
     print(json_str)
 
 
-def post_login_cmd_helper(override_auth_context: planet_auth.Auth, current_auth_context: planet_auth.Auth, use_sops):
+def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
     override_profile_name = override_auth_context.profile_name()
     if not override_profile_name:
         # Can't save to a profile if there is none.  We don't really expect this in the cases
@@ -69,15 +69,14 @@ def post_login_cmd_helper(override_auth_context: planet_auth.Auth, current_auth_
     # reasonable to ask if they intend to change their defaults.
     prompt_change_user_default_profile_if_different(candidate_profile_name=override_profile_name)
 
-    # If the client config was created ad-hoc, offer to save it.  If the
-    # config was created ad-hoc, the factory does not associate it with
-    # a file to support factory use in a context where in memory
-    # operations are desired.  This util is for helping CLI commands,
-    # we can be more opinionated about what is to be done.
+    # If the config was created ad-hoc by the factory, the factory does
+    # not associate it with a file to support factory use in a context
+    # where in-memory operations are desired.  This util function is for
+    # helping CLI commands, we can be more opinionated about what is to
+    # be done.
 
-    if (override_profile_name != current_auth_context.profile_name()) and (
-        not Builtins.is_builtin_profile(override_profile_name)
-    ):
+    # Don't clobber built-in profiles.
+    if not Builtins.is_builtin_profile(override_profile_name):
         if use_sops:
             new_profile_config_file_path = Profile.get_profile_file_path(
                 profile=override_profile_name, filename=AUTH_CONFIG_FILE_SOPS
@@ -87,6 +86,10 @@ def post_login_cmd_helper(override_auth_context: planet_auth.Auth, current_auth_
                 profile=override_profile_name, filename=AUTH_CONFIG_FILE_PLAIN
             )
 
+        # TODO? should we update if it exists with any command line options?
+        #       The way things are currently structured, options added to the
+        #       login command (like --scope) are not pushed down into the profile,
+        #       but considered runtime overrides.
         if not new_profile_config_file_path.exists():
             override_auth_context.auth_client().config().set_path(new_profile_config_file_path)
             override_auth_context.auth_client().config().save()

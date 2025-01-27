@@ -155,7 +155,7 @@ def cmd_plauth_login(
     # Arguments to login commands may imply an override to the default/root
     # command auth provider in a way that is different from what we expect
     # in most non-root commands.
-    current_auth_context = ctx.obj["AUTH"]
+    # root_cmd_auth_context = ctx.obj["AUTH"]
     override_auth_context = PlanetAuthFactory.initialize_auth_client_context(
         auth_profile_opt=auth_profile,
         auth_client_id_opt=auth_client_id,
@@ -181,7 +181,6 @@ def cmd_plauth_login(
 
     post_login_cmd_helper(
         override_auth_context=override_auth_context,
-        current_auth_context=current_auth_context,
         use_sops=sops,
     )
 
