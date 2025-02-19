@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import click
+import json
 import sys
+import textwrap
 
 from planet_auth import (
     AuthException,
@@ -21,6 +23,7 @@ from planet_auth import (
     OidcAuthClient,
     ExpiredTokenException,
     ClientCredentialsAuthClientBase,
+    TokenValidator,
 )
 
 from .options import (
@@ -38,6 +41,29 @@ from .options import (
     opt_username,
 )
 from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
+
+
+def _print_jwt(token_str):
+    print("Untrusted JWT Decoding\n")
+    print(f"RAW:\n    {token_str}\n")
+    if token_str:
+        (header, body, signature) = TokenValidator.unverified_decode(token_str)
+        pretty_hex_signature = ""
+        i = 0
+        for c in signature:
+            if i == 0:
+                pass
+            elif (i % 16) != 0:
+                pretty_hex_signature += ":"
+            else:
+                pretty_hex_signature += "\n"
+
+            pretty_hex_signature += "{:02x}".format(c)
+            i += 1
+
+        print(f'HEADER:\n{textwrap.indent(json.dumps(header, indent=2, sort_keys=True),prefix="    ")}\n')
+        print(f'BODY:\n{textwrap.indent(json.dumps(body, indent=2, sort_keys=True), prefix="    ")}\n')
+        print(f'SIGNATURE:\n{textwrap.indent(pretty_hex_signature, prefix="    ")}\n')
 
 
 def _check_client_type(ctx):
@@ -358,3 +384,46 @@ def cmd_oauth_print_access_token(ctx, refresh):
     # Not using object print for token printing. We don't want object quoting and escaping.
     # print_obj(saved_token.access_token())
     print(saved_token.access_token())
+
+
+@cmd_oauth.command("decode-access-token")
+@click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
+def cmd_oauth_decode_jwt_access_token(ctx):
+    """
+    Decode a JWT access token locally and display its contents.  NO
+    VALIDATION IS PERFORMED.  This function is intended for local
+    debugging purposes.  Note: Access tokens need not be JWTs.
+    This function will not work for authorization servers that issue
+    access tokens in other formats.
+    """
+    saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
+    _print_jwt(saved_token.access_token())
+
+
+@cmd_oauth.command("decode-id-token")
+@click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
+def cmd_oauth_decode_jwt_id_token(ctx):
+    """
+    Decode a JWT ID token locally and display its contents.  NO
+    VALIDATION IS PERFORMED.  This function is intended for local
+    debugging purposes.
+    """
+    saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
+    _print_jwt(saved_token.id_token())
+
+
+@cmd_oauth.command("decode-refresh-token")
+@click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
+def cmd_oauth_decode_jwt_refresh_token(ctx):
+    """
+    Decode a JWT refresh token locally and display its contents.  NO
+    VALIDATION IS PERFORMED.  This function is intended for local
+    debugging purposes.  Note: Refresh tokens need not be JWTs.
+    This function will not work for authorization servers that issue
+    refresh tokens in other formats.
+    """
+    saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
+    _print_jwt(saved_token.refresh_token())
