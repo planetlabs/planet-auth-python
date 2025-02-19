@@ -63,12 +63,8 @@ class OidcAuthClientWithRefreshingOidcTokenRequestAuthenticator(ABC):
         elif isinstance(credential, FileBackedOidcCredential):
             _credential = credential
         elif credential is None:
-            # Does this make sense in this class? A refreshing
-            # request authenticator cannot operate with an
-            # in-memory token that never performed an initial
-            # login.  This sets up a complete initial state,
-            # but this will not work intil the caller calls
-            # update_credential()
+            # This will be brain-dead until update_credential() or update_credential_data()
+            # is called.  This is useful for initializing properly typed credential objects.
             _credential = FileBackedOidcCredential()
         else:
             raise TypeError(

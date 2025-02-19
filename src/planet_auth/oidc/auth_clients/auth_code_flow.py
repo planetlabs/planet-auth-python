@@ -41,6 +41,7 @@ class AuthCodeClientConfig(OidcAuthClientConfig):
     Configuration required for [planet_auth.AuthCodeAuthClient][]
     """
 
+    # TODO: simplify down to just one url, I think
     def __init__(self, redirect_uri: str = None, local_redirect_uri: str = None, **kwargs):
         super().__init__(**kwargs)
         # Redirect URI must match the client config on the OIDC service,

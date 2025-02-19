@@ -280,7 +280,7 @@ def opt_refresh(function):
     """
     function = click.option(
         "--refresh/--no-refresh",
-        help="Perform a credential refresh if applicable and is required.",
+        help="Automatically perform a credential refresh if required.",
         default=True,
         show_default=True,
     )(function)

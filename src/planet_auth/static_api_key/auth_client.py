@@ -105,15 +105,9 @@ class StaticApiKeyAuthClient(AuthClient):
             elif isinstance(credential, FileBackedApiKey):
                 _credential = credential
             elif credential is None:
-                # This is kinda brain-damaged.  Even though Authenticators are allowed to obtain
-                # credentials JIT, in this case it cannot possibly do anything useful.
-                # It is effectively a NoOp Authenticator.
-                # An empty, path-less (in memory) credential to start the request authenticator off with.
+                # This will be brain-dead until update_credential() or update_credential_data()
+                # is called.  This is useful for initializing properly typed credential objects.
                 _credential = FileBackedApiKey()
-                auth_logger.warning(
-                    msg="Useless API Key Request Authenticator created."
-                    "  No api key in the client config, and no credentials object provided."
-                )
             else:
                 raise TypeError(
                     f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedApiKey."
