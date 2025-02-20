@@ -27,16 +27,21 @@ from planet_auth.util import FileBackedJsonObjectException
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 
-# This is essentially a test of the base class, FileBackedJsonObject.
-# It's just that FileBackedJsonObject was initially written for credential
-# handling, and then we expended its use.
-class TestCredential(unittest.TestCase):
+# class MockFileBackedEntity(planet_auth.FileBackedJsonObject):
+#     def __init__(self, data=None, file_path=None):
+#         super().__init__(data=data, file_path=file_path)
+
+class TestFileBackedJsonObject(unittest.TestCase):
     def setUp(self):
         # The interactions of freezegun and the filesystem mtimes have been... quirky.
         # This seems to help.
         os.environ["TZ"] = "UTC"
 
     def test_set_data_asserts_valid(self):
+        # "FileBackedJsonObject" was originally written for the Credential
+        # base class. From there, it's use expanded.  But, that remains a
+        # strong influence the priority given to base functionality, and is
+        # why for many test cases we simply use the Credential base class.
         under_test = Credential(data=None, file_path=None)
         with self.assertRaises(FileBackedJsonObjectException):
             under_test.set_data(None)
