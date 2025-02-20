@@ -31,6 +31,7 @@ from tests.test_planet_auth.util import tdata_resource_file_path
 #     def __init__(self, data=None, file_path=None):
 #         super().__init__(data=data, file_path=file_path)
 
+
 class TestFileBackedJsonObject(unittest.TestCase):
     def setUp(self):
         # The interactions of freezegun and the filesystem mtimes have been... quirky.
