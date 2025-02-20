@@ -14,6 +14,7 @@
 
 import copy
 import datetime
+import json
 import os
 import pathlib
 import shutil
@@ -23,13 +24,26 @@ import unittest
 import pytest
 
 from planet_auth.credential import Credential
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.static_api_key.request_authenticator import FileBackedApiKey
+from planet_auth.util import FileBackedJsonObjectException, InvalidDataException
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 
 # class MockFileBackedEntity(planet_auth.FileBackedJsonObject):
 #     def __init__(self, data=None, file_path=None):
 #         super().__init__(data=data, file_path=file_path)
+
+
+class TestFileBackedJsonObjectException(unittest.TestCase):
+    def test_str_without_filepath(self):
+        under_test = FileBackedJsonObjectException(message="test message")
+        self.assertEqual("test message", f"{under_test}")
+
+    def test_str_with_filepath(self):
+        under_test = FileBackedJsonObjectException(
+            message="test message", file_path=pathlib.Path("/some/unit-test/file")
+        )
+        self.assertEqual("test message (File: /some/unit-test/file)", f"{under_test}")
 
 
 class TestFileBackedJsonObject(unittest.TestCase):
@@ -50,7 +64,7 @@ class TestFileBackedJsonObject(unittest.TestCase):
 
         under_test.set_data({})
 
-    def test_load(self):
+    def test_load_and_failed_reload(self):
         under_test = Credential(data=None, file_path=None)
 
         # Load fails where there is no file
@@ -66,10 +80,31 @@ class TestFileBackedJsonObject(unittest.TestCase):
         # A subsequent failed load should throw, but leave the data unchanged.
         under_test.set_path(tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
         with self.assertRaises(FileNotFoundError):
-            # let underlying exception pass to the application
             under_test.load()
 
         self.assertEqual({"test_key": "test_value"}, under_test.data())
+
+    def test_load_file_not_found(self):
+        under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
+        with self.assertRaises(FileNotFoundError):
+            # In normal operations, we would let underlying exception
+            # pass to the application to handle.
+            under_test.load()
+
+    def test_load_invalid_file(self):
+        # leverage a derived class we know has simple requirements we can
+        # use to test the base class.
+        under_test = FileBackedApiKey(
+            api_key=None, api_key_file=tdata_resource_file_path("keys/invalid_test_credential.json")
+        )
+
+        with self.assertRaises(InvalidDataException):
+            under_test.load()
+
+        self.assertIsNone(under_test.data())
+
+        with self.assertRaises(InvalidDataException):
+            under_test.check()
 
     def test_lazy_load(self):
         # If data is not set, it should be loaded from the path, but not until
@@ -231,3 +266,35 @@ class TestFileBackedJsonObject(unittest.TestCase):
     @pytest.mark.skip("No test for SOPS encryption at this time")
     def test_sops_write(self):
         pass
+
+    def test_pretty_json(self):
+        def _custom_json_class_dumper(obj):
+            try:
+                return obj.__json_pretty_dumps__()
+            except Exception:
+                return obj
+
+        def pretty_obj_str(obj):
+            return json.dumps(obj, indent=0, sort_keys=True, default=_custom_json_class_dumper)
+
+        test_data = {
+            "data_1": "some_data_1",
+            "data_2": None,
+            "data_3": {
+                "data_3_1": "some_data_3_1",
+                "data_3_2": None,
+            },
+        }
+
+        # In memory pretty dump
+        under_test = Credential(data=test_data, file_path=None)
+        pretty_str = pretty_obj_str(under_test)
+        self.assertEqual('{\n"data_1": "some_data_1",\n"data_3": {\n"data_3_1": "some_data_3_1"\n}\n}', pretty_str)
+
+        # file backed pretty dump
+        under_test = Credential(data=test_data, file_path=pathlib.Path("/unit/test/dummy.json"))
+        pretty_str = pretty_obj_str(under_test)
+        self.assertEqual(
+            '{\n"_file_path": "/unit/test/dummy.json",\n"data_1": "some_data_1",\n"data_3": {\n"data_3_1": "some_data_3_1"\n}\n}',
+            pretty_str,
+        )
