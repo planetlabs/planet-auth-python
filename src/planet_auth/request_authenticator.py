@@ -107,6 +107,28 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         # requests.
         self._token_body = None
 
+    def update_credential_data(self, new_credential_data: dict):
+        """
+        Provide raw data that should be used to update the Credential
+        object used to authenticate requests.  This information will
+        be treated as newer than any file back data associated
+        with the credential held by the authenticator, and the file
+        will be overwritten.
+        """
+        if not self._credential:
+            # The use cases for this being unset are narrow - mostly in the noop_auth.py module,
+            # and the service side client_validator.py.  Neither of these use cases should
+            # ever need to call update_credential_data().
+            # Should we fail loud, or quiet?  Loud for now.
+            raise RuntimeError("Programming error. Cannot update a credential that has has never been set.")
+
+        self._credential.set_data(new_credential_data)
+        self._credential.save()  # Clobber old data that may be saved to disk.
+        # Clear-out auth material when a new credential is set.
+        # child classes are expected to populate it JIT for auth
+        # requests.
+        self._token_body = None
+
     def credential(self):
         """
         Return the current credential.
@@ -121,7 +143,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
 class SimpleInMemoryRequestAuthenticator(CredentialRequestAuthenticator):
     # This SimpleInMemoryRequestAuthenticator subclasses from
     # CredentialRequestAuthenticator so it can fit in places that
-    # is needed. It does not provide actually know about any Credential
+    # is needed. It does not actually know about any Credential
     # types, since how credential types map to the HTTP request
     # authentication fields is credential specific.  This class
     # is more useful for testing and stubbing out interfaces.

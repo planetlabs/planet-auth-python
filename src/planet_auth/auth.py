@@ -28,8 +28,6 @@ class AuthClientContextException(AuthException):
         super().__init__(**kwargs)
 
 
-# TODO: should this be renamed? AuthClientContext? ClientAuthContext? ClientAuth?
-#       This isn't really geared towards resource server use cases.
 class Auth:
     """
     A container class for initializing and managing a working set of
@@ -139,6 +137,7 @@ class Auth:
     @staticmethod
     def initialize_from_client(
         auth_client: AuthClient,
+        initial_token_data: Optional[dict] = None,
         token_file: Optional[Union[str, pathlib.PurePath]] = None,
         profile_name: Optional[str] = None,
     ) -> Auth:
@@ -148,6 +147,8 @@ class Auth:
         Parameters:
             auth_client: An already constructed [AuthClient][planet_auth.AuthClient]
                 object.
+            initial_token_data: Token data to use for initial state, if not to be
+                read from a file for initialization.
             token_file: A path to a file location that should be used for
                 credential storage. Credentials will be read from this file,
                 and this location may be used to save refreshed credentials.
@@ -164,7 +165,8 @@ class Auth:
             token_file_path = None
 
         request_authenticator = auth_client.default_request_authenticator(credential=token_file_path)  # type: ignore
-
+        if initial_token_data:
+            request_authenticator.update_credential_data(initial_token_data)
         return Auth(
             auth_client=auth_client,
             request_authenticator=request_authenticator,
@@ -175,6 +177,7 @@ class Auth:
     @staticmethod
     def initialize_from_config(
         client_config: AuthClientConfig,
+        initial_token_data: Optional[dict] = None,
         token_file: Optional[Union[str, pathlib.PurePath]] = None,
         profile_name: Optional[str] = None,
     ) -> Auth:
@@ -183,6 +186,8 @@ class Auth:
         returning them in a new container object.
         Parameters:
             client_config: A constructed AuthClientConfig object.
+            initial_token_data: Token data to use for initial state, if not to be
+                read from a file for initialization.
             token_file: A path to a file location that should be used for
                 credential storage. Credentials will be read from this file,
                 and this location may be used to save refreshed credentials.
@@ -194,11 +199,17 @@ class Auth:
                 configuration files or where to save tokens.
         """
         auth_client = AuthClient.from_config(config=client_config)
-        return Auth.initialize_from_client(auth_client=auth_client, token_file=token_file, profile_name=profile_name)
+        return Auth.initialize_from_client(
+            auth_client=auth_client,
+            initial_token_data=initial_token_data,
+            token_file=token_file,
+            profile_name=profile_name,
+        )
 
     @staticmethod
     def initialize_from_config_dict(
         client_config: dict,
+        initial_token_data: Optional[dict] = None,
         token_file: Optional[Union[str, pathlib.PurePath]] = None,
         profile_name: Optional[str] = None,
     ) -> Auth:
@@ -207,6 +218,8 @@ class Auth:
         returning them in a new container object.
         Parameters:
             client_config: A dictionary containing a valid auth client configuration.
+            initial_token_data: Token data to use for initial state, if not to be
+                read from a file for initialization.
             token_file: A path to a file location that should be used for
                 credential storage. Credentials will be read from this file,
                 and this location may be used to save refreshed credentials.
@@ -219,12 +232,16 @@ class Auth:
         """
         auth_client_config = AuthClientConfig.from_dict(client_config)
         return Auth.initialize_from_config(
-            client_config=auth_client_config, token_file=token_file, profile_name=profile_name
+            client_config=auth_client_config,
+            initial_token_data=initial_token_data,
+            token_file=token_file,
+            profile_name=profile_name,
         )
 
     @staticmethod
     def initialize_from_config_file(
         client_config_file: Union[str, pathlib.PurePath],
+        initial_token_data: Optional[dict] = None,
         token_file: Union[str, pathlib.PurePath] = None,
         profile_name: Optional[str] = None,
     ) -> Auth:
@@ -234,6 +251,8 @@ class Auth:
         Parameters:
             client_config_file: A file containing a client config json definition.
                 The file should be a .json or .sops.json file
+            initial_token_data: Token data to use for initial state, if not to be
+                read from a file for initialization.
             token_file: A path to a file location that should be used for
                 credential storage. Credentials will be read from this file,
                 and this location may be used to save refreshed credentials.
@@ -246,5 +265,8 @@ class Auth:
         """
         auth_client_config = AuthClientConfig.from_file(client_config_file)
         return Auth.initialize_from_config(
-            client_config=auth_client_config, token_file=token_file, profile_name=profile_name
+            client_config=auth_client_config,
+            initial_token_data=initial_token_data,
+            token_file=token_file,
+            profile_name=profile_name,
         )

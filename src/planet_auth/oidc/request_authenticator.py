@@ -119,6 +119,17 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._refresh_at = 0
         # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
 
+    def update_credential_data(self, new_credential_data: dict):
+        # This is more different than update_credential() than it may
+        # appear. Inherent in being passed a Credential in update_credential()
+        # is that it may not yet be loaded from disk, and so deferring
+        # the _load() as a JIT operation is appropriate.  In this case,
+        # being passed the data struct is as if a network refresh call
+        # has already taken place or a _load() is in progress, and we
+        # should behave as  if we are finishing a _refresh() call.
+        super().update_credential_data(new_credential_data=new_credential_data)
+        self._load()
+
 
 class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAuthenticator):
     """

@@ -23,7 +23,12 @@ from planet_auth import (
     PlanetLegacyRequestAuthenticator,
     AuthException,
 )
-from planet_auth.constants import TOKEN_FILE_SOPS, TOKEN_FILE_PLAIN
+from planet_auth.constants import (
+    TOKEN_FILE_SOPS,
+    TOKEN_FILE_PLAIN,
+    AUTH_CONFIG_FILE_SOPS,
+    AUTH_CONFIG_FILE_PLAIN,
+)
 
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.builtins import Builtins
@@ -33,6 +38,10 @@ from planet_auth_utils.constants import EnvironmentVariables
 logger = logging.getLogger(__name__)
 
 
+# TODO: we should probably add support for https://pypi.org/project/keyring/
+#    or the like.  We would have to work out how we want independent installations
+#    to interact, if not through ~/.planet/.  How would QGIS interact with the CLI
+#    to manage a session, for example.
 class PlanetAuthFactory:
     @staticmethod
     def _token_file_path(profile_name: str, overide_path: Optional[str], save_token_file: bool):
@@ -46,6 +55,32 @@ class PlanetAuthFactory:
             )
         else:
             return None
+
+    @staticmethod
+    def _auth_client_config_file_path(profile_name: str):
+        return Profile.get_profile_file_path_with_priority(
+            filenames=[AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN], profile=profile_name
+        )
+
+    @staticmethod
+    def _update_saved_profile_config(plauth_context: Auth):
+        # Fixme: make this a method on Auth?
+        # FIXME: integrate with app provided storage?
+        # FIXME: What about sops?
+
+        # FIXME: this is probably redundant with the code to save profiles wired to the CLI.
+        #  Consolidate these paths
+        # FIXME: Per above, should we clobber or check? Options may change.
+        # FIXME: Should not save built-in profiles
+
+        _profile_name = plauth_context.profile_name()
+        if not _profile_name:
+            raise MissingArgumentException("A profile name must be provided if persisting the profile configuration")
+
+        plauth_context._auth_client.config().set_path(
+            PlanetAuthFactory._auth_client_config_file_path(profile_name=_profile_name)
+        )
+        plauth_context._auth_client.config().save()
 
     @staticmethod
     def _init_context_from_profile(
@@ -78,6 +113,8 @@ class PlanetAuthFactory:
         client_secret: str,
         token_file_opt: Optional[str] = None,
         save_token_file: bool = True,
+        # profile_name: Optional[str] = None, # XXXX Ad-Hoc?
+        save_profile_config: bool = False,
     ) -> Auth:
         # TODO: support oauth service accounts that use pubkey, and not just client secrets.
         # TODO: Can we handle different trust realms when initializing a M2M client with
@@ -96,27 +133,38 @@ class PlanetAuthFactory:
             profile_name=adhoc_profile_name, overide_path=token_file_opt, save_token_file=save_token_file
         )
 
-        return Auth.initialize_from_config_dict(
+        plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=token_file_path,
             profile_name=adhoc_profile_name,
         )
+        if save_profile_config:
+            PlanetAuthFactory._update_saved_profile_config(plauth_context)
+
+        return plauth_context
 
     @staticmethod
     def _init_from_client_config(
         client_config: dict,
         profile_name: str,
+        initial_token_data: Optional[dict] = None,
         save_token_file: bool = True,
+        save_profile_config: bool = True,
     ) -> Auth:
         token_file_path = PlanetAuthFactory._token_file_path(
             profile_name=profile_name, overide_path=None, save_token_file=save_token_file
         )
 
-        return Auth.initialize_from_config_dict(
+        plauth_context = Auth.initialize_from_config_dict(
             client_config=client_config,
+            initial_token_data=initial_token_data,
             token_file=token_file_path,
             profile_name=profile_name,
         )
+        if save_profile_config:
+            PlanetAuthFactory._update_saved_profile_config(plauth_context)
+
+        return plauth_context
 
     # @staticmethod
     # def _init_context_from_legacy_username_password_key(
@@ -151,11 +199,16 @@ class PlanetAuthFactory:
             "bearer_token_prefix": PlanetLegacyRequestAuthenticator.TOKEN_PREFIX,
         }
         adhoc_profile_name = "_PL_API_KEY"
-        return Auth.initialize_from_config_dict(
+        plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=None,
-            profile_name=adhoc_profile_name,
+            profile_name=adhoc_profile_name,  # XXX ???
         )
+
+        # if save_profile_config:
+        #    PlanetAuthFactory._update_saved_profile_config(plauth_context)
+
+        return plauth_context
 
     @staticmethod
     def initialize_auth_client_context(
@@ -164,7 +217,9 @@ class PlanetAuthFactory:
         auth_client_secret_opt: Optional[str] = None,
         auth_api_key_opt: Optional[str] = None,  # Deprecated
         token_file_opt: Optional[str] = None,  # TODO: Remove, but we still depend on it for Planet Legacy use cases.
+        # TODO?: initial_token_data: dict = None,
         save_token_file: bool = True,
+        save_profile_config: bool = False,  # Implicitly create/update a profile on disk
     ) -> Auth:
         """
         Helper function to initialize the Auth context in applications.
@@ -231,6 +286,8 @@ class PlanetAuthFactory:
                 client_secret=auth_client_secret_opt,
                 token_file_opt=token_file_opt,
                 save_token_file=save_token_file,
+                # profile_name="FIXME1",
+                save_profile_config=save_profile_config,
             )
 
         if auth_api_key_opt:
@@ -280,6 +337,8 @@ class PlanetAuthFactory:
                 client_secret=effective_user_selected_client_secret,
                 token_file_opt=token_file_opt,
                 save_token_file=save_token_file,
+                # profile_name="FIXME2",
+                save_profile_config=save_profile_config,
             )
 
         effective_user_selected_api_key = user_config_file.effective_conf_value(
@@ -311,12 +370,20 @@ class PlanetAuthFactory:
         )
 
     @staticmethod
-    def initialize_auth_client_context_with_config(
+    def initialize_auth_client_context_from_config(
         client_config: dict,
         profile_name: str,
+        initial_token_data: Optional[dict] = None,
         save_token_file: bool = True,
+        save_profile_config: bool = True,  # Implicitly create/update a profile on disk
     ) -> Auth:
-        return PlanetAuthFactory._init_from_client_config(client_config, profile_name, save_token_file)
+        return PlanetAuthFactory._init_from_client_config(
+            client_config=client_config,
+            profile_name=profile_name,
+            initial_token_data=initial_token_data,
+            save_token_file=save_token_file,
+            save_profile_config=save_profile_config,
+        )
 
     @staticmethod
     def initialize_resource_server_validator(

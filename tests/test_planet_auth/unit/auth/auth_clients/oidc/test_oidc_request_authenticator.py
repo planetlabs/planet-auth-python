@@ -14,9 +14,9 @@
 
 from unittest.mock import MagicMock
 
+import freezegun
 import pathlib
 import tempfile
-import freezegun
 import unittest
 
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
@@ -407,6 +407,28 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
 
     # def test_side_band_update_credential_in_memory(self):
     #     under_test = self.under_test_happy_path_in_memory()
+
+    def test_side_band_update_credential_data(self):
+        # Similar to above, the credential is updated by a
+        # side-band call to update the data.
+        under_test = self.under_test_happy_path()
+        self.mock_api_call(under_test)  # Should ensure that our old data is all primed and used
+        initial_credential_data = under_test.credential().data()
+
+        # abuse login to dummy up some other valid credential structure.
+        sideband_credential = self.stub_auth_client.login(
+            get_access_token=True, get_refresh_token=True, get_id_token=False
+        )
+        under_test.update_credential_data(sideband_credential.data())
+
+        # update_credential_data() should leave is us in a freshly _load()'ed state.
+        # It should not be necessary to simulate an API call for everything to be set
+        current_credential_data = under_test._credential.data()
+        self.assertNotEqual(current_credential_data, initial_credential_data)
+        self.assertEqual(current_credential_data, sideband_credential.data())
+        self.assertEqual(under_test._token_body, sideband_credential.access_token())
+        self.assertNotEqual(0, under_test._refresh_at)
+        self.assertNotEqual(0, under_test._credential._load_time)
 
 
 class RefreshOrReloginOidcRequestAuthenticatorTest(unittest.TestCase):
