@@ -127,7 +127,13 @@ from .oidc.request_authenticator import (
 from .planet_legacy.request_authenticator import PlanetLegacyRequestAuthenticator
 from .static_api_key.request_authenticator import FileBackedApiKeyRequestAuthenticator
 
-from .util import InvalidDataException, FileBackedJsonObject, FileBackedJsonObjectException
+from .util import (
+    InvalidDataException,
+    FileBackedJsonObject,
+    FileBackedJsonObjectException,
+    ObjectStorageProvider,
+    ObjectStorageProvider_KeyType,
+)
 
 __all__ = [
     # Classes
@@ -167,6 +173,8 @@ __all__ = [
     "InvalidDataException",
     "InvalidArgumentException",
     "InvalidTokenException",
+    "ObjectStorageProvider",
+    "ObjectStorageProvider_KeyType",
     "OidcAuthClient",
     "OidcAuthClientConfig",
     "OidcClientValidatorAuthClientConfig",

@@ -18,6 +18,7 @@ import pathlib
 import stat
 import subprocess
 import time
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import planet_auth.logging.auth_logger
@@ -69,6 +70,113 @@ class InvalidDataException(FileBackedJsonObjectException):
     pass
 
 
+ObjectStorageProvider_KeyType = pathlib.Path
+"""
+Key type for object storage.  Paths are currently used in part because of
+the history of the class.  Paths need not be real files on disk.
+It is up to the implementation to decide if a real file should be used,
+or another storage mechanism should be used.
+"""
+
+
+# TODO: do we need a concept of "list" for the storage provider?
+#     "profiles list" would be the only consumer at this time.
+class ObjectStorageProvider(ABC):
+    """
+    Abstract interface used to persist objects to storage.
+    """
+
+    @abstractmethod
+    def read_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+        """
+        Read an object from storage
+        :return:
+        """
+
+    @abstractmethod
+    def write_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+        """
+        Write an object to storage
+        :return:
+        """
+
+
+class _SOPSAwareSingleFileSingleObjectStorageProvider(ObjectStorageProvider):
+    """
+    Storage provider geared around backing a single object in a single file.
+    """
+
+    @staticmethod
+    def _is_sops_path(file_path):
+        # FIXME?: Could be ".json.sops", or ".sops.json", depending on file
+        #         level or field level encryption, respectively.  We currently
+        #         only look for and support field level encryption in json
+        #         files with a ".sops.json" suffix.
+        return bool(file_path.suffixes == [".sops", ".json"])
+
+    @staticmethod
+    def _read_json(file_path: pathlib.Path):
+        auth_logger.debug(msg="Loading JSON data from file {}".format(file_path))
+        with open(file_path, mode="r", encoding="UTF-8") as file_r:
+            return json.load(file_r)
+
+    @staticmethod
+    def _read_json_sops(file_path: pathlib.Path):
+        auth_logger.debug(msg="Loading JSON data from SOPS encrypted file {}".format(file_path))
+        data_b = subprocess.check_output(["sops", "-d", file_path])
+        return json.loads(data_b)
+
+    @staticmethod
+    def _write_json(file_path: pathlib.Path, data: dict):
+        auth_logger.debug(msg="Writing JSON data to file {}".format(file_path))
+        with open(file_path, mode="w", encoding="UTF-8") as file_w:
+            os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE)
+            _no_none_data = {key: value for key, value in data.items() if value is not None}
+            file_w.write(json.dumps(_no_none_data, indent=2, sort_keys=True))
+
+    @staticmethod
+    def _write_json_sops(file_path: pathlib.Path, data: dict):
+        # TODO: It would be nice to only encrypt the fields we need to.
+        #       It would be a better user experience.
+        #
+        # Writing directly seems to blow up. I guess we have to write clear text,
+        # then encrypt in place?
+        # with io.StringIO(json.dumps(data)) as data_f:
+        #     subprocess.check_call(
+        #         ['sops', '-e', '--input-type', 'json', '--output-type',
+        #          'json', '--output', file_path, '/dev/stdin'],
+        #         stdin=data_f)
+        auth_logger.debug(msg="Writing JSON data to SOPS encrypted file {}".format(file_path))
+        _SOPSAwareSingleFileSingleObjectStorageProvider._write_json(file_path, data)
+        subprocess.check_call(["sops", "-e", "--input-type", "json", "--output-type", "json", "-i", file_path])
+
+    @staticmethod
+    def _load_file(file_path: pathlib.Path) -> dict:
+        if _SOPSAwareSingleFileSingleObjectStorageProvider._is_sops_path(file_path):
+            new_data = _SOPSAwareSingleFileSingleObjectStorageProvider._read_json_sops(file_path)
+        else:
+            new_data = _SOPSAwareSingleFileSingleObjectStorageProvider._read_json(file_path)
+
+        return new_data
+
+    @staticmethod
+    def _save_file(file_path: pathlib.Path, data: dict):
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        if _SOPSAwareSingleFileSingleObjectStorageProvider._is_sops_path(file_path):
+            _SOPSAwareSingleFileSingleObjectStorageProvider._write_json_sops(file_path, data)
+        else:
+            _SOPSAwareSingleFileSingleObjectStorageProvider._write_json(file_path, data)
+
+    def read_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+        return self._load_file(file_path=key)
+
+    def write_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+        self._save_file(file_path=key, data=data)
+
+
+# TODO: rename/generalize as a storage backed JSON object. Since this was
+#   originally written, we have introduced the concept of custom storage
+#   providers, and storage may not always be file backed.
 class FileBackedJsonObject:
     """
     A file backed json object for storing information. Base class provides
@@ -90,7 +198,7 @@ class FileBackedJsonObject:
 
     Saving to the backing is also optional. Uses in this way, this class
     behaves as a validating in-memory json object holder.  To disable
-    on disk saving, construct objects with a None file_path.
+    saving to storage, construct objects with a None file_path.
     """
 
     # TODO: Consider a shift to a schema framework for validation?
@@ -112,7 +220,13 @@ class FileBackedJsonObject:
             # self.check_data(data)
             self._load_time = int(time.time())
 
+        # TODO: take as an argument
+        self._object_storage_provider = _SOPSAwareSingleFileSingleObjectStorageProvider()
+
     def __json_pretty_dumps__(self):
+        # This function is provided so json.dumps can display
+        # versions of the object that are different from what
+        # we want to save to storage.
         # This is just to work with pretty-print object dumper in
         # the plauth CLI.  We prefer to not strip the null/None
         # entries when we dump to a file so the act as guideposts
@@ -143,6 +257,7 @@ class FileBackedJsonObject:
         """
         Set the path for saved data.
         """
+        # TODO: also take an updated storage provider? Need a set path on the data provider?
         self._file_path = pathlib.Path(file_path) if file_path else None
 
     def data(self):
@@ -156,7 +271,7 @@ class FileBackedJsonObject:
         """
         Update the data set with the provided sparse update.
         Updates that result in a data-set that will not pass
-        check_data() will be rejected, and the will be unchanged.
+        check_data() will be rejected, and the data will be unchanged.
         """
         old_data = self._data
         if old_data:
@@ -223,11 +338,13 @@ class FileBackedJsonObject:
 
     def save(self):
         """
-        Save the data to disk.  If the data is invalid according
+        Save the data to storage.  If the data is invalid according
         to the child class's check_data() method, the data will
-        not be saved and an error will be thrown.
+        not be saved and an error will be thrown. The intent in
+        this design is to never save known bad data.
+
         If the path has not been set, nothing will be saved
-        to disk, and this will silently succeed. This is to
+        to storage, and this will silently succeed. This is to
         allow for transparent in memory only use cases.
         """
         self.check_data(self._data)
@@ -237,12 +354,7 @@ class FileBackedJsonObject:
             # raise FileBackedJsonObjectException(message="Cannot save data to file. File path is not set.")
             return
 
-        self._file_path.parent.mkdir(parents=True, exist_ok=True)
-        if self._is_sops_path(self._file_path):
-            self._write_json_sops(self._file_path, self._data)
-        else:
-            self._write_json(self._file_path, self._data)
-
+        self._object_storage_provider.write_obj(self._file_path, self._data)
         self._load_time = int(time.time())
 
     def is_loaded(self) -> bool:
@@ -250,11 +362,11 @@ class FileBackedJsonObject:
 
     def load(self):
         """
-        Force a data load from disk.  If the file path has not been set,
+        Force a data load from storage.  If the file path has not been set,
         this will be a no-op to allow for in memory operations.
 
-        If the data loaded from disk is invalid, an will be thrown, and the
-        currently held data will be left unchanged.  When in memory
+        If the data loaded from storage is invalid, an exception will be thrown,
+        and the currently held data will be left unchanged.  When in memory
         data is invalid and no file path has been set, an error IS NOT
         thrown - there would be nothing to fall back to. In memory users
         should expect to call check() or check_data() on their own.
@@ -263,29 +375,24 @@ class FileBackedJsonObject:
             # raise FileBackedJsonObjectException(message="Cannot load data from file. File path is not set.")
             return  # we now allow in memory operation.  Should we raise an error if the current data is invalid?
 
-        if self._is_sops_path(self._file_path):
-            new_data = self._read_json_sops(self._file_path)
-        else:
-            new_data = self._read_json(self._file_path)
-
+        new_data = self._object_storage_provider.read_obj(self._file_path)
         self.check_data(new_data)
-
         self._data = new_data
         self._load_time = int(time.time())
 
     def lazy_load(self):
         """
-        Lazy load the data from disk.
+        Lazy load the data from storage.
 
         If the data has already been set, whether by an the constructor, an
-        explicit set_data(), or a previous load from disk, no attempt is made
+        explicit set_data(), or a previous load from storage, no attempt is made
         to refresh the data.  Object will behave as an in memory object.
 
-        If the data is not set, it will attempt to load the data from disk.
+        If the data is not set, it will attempt to load the data from storage.
         An error will be thrown if the loaded data is invalid, the file has
         not been set, or the file has been set to a non-existent path.
 
-        For updating the data from disk even if an in memory copy exists,
+        For updating the data from storage even if an in memory copy exists,
         see lazy_reload().
 
         Users may always force a load at any time by calling load()
@@ -295,9 +402,9 @@ class FileBackedJsonObject:
 
     def lazy_reload(self):
         """
-        Lazy reload the data from disk.
+        Lazy reload the data from storage.
 
-        If the data is set, a reload will be attempted if the data on disk
+        If the data is set, a reload will be attempted if the data on storage
         appears to be newer if a path is set.  if a path is not set, no
         attempt will be made to load the data.
 
@@ -333,48 +440,3 @@ class FileBackedJsonObject:
     #    if self._data:
     #        return self._data.get(field)
     #    return None
-
-    @staticmethod
-    def _read_json(data_file):
-        auth_logger.debug(msg="Loading JSON data from file {}".format(data_file))
-        with open(data_file, mode="r", encoding="UTF-8") as file_r:
-            return json.load(file_r)
-
-    @staticmethod
-    def _read_json_sops(data_file):
-        auth_logger.debug(msg="Loading JSON data from SOPS encrypted file {}".format(data_file))
-        data_b = subprocess.check_output(["sops", "-d", data_file])
-        return json.loads(data_b)
-
-    @staticmethod
-    def _write_json(data_file, data):
-        auth_logger.debug(msg="Writing JSON data to file {}".format(data_file))
-        with open(data_file, mode="w", encoding="UTF-8") as file_w:
-            os.chmod(data_file, stat.S_IREAD | stat.S_IWRITE)
-            _no_none_data = {key: value for key, value in data.items() if value is not None}
-            file_w.write(json.dumps(_no_none_data, indent=2, sort_keys=True))
-
-    @staticmethod
-    def _write_json_sops(data_file, data):
-        # TODO: It would be nice to only encrypt the fields we need to.
-        #       It would be a better user experience.  Probably the thing to
-        #       do is let derived classes tell us what fields are to
-        #       be encrypted.
-        # Seems to blow up. I guess we have to write clear text,
-        # then encrypt in place?
-        # with io.StringIO(json.dumps(data)) as data_f:
-        #     subprocess.check_call(
-        #         ['sops', '-e', '--input-type', 'json', '--output-type',
-        #          'json', '--output', data_file, '/dev/stdin'],
-        #         stdin=data_f)
-        auth_logger.debug(msg="Writing JSON data to SOPS encrypted file {}".format(data_file))
-        FileBackedJsonObject._write_json(data_file, data)
-        subprocess.check_call(["sops", "-e", "--input-type", "json", "--output-type", "json", "-i", data_file])
-
-    @staticmethod
-    def _is_sops_path(file_path):
-        # FIXME?: Could be ".json.sops", or ".sops.json", depending on file
-        #         level or field level encryption, respectively.  We currently
-        #         only look for and support field level encryption in json
-        #         files with a ".sops.json" suffix.
-        return bool(file_path.suffixes == [".sops", ".json"])
