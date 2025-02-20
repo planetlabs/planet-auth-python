@@ -128,7 +128,8 @@ class FileBackedJsonObject:
             return d
 
         json_dumps = self._data.copy()
-        json_dumps["_file_path"] = str(self._file_path)
+        if self._file_path:
+            json_dumps["_file_path"] = str(self._file_path)
         _del_none(json_dumps)
         return json_dumps
 
