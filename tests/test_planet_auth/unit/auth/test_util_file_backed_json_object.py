@@ -21,17 +21,68 @@ import shutil
 import tempfile
 import freezegun
 import unittest
+import unittest.mock
 import pytest
 
+from planet_auth import ObjectStorageProvider_KeyType
 from planet_auth.credential import Credential
 from planet_auth.static_api_key.request_authenticator import FileBackedApiKey
-from planet_auth.util import FileBackedJsonObjectException, InvalidDataException
+from planet_auth.util import (
+    FileBackedJsonObject,
+    FileBackedJsonObjectException,
+    InvalidDataException,
+    ObjectStorageProvider,
+)
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 
-# class MockFileBackedEntity(planet_auth.FileBackedJsonObject):
+# class MockFileBackedEntity(FileBackedJsonObject):
 #     def __init__(self, data=None, file_path=None):
 #         super().__init__(data=data, file_path=file_path)
+
+
+class TestEntity(FileBackedJsonObject):
+    def __init__(self, data=None, file_path=None):
+        super().__init__(data=data, file_path=file_path)
+
+    def check_data(self, data):
+        super().check_data(data)
+        # key 1 is mandatory
+        if data.get("test_key_1") == "required_value_1" or data.get("test_key_1") == "required_value_2":
+            pass
+        else:
+            raise InvalidDataException(
+                "test entity requires that 'test_key_1' be 'required_value_1' or 'required_value_2"
+            )
+
+        # key 2 is optional
+        if data.get("test_key_2"):
+            if data.get("test_key_2") == "required_value_1" or data.get("test_key_2") == "required_value_2":
+                return
+            else:
+                raise InvalidDataException(
+                    "test entity requires that 'test_key_2' be 'required_value_1' or 'required_value_2"
+                )
+
+
+class MockStorageNotFound(FileBackedJsonObjectException):
+    pass
+
+
+class MockObjectStorageProvider(ObjectStorageProvider):
+    def __init__(self, initial_mock_storage):
+        self._mock_storage = copy.deepcopy(initial_mock_storage)
+
+    def _peek(self):
+        return self._mock_storage
+
+    def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+        if key not in self._mock_storage:
+            raise MockStorageNotFound
+        return self._mock_storage[key]
+
+    def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+        self._mock_storage[key] = data
 
 
 class TestFileBackedJsonObjectException(unittest.TestCase):
@@ -63,6 +114,29 @@ class TestFileBackedJsonObject(unittest.TestCase):
             under_test.set_data(None)
 
         under_test.set_data({})
+
+    def test_update_data_asserts_valid(self):
+        under_test = TestEntity(data=None, file_path=None)
+        with self.assertRaises(InvalidDataException):
+            under_test.update_data(None)
+
+        under_test.update_data({"test_key_1": "required_value_1"})
+        self.assertEqual(under_test.data(), {"test_key_1": "required_value_1"})
+
+        with self.assertRaises(InvalidDataException):
+            under_test.update_data({"test_key_1": "invalid_value"})
+        self.assertEqual(under_test.data(), {"test_key_1": "required_value_1"})
+
+        under_test.update_data({"test_key_1": "required_value_2"})
+        self.assertEqual(under_test.data(), {"test_key_1": "required_value_2"})
+
+        # The update should not only be valid, but sparse.
+        with self.assertRaises(InvalidDataException):
+            under_test.update_data({"test_key_2": "invalid_value"})
+        self.assertEqual(under_test.data(), {"test_key_1": "required_value_2"})
+
+        under_test.update_data({"test_key_2": "required_value_1"})
+        self.assertEqual(under_test.data(), {"test_key_1": "required_value_2", "test_key_2": "required_value_1"})
 
     def test_load_and_failed_reload(self):
         under_test = Credential(data=None, file_path=None)
@@ -298,3 +372,130 @@ class TestFileBackedJsonObject(unittest.TestCase):
             '{\n"_file_path": "/unit/test/dummy.json",\n"data_1": "some_data_1",\n"data_3": {\n"data_3_1": "some_data_3_1"\n}\n}',
             pretty_str,
         )
+
+
+class TestFileBackedJsonObjectCustomStorage(unittest.TestCase):
+    def setUp(self):
+        # Note: FileBackedJsonObject binds an instance to a path, but the storage
+        #   provider is _not_ bound by that cardinality.  Multiple FileBackedJsonObject
+        #   instances can use the same instances of a storage provider.
+        self.utest_path1 = pathlib.Path("/utest/custom_storage/path_1")
+        self.utest_path2 = pathlib.Path("/utest/custom_storage/path_2")
+        self.utest_path3 = pathlib.Path("/utest/custom_storage/path_3")
+        self.initial_mock_storage_1 = {self.utest_path1: {"field_1": "stored_data_1"}}
+        self.initial_mock_storage_2 = {}
+        self.wrapped_storage_1 = unittest.mock.Mock(
+            wraps=MockObjectStorageProvider(initial_mock_storage=self.initial_mock_storage_1)
+        )
+        self.wrapped_storage_2 = unittest.mock.Mock(
+            wraps=MockObjectStorageProvider(initial_mock_storage=self.initial_mock_storage_2)
+        )
+
+    def test_custom_load_1(self):
+        under_test = FileBackedJsonObject(
+            data=None, file_path=self.utest_path1, storage_provider=self.wrapped_storage_1
+        )
+        self.assertIsNone(under_test.data())
+        under_test.lazy_load()
+        self.assertEqual(self.wrapped_storage_1.load_obj.call_count, 1)
+        self.assertEqual(under_test.data(), self.initial_mock_storage_1[self.utest_path1])
+
+    def test_custom_load_2(self):
+        under_test = FileBackedJsonObject(
+            data={"field_1": "testcase_initial_data_1"},
+            file_path=self.utest_path1,
+            storage_provider=self.wrapped_storage_1,
+        )
+        self.assertEqual(under_test.data(), {"field_1": "testcase_initial_data_1"})
+        under_test.load()  # storage data newer than initial data.
+        self.assertEqual(self.wrapped_storage_1.load_obj.call_count, 1)
+        self.assertEqual(under_test.data(), self.initial_mock_storage_1[self.utest_path1])
+
+    def test_custom_load_no_path_1(self):
+        under_test = FileBackedJsonObject(data=None, file_path=None, storage_provider=self.wrapped_storage_1)
+        under_test.load()
+        self.assertIsNone(under_test.data())
+        self.assertEqual(self.wrapped_storage_1.load_obj.call_count, 0)
+
+    def test_custom_load_no_path_2(self):
+        under_test = FileBackedJsonObject(
+            data={"field_1": "testcase_initial_data_1"}, file_path=None, storage_provider=self.wrapped_storage_1
+        )
+        under_test.load()
+        self.assertEqual(under_test.data(), {"field_1": "testcase_initial_data_1"})
+        self.assertEqual(self.wrapped_storage_1.load_obj.call_count, 0)
+
+    def test_custom_load_update_path(self):
+        under_test = FileBackedJsonObject(
+            data=None, file_path=self.utest_path1, storage_provider=self.wrapped_storage_1
+        )
+        under_test.load()
+        under_test.set_path(self.utest_path3)
+        under_test.save()
+
+        # Peek into mock to see that the changes we intended happened.
+        # Nothing changed our mock storage at path1, so it should be the same.
+        self.assertEqual(
+            self.wrapped_storage_1._peek()[self.utest_path1], self.wrapped_storage_1._peek()[self.utest_path3]
+        )
+
+    def test_custom_load_not_in_storage(self):
+        under_test = FileBackedJsonObject(
+            data=None, file_path=self.utest_path3, storage_provider=self.wrapped_storage_2
+        )
+        with self.assertRaises(MockStorageNotFound):
+            under_test.load()
+
+    def test_update_storage_provider_save(self):
+        under_test = FileBackedJsonObject(
+            data=None, file_path=self.utest_path1, storage_provider=self.wrapped_storage_1
+        )
+        under_test.load()
+        orig_loaded_data = copy.deepcopy(under_test.data())
+        under_test.set_path(self.utest_path3)
+        under_test.set_storage_provider(self.wrapped_storage_2)
+        under_test.save()
+
+        # a new object in the same storage realm gets the data from the old
+        # objet writing it to the new realm after updating storage params.
+        # This probes that the storage provider update happened as expected.
+        # It is outside the scope of this test that custom providers work
+        # as expected. Storage semantics may vary between providers.
+        under_test_new = FileBackedJsonObject(
+            data=None, file_path=self.utest_path3, storage_provider=self.wrapped_storage_2
+        )
+        under_test_new.lazy_load()
+        self.assertEqual(under_test_new.data(), orig_loaded_data)
+
+    def test_custom_save_path_saves(self):
+        test_data = {"field_1": "test_custom_save_path_saves data"}
+        under_test = FileBackedJsonObject(
+            data=test_data, file_path=self.utest_path2, storage_provider=self.wrapped_storage_1
+        )
+        under_test.save()
+        self.assertEqual(self.wrapped_storage_1.save_obj.call_count, 1)
+
+        under_test_new = FileBackedJsonObject(
+            data=None, file_path=self.utest_path2, storage_provider=self.wrapped_storage_1
+        )
+        under_test_new.load()
+        self.assertEqual(under_test.data(), test_data)
+        self.assertEqual(under_test.data(), under_test_new.data())
+
+    def test_custom_save_no_path_does_not_save(self):
+        test_data = {"field_1": "test_custom_save_no_path_does_not_save data"}
+        under_test = FileBackedJsonObject(data=test_data, file_path=None, storage_provider=self.wrapped_storage_1)
+        under_test.save()
+        self.assertEqual(self.wrapped_storage_1.save_obj.call_count, 0)
+
+        under_test_new = FileBackedJsonObject(
+            data=None, file_path=self.utest_path2, storage_provider=self.wrapped_storage_1
+        )
+        with self.assertRaises(MockStorageNotFound):
+            under_test_new.load()
+
+        self.assertIsNone(under_test_new.data())
+
+    def test_TODO(self):
+        # update all the places I set_path to also update storage (e.g. credential refresh)
+        self.assertTrue(False)

@@ -87,14 +87,14 @@ class ObjectStorageProvider(ABC):
     """
 
     @abstractmethod
-    def read_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+    def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
         """
         Read an object from storage
         :return:
         """
 
     @abstractmethod
-    def write_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+    def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
         """
         Write an object to storage
         :return:
@@ -167,10 +167,10 @@ class _SOPSAwareSingleFileSingleObjectStorageProvider(ObjectStorageProvider):
         else:
             _SOPSAwareSingleFileSingleObjectStorageProvider._write_json(file_path, data)
 
-    def read_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+    def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
         return self._load_file(file_path=key)
 
-    def write_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+    def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
         self._save_file(file_path=key, data=data)
 
 
@@ -204,7 +204,12 @@ class FileBackedJsonObject:
     # TODO: Consider a shift to a schema framework for validation?
     #       E.g. schematics Model.
 
-    def __init__(self, data: Optional[Dict[str, Any]] = None, file_path: Optional[pathlib.Path] = None):
+    def __init__(
+        self,
+        data: Optional[Dict[str, Any]] = None,
+        file_path: Optional[pathlib.Path] = None,
+        storage_provider: Optional[ObjectStorageProvider] = None,
+    ):
         # Derived classes should not do anything to make the base class's
         # self._data non-falsey based on empty init to keep JIT lazy_load()
         # use cases from file backed object working as expected.
@@ -220,8 +225,10 @@ class FileBackedJsonObject:
             # self.check_data(data)
             self._load_time = int(time.time())
 
-        # TODO: take as an argument
-        self._object_storage_provider = _SOPSAwareSingleFileSingleObjectStorageProvider()
+        if storage_provider:
+            self._object_storage_provider = storage_provider
+        else:
+            self._object_storage_provider = _SOPSAwareSingleFileSingleObjectStorageProvider()
 
     def __json_pretty_dumps__(self):
         # This function is provided so json.dumps can display
@@ -255,10 +262,15 @@ class FileBackedJsonObject:
 
     def set_path(self, file_path):
         """
-        Set the path for saved data.
+        Update storage path for the object.
         """
-        # TODO: also take an updated storage provider? Need a set path on the data provider?
         self._file_path = pathlib.Path(file_path) if file_path else None
+
+    def set_storage_provider(self, storage_provider: ObjectStorageProvider):
+        """
+        Update storage provider for the object.
+        """
+        self._object_storage_provider = storage_provider
 
     def data(self):
         """
@@ -325,7 +337,7 @@ class FileBackedJsonObject:
         """
         Run check_data against our current state.  An exception will be thrown
         if the current data is found to be invalid.  Subclasses should not
-        need to override this method ,as they are expected to implement
+        need to override this method, as they are expected to implement
         check_data().  This method will not perform a load() before checking
         the data. That is considered an application responsibility.
         """
@@ -354,7 +366,7 @@ class FileBackedJsonObject:
             # raise FileBackedJsonObjectException(message="Cannot save data to file. File path is not set.")
             return
 
-        self._object_storage_provider.write_obj(self._file_path, self._data)
+        self._object_storage_provider.save_obj(self._file_path, self._data)
         self._load_time = int(time.time())
 
     def is_loaded(self) -> bool:
@@ -375,7 +387,7 @@ class FileBackedJsonObject:
             # raise FileBackedJsonObjectException(message="Cannot load data from file. File path is not set.")
             return  # we now allow in memory operation.  Should we raise an error if the current data is invalid?
 
-        new_data = self._object_storage_provider.read_obj(self._file_path)
+        new_data = self._object_storage_provider.load_obj(self._file_path)
         self.check_data(new_data)
         self._data = new_data
         self._load_time = int(time.time())
