@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 from planet_auth.credential import Credential
-from planet_auth.util import InvalidDataException
+from planet_auth.util import InvalidDataException, ObjectStorageProvider
 
 
 class FileBackedPlanetLegacyApiKey(Credential):
@@ -21,7 +23,9 @@ class FileBackedPlanetLegacyApiKey(Credential):
     Credential object for storing Planet Legacy API Keys
     """
 
-    def __init__(self, api_key=None, jwt=None, api_key_file=None):
+    def __init__(
+        self, api_key=None, jwt=None, api_key_file=None, storage_provider: Optional[ObjectStorageProvider] = None
+    ):
         if api_key or jwt:
             # "key" was used by the old Python SDK.
             # Keeping this json key name and file format so this class
@@ -29,7 +33,7 @@ class FileBackedPlanetLegacyApiKey(Credential):
             init_data = {"key": api_key, "jwt": jwt}
         else:
             init_data = None
-        super().__init__(data=init_data, file_path=api_key_file)
+        super().__init__(data=init_data, file_path=api_key_file, storage_provider=storage_provider)
 
     def check_data(self, data):
         """

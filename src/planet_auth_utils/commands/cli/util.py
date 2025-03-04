@@ -92,6 +92,9 @@ def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
         #       but considered runtime overrides.
         if not new_profile_config_file_path.exists():
             override_auth_context.auth_client().config().set_path(new_profile_config_file_path)
+            # No need to specify provider. The CLI is only concerned with the
+            # default file based storage provider for now.
+            # override_auth_context.auth_client().config().set_storage_provider()
             override_auth_context.auth_client().config().save()
 
     # TODO? Set ctx.obj["AUTH"] to override_auth_context?

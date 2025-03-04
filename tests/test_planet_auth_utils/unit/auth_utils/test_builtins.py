@@ -16,7 +16,6 @@ import os
 import pytest
 import unittest
 
-from planet_auth_utils.profile import ProfileException
 from planet_auth_utils.builtins import Builtins, BuiltinsException
 from planet_auth_utils.constants import EnvironmentVariables
 
@@ -29,10 +28,14 @@ from tests.test_planet_auth_utils.unit.auth_utils.utest_builtins import UTestMoc
 
 class TestBuiltInProfiles:
     def test_load_auth_client_config_blank(self):
-        with pytest.raises(ProfileException):  # as pe:
-            Builtins.load_auth_client_config(None)
-        with pytest.raises(ProfileException):  # as pe:
-            Builtins.load_auth_client_config("")
+        with pytest.raises(BuiltinsException):  # as be:
+            Builtins.load_builtin_auth_client_config(None)
+        with pytest.raises(BuiltinsException):  # as be:
+            Builtins.load_builtin_auth_client_config("")
+
+    def test_load_auth_client_config_custom_profile(self):
+        with pytest.raises(BuiltinsException):  # as be:
+            Builtins.load_builtin_auth_client_config("custom_non_builtin_profile")
 
     def test_builtin_profile_auth_client_config_dict_blank(self):
         with pytest.raises(BuiltinsException):  # as be:
@@ -73,3 +76,7 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
             UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_ALIAS_UTEST_ALIAS_2
         )
         self.assertEqual(under_test_resolved, UTestMockBuiltinConfigurationProvider.BUILTIN_PROFILE_NAME_UTEST_USER)
+
+    def test_deailas_non_builtin(self):
+        with pytest.raises(BuiltinsException):  # as be:
+            Builtins.dealias_builtin_profile("some_user_defined_non_builtin_profile")

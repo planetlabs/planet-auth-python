@@ -215,6 +215,10 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
 
         return self.device_login_complete(device_auth_response)
 
+    def can_login_unattended(self) -> bool:
+        # Always requires user interaction
+        return False
+
 
 class DeviceCodeAuthClient(DeviceCodeAuthClientBase, OidcAuthClientWithNoneClientAuth):
     """

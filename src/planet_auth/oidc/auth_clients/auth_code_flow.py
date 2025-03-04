@@ -168,6 +168,10 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
         )
         return FileBackedOidcCredential(token_json)
 
+    def can_login_unattended(self) -> bool:
+        # Always requires user interaction
+        return False
+
 
 class AuthCodeAuthClient(AuthCodeAuthClientBase, OidcAuthClientWithNoneClientAuth):
     """

@@ -75,6 +75,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         if self._auth_client:
             new_credentials = self._auth_client.refresh(self._credential.refresh_token())
             new_credentials.set_path(self._credential.path())
+            new_credentials.set_storage_provider(self._credential.storage_provider())
             new_credentials.save()
 
             self._credential = new_credentials
@@ -161,6 +162,7 @@ class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAu
                 new_credentials = self._auth_client.login(allow_open_browser=False, allow_tty_prompt=False)
 
             new_credentials.set_path(self._credential.path())
+            new_credentials.set_storage_provider(self._credential.storage_provider())
             new_credentials.save()
 
             self._credential = new_credentials

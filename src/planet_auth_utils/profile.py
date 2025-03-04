@@ -84,19 +84,20 @@ class Profile:
                 filename=candidate_filename, profile=profile, override_path=None
             )
             last_candidate_path = candidate_path
-            if candidate_path.exists():
+            if candidate_path.exists():  # TODO - use storage provider when profiles support custom storage provider
                 return candidate_path
 
         return last_candidate_path  # type: ignore
 
     @staticmethod
-    def load_client_config(profile: str) -> AuthClientConfig:
+    def load_auth_client_config(profile: str) -> AuthClientConfig:
         auth_config_path = Profile.get_profile_file_path_with_priority(
             filenames=[AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN],
             profile=profile,
         )
-        if auth_config_path.exists():
+        if auth_config_path.exists():  # TODO - use storage provider when profiles support custom storage provider
             auth_logger.debug(msg='Using auth client configuration from "{}"'.format(str(auth_config_path)))
+            # client_config = AuthClientConfig.from_file(file_path=auth_config_path, storage_provider=XXX_What)
             client_config = AuthClientConfig.from_file(auth_config_path)
         else:
             raise FileNotFoundError('Auth configuration file "{}" not found.'.format(str(auth_config_path)))
@@ -116,7 +117,7 @@ class Profile:
                 filenames=[AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN],
                 override_path=None,
             )
-            if config_file.exists():
+            if config_file.exists():  # TODO - use storage provider when profiles support custom storage provider
                 profile_names.append(candidate_profile_name)
 
         profile_names.sort()

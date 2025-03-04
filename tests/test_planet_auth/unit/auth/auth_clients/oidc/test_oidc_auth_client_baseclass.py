@@ -259,6 +259,9 @@ class OidcBaseTestHarnessAuthClient(OidcAuthClient):
     ) -> CredentialRequestAuthenticator:
         return SimpleInMemoryRequestAuthenticator(token_body=TEST_ACCESS_TOKEN)
 
+    def can_login_unattended(self) -> bool:
+        return False
+
 
 def mocked_pem_load_error(key_data, **kwargs):
     return None

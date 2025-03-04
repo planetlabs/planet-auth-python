@@ -104,19 +104,19 @@ class ProfileTest(TestWithHomeDirProfiles, unittest.TestCase):
 
     def test_load_client_none(self):
         with self.assertRaises(ProfileException):
-            Profile.load_client_config(profile=None)
+            Profile.load_auth_client_config(profile=None)
 
     def test_load_client_custom_profile_ok(self):
-        client_conf = Profile.load_client_config(profile=PROFILE1_NAME)
+        client_conf = Profile.load_auth_client_config(profile=PROFILE1_NAME)
         self.assertIsInstance(client_conf, StaticApiKeyAuthClientConfig)
 
     def test_load_client_custom_profile_invalid(self):
         with self.assertRaises(AuthClientException):
-            Profile.load_client_config(profile=PROFILE2_NAME)
+            Profile.load_auth_client_config(profile=PROFILE2_NAME)
 
     def test_load_client_custom_profile_does_not_exist(self):
         with self.assertRaises(FileNotFoundError):
-            Profile.load_client_config(profile="profile_does_not_exist")
+            Profile.load_auth_client_config(profile="profile_does_not_exist")
 
     def test_list_profiles(self):
         profile_list = Profile.list_on_disk_profiles()

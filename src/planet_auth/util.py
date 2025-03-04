@@ -100,7 +100,17 @@ class ObjectStorageProvider(ABC):
         :return:
         """
 
+    @abstractmethod
+    def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
+        """
+        Check whether a given object exists in storage.
+        """
 
+
+# TODO: Should we also provide a storage provider for keyring? https://pypi.org/project/keyring/
+#    We would have to work out how we want independent installations
+#    to interact, if not through ~/.planet/.  How would QGIS interact with the CLI
+#    to manage a session, for example?
 class _SOPSAwareSingleFileSingleObjectStorageProvider(ObjectStorageProvider):
     """
     Storage provider geared around backing a single object in a single file.
@@ -173,17 +183,20 @@ class _SOPSAwareSingleFileSingleObjectStorageProvider(ObjectStorageProvider):
     def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
         self._save_file(file_path=key, data=data)
 
+    def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
+        return key.exists()
+
 
 # TODO: rename/generalize as a storage backed JSON object. Since this was
 #   originally written, we have introduced the concept of custom storage
 #   providers, and storage may not always be file backed.
 class FileBackedJsonObject:
     """
-    A file backed json object for storing information. Base class provides
+    A storage backed json object for storing information. Base class provides
     lazy loading and validation before saving or setting the data.  Derived
     classes should provide type specific validation and convenience data
     accessors. The intent is that this provides a way to have an object
-    backed by a file, and rails are in place to prevent invalid data from
+    backed by storage, and rails are in place to prevent invalid data from
     being saved or used.
 
     Data is allowed to be initialized as None so that JIT load() use cases
@@ -193,16 +206,22 @@ class FileBackedJsonObject:
 
     The None data structure is treated as a special case, and means that the
     class has been constructed, but the data has never been set.  Once data has
-    been set, either by calling set_data() or by loading data from a file,
+    been set, either by calling set_data() or by loading data from a storage,
     it is only permitted to be set to valid values.
 
     Saving to the backing is also optional. Uses in this way, this class
     behaves as a validating in-memory json object holder.  To disable
     saving to storage, construct objects with a None file_path.
+
+    The default storage provider will use the file system for storage.
+    When loading from file storage, the file may be SOPS encrypted.
+    When using SOPS encryption, the file should have a ".sops.json" suffix.
     """
 
     # TODO: Consider a shift to a schema framework for validation?
     #       E.g. schematics Model.
+
+    _default_storage_provider = _SOPSAwareSingleFileSingleObjectStorageProvider()
 
     def __init__(
         self,
@@ -228,7 +247,7 @@ class FileBackedJsonObject:
         if storage_provider:
             self._object_storage_provider = storage_provider
         else:
-            self._object_storage_provider = _SOPSAwareSingleFileSingleObjectStorageProvider()
+            self._object_storage_provider = self._default_storage_provider
 
     def __json_pretty_dumps__(self):
         # This function is provided so json.dumps can display
@@ -266,11 +285,31 @@ class FileBackedJsonObject:
         """
         self._file_path = pathlib.Path(file_path) if file_path else None
 
-    def set_storage_provider(self, storage_provider: ObjectStorageProvider):
+    def set_storage_provider(self, storage_provider: Optional[ObjectStorageProvider] = None):
         """
         Update storage provider for the object.
         """
-        self._object_storage_provider = storage_provider
+        if storage_provider:
+            self._object_storage_provider = storage_provider
+        else:
+            self._object_storage_provider = self._default_storage_provider
+
+    def storage_provider(self) -> ObjectStorageProvider:
+        """
+        Retrieve the currently configured storage provider for saved data.
+        """
+        return self._object_storage_provider
+
+    def is_persisted_to_storage(self) -> bool:
+        """
+        Check if the object exists in storage.  This does not require or cause the
+        object to be loaded.  This does not check that the version in storage
+        is the most up-to-date.
+        """
+        if self._file_path:
+            return self._object_storage_provider.obj_exists(self._file_path)
+        else:
+            return False
 
     def data(self):
         """

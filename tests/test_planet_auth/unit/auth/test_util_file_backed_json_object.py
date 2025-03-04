@@ -24,15 +24,15 @@ import unittest
 import unittest.mock
 import pytest
 
-from planet_auth import ObjectStorageProvider_KeyType
 from planet_auth.credential import Credential
 from planet_auth.static_api_key.request_authenticator import FileBackedApiKey
 from planet_auth.util import (
     FileBackedJsonObject,
     FileBackedJsonObjectException,
     InvalidDataException,
-    ObjectStorageProvider,
 )
+
+from tests.test_planet_auth.unit.auth.util import MockObjectStorageProvider, MockStorageObjectNotFound
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 
@@ -63,26 +63,6 @@ class TestEntity(FileBackedJsonObject):
                 raise InvalidDataException(
                     "test entity requires that 'test_key_2' be 'required_value_1' or 'required_value_2"
                 )
-
-
-class MockStorageNotFound(FileBackedJsonObjectException):
-    pass
-
-
-class MockObjectStorageProvider(ObjectStorageProvider):
-    def __init__(self, initial_mock_storage):
-        self._mock_storage = copy.deepcopy(initial_mock_storage)
-
-    def _peek(self):
-        return self._mock_storage
-
-    def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
-        if key not in self._mock_storage:
-            raise MockStorageNotFound
-        return self._mock_storage[key]
-
-    def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
-        self._mock_storage[key] = data
 
 
 class TestFileBackedJsonObjectException(unittest.TestCase):
@@ -443,7 +423,7 @@ class TestFileBackedJsonObjectCustomStorage(unittest.TestCase):
         under_test = FileBackedJsonObject(
             data=None, file_path=self.utest_path3, storage_provider=self.wrapped_storage_2
         )
-        with self.assertRaises(MockStorageNotFound):
+        with self.assertRaises(MockStorageObjectNotFound):
             under_test.load()
 
     def test_update_storage_provider_save(self):
@@ -454,6 +434,7 @@ class TestFileBackedJsonObjectCustomStorage(unittest.TestCase):
         orig_loaded_data = copy.deepcopy(under_test.data())
         under_test.set_path(self.utest_path3)
         under_test.set_storage_provider(self.wrapped_storage_2)
+        self.assertEqual(under_test.storage_provider(), self.wrapped_storage_2)
         under_test.save()
 
         # a new object in the same storage realm gets the data from the old
@@ -491,11 +472,28 @@ class TestFileBackedJsonObjectCustomStorage(unittest.TestCase):
         under_test_new = FileBackedJsonObject(
             data=None, file_path=self.utest_path2, storage_provider=self.wrapped_storage_1
         )
-        with self.assertRaises(MockStorageNotFound):
+        with self.assertRaises(MockStorageObjectNotFound):
             under_test_new.load()
 
         self.assertIsNone(under_test_new.data())
 
-    def test_TODO(self):
-        # update all the places I set_path to also update storage (e.g. credential refresh)
-        self.assertTrue(False)
+    def test_check_if_in_storage_none(self):
+        under_test = FileBackedJsonObject(file_path=None, storage_provider=self.wrapped_storage_1)
+        self.assertFalse(under_test.is_persisted_to_storage())
+
+    def test_check_if_in_storage_path_exists(self):
+        under_test = FileBackedJsonObject(file_path=self.utest_path1, storage_provider=self.wrapped_storage_1)
+        self.assertTrue(under_test.is_persisted_to_storage())
+
+    def test_check_if_in_storage_path_does_not_exist(self):
+        under_test = FileBackedJsonObject(file_path=self.utest_path3, storage_provider=self.wrapped_storage_1)
+        self.assertFalse(under_test.is_persisted_to_storage())
+
+    def test_check_if_in_storage_path_does_not_exist_with_init_data(self):
+        test_data = {"field_1": "test_custom_save_no_path_does_not_save data"}
+        under_test = FileBackedJsonObject(
+            data=test_data, file_path=self.utest_path3, storage_provider=self.wrapped_storage_1
+        )
+        self.assertFalse(under_test.is_persisted_to_storage())
+        under_test.save()
+        self.assertTrue(under_test.is_persisted_to_storage())

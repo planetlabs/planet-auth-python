@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 from planet_auth.credential import Credential
-from planet_auth.util import InvalidDataException
+from planet_auth.util import InvalidDataException, ObjectStorageProvider
 
 
 class FileBackedApiKey(Credential):
@@ -21,13 +23,19 @@ class FileBackedApiKey(Credential):
     Credential object for storing simple API key bearer tokens.
     """
 
-    def __init__(self, api_key=None, prefix="Bearer", api_key_file=None):
+    def __init__(
+        self,
+        api_key=None,
+        prefix="Bearer",
+        api_key_file=None,
+        storage_provider: Optional[ObjectStorageProvider] = None,
+    ):
         if api_key:
             init_data = {"api_key": api_key, "bearer_token_prefix": prefix}
         else:
             init_data = None
 
-        super().__init__(data=init_data, file_path=api_key_file)
+        super().__init__(data=init_data, file_path=api_key_file, storage_provider=storage_provider)
 
     def check_data(self, data):
         """

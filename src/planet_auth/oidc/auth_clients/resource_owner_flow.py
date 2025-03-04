@@ -130,6 +130,11 @@ class ResourceOwnerAuthClientBase(
             )
         )
 
+    def can_login_unattended(self) -> bool:
+        return bool(self._resource_owner_client_config.user_password()) and bool(
+            self._resource_owner_client_config.user_name()
+        )
+
 
 class ResourceOwnerAuthClient(ResourceOwnerAuthClientBase, OidcAuthClientWithNoneClientAuth):
     """

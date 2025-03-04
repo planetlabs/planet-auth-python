@@ -21,7 +21,7 @@ import pytest
 
 from planet_auth import ScopeNotGrantedTokenException, InvalidArgumentException
 from planet_auth.auth import Auth
-from planet_auth.auth_client import AuthClient
+from planet_auth.auth_client import AuthClient, AuthClientConfig
 from planet_auth.oidc.auth_clients.client_validator import OidcClientValidatorAuthClient
 from planet_auth.oidc.auth_clients.client_credentials_flow import ClientCredentialsClientSecretAuthClient
 from planet_auth.auth_exception import AuthException, InvalidTokenException
@@ -479,8 +479,10 @@ class TestMultiValidator:
         with pytest.raises(AuthException):
             OidcMultiIssuerValidator(
                 trusted=[
-                    Auth.initialize_from_config_file(
-                        client_config_file=tdata_resource_file_path("auth_client_configs/utest/planet_legacy.json")
+                    Auth.initialize_from_config(
+                        client_config=AuthClientConfig.from_file(
+                            tdata_resource_file_path("auth_client_configs/utest/planet_legacy.json")
+                        )
                     )
                 ]
             )
@@ -488,8 +490,10 @@ class TestMultiValidator:
             OidcMultiIssuerValidator(
                 trusted=[
                     Auth.initialize_from_client(auth_client=primary_issuer),
-                    Auth.initialize_from_config_file(
-                        client_config_file=tdata_resource_file_path("auth_client_configs/utest/static_api_key.json")
+                    Auth.initialize_from_config(
+                        client_config=AuthClientConfig.from_file(
+                            tdata_resource_file_path("auth_client_configs/utest/static_api_key.json")
+                        )
                     ),
                 ],
             )

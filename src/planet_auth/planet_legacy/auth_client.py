@@ -222,22 +222,31 @@ class PlanetLegacyAuthClient(AuthClient):
     ) -> CredentialRequestAuthenticator:
         # If an API key has been configured in the client config, use that and ignore
         # any separate credential file.
+        storage_provider = self._auth_client_config.storage_provider()
         if self._legacy_client_config.api_key():
             _credential = FileBackedPlanetLegacyApiKey(
-                api_key=self._legacy_client_config.api_key(), api_key_file=self._legacy_client_config.path()
+                api_key=self._legacy_client_config.api_key(),
+                api_key_file=self._legacy_client_config.path(),
+                storage_provider=storage_provider,
             )
         else:
             if isinstance(credential, pathlib.Path):
-                _credential = FileBackedPlanetLegacyApiKey(api_key_file=credential)
+                _credential = FileBackedPlanetLegacyApiKey(api_key_file=credential, storage_provider=storage_provider)
             elif isinstance(credential, FileBackedPlanetLegacyApiKey):
                 _credential = credential
             elif credential is None:
                 # This will be brain-dead until update_credential() or update_credential_data()
                 # is called.  This is useful for initializing properly typed credential objects.
-                _credential = FileBackedPlanetLegacyApiKey()
+                _credential = FileBackedPlanetLegacyApiKey(storage_provider=storage_provider)
             else:
                 raise TypeError(
                     f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedPlanetLegacyApiKey."
                 )
 
         return PlanetLegacyRequestAuthenticator(planet_legacy_credential=_credential)
+
+    def can_login_unattended(self) -> bool:
+        # We could allow username/password to be specified in the client
+        # config, and forgo prompts in login(), but we've not implemented
+        # what would be a bad security practice of saving passwords.
+        return False

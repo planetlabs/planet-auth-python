@@ -15,13 +15,15 @@
 import logging
 import warnings
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from planet_auth import (
     Auth,
+    AuthClientConfig,
+    AuthException,
+    ObjectStorageProvider,
     OidcMultiIssuerValidator,
     PlanetLegacyRequestAuthenticator,
-    AuthException,
 )
 from planet_auth.constants import (
     TOKEN_FILE_SOPS,
@@ -38,10 +40,6 @@ from planet_auth_utils.constants import EnvironmentVariables
 logger = logging.getLogger(__name__)
 
 
-# TODO: we should probably add support for https://pypi.org/project/keyring/
-#    or the like.  We would have to work out how we want independent installations
-#    to interact, if not through ~/.planet/.  How would QGIS interact with the CLI
-#    to manage a session, for example.
 class PlanetAuthFactory:
     @staticmethod
     def _token_file_path(profile_name: str, overide_path: Optional[str], save_token_file: bool):
@@ -63,15 +61,9 @@ class PlanetAuthFactory:
         )
 
     @staticmethod
-    def _update_saved_profile_config(plauth_context: Auth):
-        # Fixme: make this a method on Auth?
-        # FIXME: integrate with app provided storage?
-        # FIXME: What about sops?
-
-        # FIXME: this is probably redundant with the code to save profiles wired to the CLI.
-        #  Consolidate these paths
-        # FIXME: Per above, should we clobber or check? Options may change.
-        # FIXME: Should not save built-in profiles
+    def _update_saved_profile_config(plauth_context: Auth, storage_provider: Optional[ObjectStorageProvider] = None):
+        # FIXME: should we clobber or check? Options may change.
+        # FIXME: Should not save built-in profiles.
 
         _profile_name = plauth_context.profile_name()
         if not _profile_name:
@@ -80,31 +72,47 @@ class PlanetAuthFactory:
         plauth_context._auth_client.config().set_path(
             PlanetAuthFactory._auth_client_config_file_path(profile_name=_profile_name)
         )
+        plauth_context._auth_client.config().set_storage_provider(storage_provider=storage_provider)
         plauth_context._auth_client.config().save()
+
+    @staticmethod
+    def load_auth_client_config_from_profile(
+        profile_name: str,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
+    ) -> Tuple[str, AuthClientConfig]:
+        """
+        Load the auth client config from a profile name.  Both built-in and used defined
+        custom profiles are considered.
+        """
+        # TODO: does not yet support custom storage providers
+        if Builtins.is_builtin_profile(profile_name):
+            normalized_profile_name = Builtins.dealias_builtin_profile(profile_name)
+            auth_client_config = Builtins.load_builtin_auth_client_config(normalized_profile_name)
+        else:
+            normalized_profile_name = profile_name.lower()
+            auth_client_config = Profile.load_auth_client_config(normalized_profile_name)
+
+        return normalized_profile_name, auth_client_config
 
     @staticmethod
     def _init_context_from_profile(
         profile_name: str,
         token_file_opt: Optional[str] = None,
         save_token_file: bool = True,
-        log_fallback_warning: bool = False,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> Auth:
-        normalized_builtin_profile = Builtins.dealias_builtin_profile(profile_name)
-        if normalized_builtin_profile:
-            user_selected_profile = normalized_builtin_profile
-        else:
-            user_selected_profile = profile_name.lower()
+        normalized_selected_profile, auth_client_config = PlanetAuthFactory.load_auth_client_config_from_profile(
+            profile_name=profile_name
+        )
 
         token_file_path = PlanetAuthFactory._token_file_path(
-            profile_name=user_selected_profile, overide_path=token_file_opt, save_token_file=save_token_file  # type: ignore
+            profile_name=normalized_selected_profile, overide_path=token_file_opt, save_token_file=save_token_file  # type: ignore
         )
-        auth_client_config = Builtins.load_auth_client_config(user_selected_profile)
-        if log_fallback_warning:
-            logger.warning('Client profile "%s" selected as a fallback.', user_selected_profile)
+
         return Auth.initialize_from_config(
             client_config=auth_client_config,
             token_file=token_file_path,
-            profile_name=user_selected_profile,
+            profile_name=normalized_selected_profile,
         )
 
     @staticmethod
@@ -115,6 +123,7 @@ class PlanetAuthFactory:
         save_token_file: bool = True,
         # profile_name: Optional[str] = None, # XXXX Ad-Hoc?
         save_profile_config: bool = False,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> Auth:
         # TODO: support oauth service accounts that use pubkey, and not just client secrets.
         # TODO: Can we handle different trust realms when initializing a M2M client with
@@ -139,17 +148,21 @@ class PlanetAuthFactory:
             profile_name=adhoc_profile_name,
         )
         if save_profile_config:
-            PlanetAuthFactory._update_saved_profile_config(plauth_context)
+            PlanetAuthFactory._update_saved_profile_config(
+                plauth_context=plauth_context,
+                # storage_provider=storage_provider,  # Not yet supported here
+            )
 
         return plauth_context
 
     @staticmethod
-    def _init_from_client_config(
+    def _init_context_from_client_config(
         client_config: dict,
         profile_name: str,
         initial_token_data: Optional[dict] = None,
         save_token_file: bool = True,
         save_profile_config: bool = True,
+        storage_provider: Optional[ObjectStorageProvider] = None,
     ) -> Auth:
         token_file_path = PlanetAuthFactory._token_file_path(
             profile_name=profile_name, overide_path=None, save_token_file=save_token_file
@@ -160,9 +173,12 @@ class PlanetAuthFactory:
             initial_token_data=initial_token_data,
             token_file=token_file_path,
             profile_name=profile_name,
+            storage_provider=storage_provider,
         )
         if save_profile_config:
-            PlanetAuthFactory._update_saved_profile_config(plauth_context)
+            PlanetAuthFactory._update_saved_profile_config(
+                plauth_context=plauth_context, storage_provider=storage_provider
+            )
 
         return plauth_context
 
@@ -206,7 +222,9 @@ class PlanetAuthFactory:
         )
 
         # if save_profile_config:
-        #    PlanetAuthFactory._update_saved_profile_config(plauth_context)
+        #    PlanetAuthFactory._update_saved_profile_config(
+        #        plauth_context=plauth_context,
+        #        storage_provider=storage_provider)
 
         return plauth_context
 
@@ -219,7 +237,10 @@ class PlanetAuthFactory:
         token_file_opt: Optional[str] = None,  # TODO: Remove, but we still depend on it for Planet Legacy use cases.
         # TODO?: initial_token_data: dict = None,
         save_token_file: bool = True,
-        save_profile_config: bool = False,  # Implicitly create/update a profile on disk
+        save_profile_config: bool = False,
+        # Not supporting custom storage providers at this time.
+        # The preferred behavior of Profiles with custom storage providers is TBD.
+        # storage_provider: Optional[ObjectStorageProvider] = None,
     ) -> Auth:
         """
         Helper function to initialize the Auth context in applications.
@@ -233,7 +254,8 @@ class PlanetAuthFactory:
         number of possibilities rises.
 
         This helper function is provided to help build applications with a consistent
-        user experience.
+        user experience when sharing auth context with the CLI.  This function
+        does not at this time support using custom storage providers.
 
         Arguments to this function are taken to be explicitly set by the user, and are
         given the highest priority.  Internally, the priority used for the source of
@@ -359,30 +381,45 @@ class PlanetAuthFactory:
             return PlanetAuthFactory._init_context_from_api_key(
                 api_key=effective_user_selected_api_key,
             )
+
         #
         # Fall back to a built-in default configuration when all else fails.
         #
+        if log_fallback_warning:
+            logger.warning('Loading built-in profile "%s" as a fallback.', Builtins.builtin_default_profile_name())
+
         return PlanetAuthFactory._init_context_from_profile(
             profile_name=Builtins.builtin_default_profile_name(),
             token_file_opt=token_file_opt,
             save_token_file=save_token_file,
-            log_fallback_warning=log_fallback_warning,
         )
 
     @staticmethod
-    def initialize_auth_client_context_from_config(
+    def initialize_auth_client_context_from_custom_config(
         client_config: dict,
         profile_name: str,
         initial_token_data: Optional[dict] = None,
         save_token_file: bool = True,
-        save_profile_config: bool = True,  # Implicitly create/update a profile on disk
+        save_profile_config: bool = True,
+        storage_provider: Optional[ObjectStorageProvider] = None,
     ) -> Auth:
-        return PlanetAuthFactory._init_from_client_config(
+        """
+        Initialize using the provided client config dictionary
+        and custom storage provider for session persistence.
+
+        If a storage provider is not provided, a default file
+        based storage provider will be used that is interoperable
+        with the plauth CLI utility.  If a custom storage provider
+        is supplied, sessions will not be visible to the plauth
+        CLI tools.
+        """
+        return PlanetAuthFactory._init_context_from_client_config(
             client_config=client_config,
             profile_name=profile_name,
             initial_token_data=initial_token_data,
             save_token_file=save_token_file,
             save_profile_config=save_profile_config,
+            storage_provider=storage_provider,
         )
 
     @staticmethod

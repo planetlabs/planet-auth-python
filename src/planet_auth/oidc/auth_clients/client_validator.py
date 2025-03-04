@@ -105,3 +105,7 @@ class OidcClientValidatorAuthClient(OidcAuthClient):
     ) -> CredentialRequestAuthenticator:
         # return SimpleInMemoryRequestAuthenticator(token_body=None)  # Kinder and gentler failure.
         return ForbiddenRequestAuthenticator()
+
+    def can_login_unattended(self) -> bool:
+        return False
+        # raise AuthClientException(message="OIDC Client Validator auth client cannot perform a login.")

@@ -22,7 +22,7 @@ import planet_auth.logging.auth_logger
 from planet_auth.auth_exception import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
-from planet_auth.util import FileBackedJsonObject, InvalidDataException
+from planet_auth.util import FileBackedJsonObject, InvalidDataException, ObjectStorageProvider
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
@@ -45,9 +45,6 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
 
     The factory methods in the base class accept a dictionary, and will
     return an instance of an appropriate subclass.
-
-    When loading client config from a file, the file may be SOPS encrypted.
-    When using SOPS encryption, the file should have a ".sops.json" suffix.
 
     Example:
         ```python
@@ -84,8 +81,8 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
     #       hierarchies.
     CLIENT_TYPE_KEY = "client_type"
 
-    def __init__(self, file_path=None, **kwargs):
-        super().__init__(data=kwargs, file_path=file_path)
+    def __init__(self, file_path=None, storage_provider: Optional[ObjectStorageProvider] = None, **kwargs):
+        super().__init__(data=kwargs, file_path=file_path, storage_provider=storage_provider)
         if len(kwargs.keys()) > 0:
             # raise AuthClientConfigException(
             # message='Unexpected config arguments in client configuration: {}'
@@ -167,17 +164,21 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
         return config_cls(**config_data)
 
     @staticmethod
-    def from_file(file_path) -> AuthClientConfig:
+    def from_file(file_path, storage_provider: Optional[ObjectStorageProvider] = None) -> AuthClientConfig:
         """
         Create an AuthClientConfig from a json file that contains a config
         dictionary.
         Returns:
             A concrete auth client config object.
         """
-        config_file = FileBackedJsonObject(file_path=file_path)
+        config_file = FileBackedJsonObject(file_path=file_path, storage_provider=storage_provider)
         config_file.load()
-        conf = AuthClientConfig.from_dict(config_file.data())  # Also a FileBackedJsonObject, but a derived class.
+        # AuthClientConfig.from_dict() also returns a FileBackedJsonObject.
+        # Re-creating with from_dict() after the load() gives us a more strongly
+        # typed subclass with better data checking and better error messages.
+        conf = AuthClientConfig.from_dict(config_file.data())
         conf.set_path(file_path)
+        conf.set_storage_provider(storage_provider=storage_provider)
         return conf
 
     @classmethod
@@ -217,7 +218,7 @@ class AuthClient(ABC):
     that may be used for service APIs.
 
     The factory methods in the base class accepts a client specific client
-    configuraiton type, and will return an instance of an appropriate subclass.
+    configuration type, and will return an instance of an appropriate subclass.
 
     Example:
         ```python
@@ -485,9 +486,12 @@ class AuthClient(ABC):
             message="Listing scopes is not implemented for the current authentication mechanism."
         )
 
+    # TODO: as a practical matter, I don't think we ever use the "Credential"
+    #   option, and it makes the code more clumsy.  We should consider removing it.
     @abstractmethod
     def default_request_authenticator(
-        self, credential: Union[pathlib.Path, Credential]  # TODO: separate out credential from credential_path args?
+        self,
+        credential: Union[pathlib.Path, Credential],
     ) -> CredentialRequestAuthenticator:
         """
         Return an instance of the default request authenticator to use for
@@ -519,4 +523,19 @@ class AuthClient(ABC):
         Returns:
             Returns an instance of the default request authenticator class to
                 use for Credentials of the type obtained by the AuthClient.
+        """
+
+    @abstractmethod
+    def can_login_unattended(self) -> bool:
+        """
+        Check whether the client can perform an unattended login.
+
+        Depending on the implementation, some clients may be able to perform
+        unattended logins based on information the client config (e.g. static
+        API key clients can do this).  These should return true.  Other clients
+        will always require user interactive logins (e.g. a user interactive
+        client using a browser and MFA to login).  These should return false.
+        Some clients may be flexible and support either depending on the state
+        of their configuration.  These should return a result based on their
+        configuration.
         """

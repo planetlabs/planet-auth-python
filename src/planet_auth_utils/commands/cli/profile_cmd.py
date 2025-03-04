@@ -26,6 +26,7 @@ from planet_auth.constants import (
 
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.builtins import Builtins
+from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 from planet_auth_utils.constants import EnvironmentVariables
 from .options import opt_long, opt_sops
@@ -106,10 +107,11 @@ def _load_all_on_disk_profiles() -> dict:
     profiles_dicts = OrderedDict()
     for candidate_profile_name in candidate_profile_names:
         try:
-            conf = Profile.load_client_config(candidate_profile_name)
+            # normalized_profile_name, conf = PlanetAuthFactory.load_auth_client_config_from_profile(candidate_profile_name)
+            conf = Profile.load_auth_client_config(candidate_profile_name)
             profiles_dicts[candidate_profile_name] = conf
         except Exception as ex:
-            logger.debug(msg=f'"{candidate_profile_name}" was not a valid local profile directory: {ex}')
+            logger.debug(msg=f'"{candidate_profile_name}" was not a valid locally defined profile directory: {ex}')
 
     return profiles_dicts
 
@@ -231,13 +233,16 @@ def cmd_profile_copy(sops, src, dst):
     #       pubkeys are used.  To do that properly, their paths should be
     #       relative to the profile dir, and not absolute, but that is not
     #       currently implemented.
-    auth_config = Builtins.load_auth_client_config(src)
+    _, auth_config = PlanetAuthFactory.load_auth_client_config_from_profile(src)
     if sops:
         dst_config_filepath = Profile.get_profile_file_path(profile=dst, filename=AUTH_CONFIG_FILE_SOPS)
     else:
         dst_config_filepath = Profile.get_profile_file_path(profile=dst, filename=AUTH_CONFIG_FILE_PLAIN)
 
     auth_config.set_path(dst_config_filepath)
+    # No need to specify provider. The CLI is only concerned with the
+    # default file based storage provider for now.
+    # auth_config.auth_client().config().set_storage_provider()
     auth_config.save()
 
 
@@ -275,5 +280,5 @@ def cmd_profile_show(ctx):
     except Exception:  #  as ex:
         # print(f'User Default: {ex}')
         print("User Default: N/A")
-    # print(f"Global Built-in Default: {Builtins.dealias_builtin_profile(Builtins.builtin_default_profile_name())}")
+
     print(f"Global Built-in Default: {Builtins.builtin_default_profile_name()}")

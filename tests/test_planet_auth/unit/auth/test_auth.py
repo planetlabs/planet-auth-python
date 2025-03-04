@@ -16,7 +16,7 @@ import pathlib
 import unittest
 
 from planet_auth.auth import Auth
-from planet_auth.auth_client import AuthClientException
+from planet_auth.auth_client import AuthClientException, AuthClientConfig
 from planet_auth.static_api_key.auth_client import StaticApiKeyAuthClient
 from planet_auth.static_api_key.request_authenticator import FileBackedApiKeyRequestAuthenticator
 from planet_auth.none.noop_auth import NoOpAuthClient
@@ -26,8 +26,10 @@ from tests.test_planet_auth.util import tdata_resource_file_path
 
 class AuthTest(unittest.TestCase):
     def test_initialize_from_conffile_with_no_token_file(self):
-        under_test = Auth.initialize_from_config_file(
-            client_config_file=tdata_resource_file_path("auth_client_configs/utest/static_api_key.json"),
+        under_test = Auth.initialize_from_config(
+            client_config=AuthClientConfig.from_file(
+                tdata_resource_file_path("auth_client_configs/utest/static_api_key.json")
+            ),
         )
         self.assertIsInstance(under_test.auth_client(), StaticApiKeyAuthClient)
         self.assertIsInstance(under_test.request_authenticator(), FileBackedApiKeyRequestAuthenticator)
@@ -35,8 +37,10 @@ class AuthTest(unittest.TestCase):
         self.assertIsNone(under_test.profile_name())
 
     def test_initialize_from_conffile_with_token_file(self):
-        under_test = Auth.initialize_from_config_file(
-            client_config_file=tdata_resource_file_path("auth_client_configs/utest/static_api_key.json"),
+        under_test = Auth.initialize_from_config(
+            client_config=AuthClientConfig.from_file(
+                tdata_resource_file_path("auth_client_configs/utest/static_api_key.json")
+            ),
             token_file="/dev/null/test_token.json",
         )
         self.assertIsInstance(under_test.auth_client(), StaticApiKeyAuthClient)

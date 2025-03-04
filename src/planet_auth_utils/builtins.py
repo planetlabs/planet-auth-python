@@ -16,17 +16,16 @@ import logging
 import os
 from typing import List, Optional
 
-from planet_auth import AuthClientConfig, AuthException
-from planet_auth_utils.profile import Profile
+from planet_auth import AuthClientConfig
+from planet_auth_utils.profile import ProfileException
 from planet_auth_utils.constants import EnvironmentVariables
 from .builtins_provider import BuiltinConfigurationProviderInterface, EmptyBuiltinProfileConstants
 
 logger = logging.getLogger(__name__)
 
 
-class BuiltinsException(AuthException):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class BuiltinsException(ProfileException):
+    pass
 
 
 def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
@@ -116,14 +115,18 @@ class Builtins:
         return _profile in Builtins._builtin.builtin_client_profile_aliases()
 
     @staticmethod
-    def dealias_builtin_profile(profile: str) -> Optional[str]:
+    def dealias_builtin_profile(profile: str) -> str:
         Builtins._load_builtin_jit()
-        _dealiased = profile.lower()
 
-        while Builtins.is_builtin_profile_alias(_dealiased):
-            _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)  # type: ignore
+        if Builtins.is_builtin_profile(profile):
+            _dealiased = profile.lower()
+            while Builtins.is_builtin_profile_alias(_dealiased):
+                _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)  # type: ignore
 
-        return _dealiased
+            return _dealiased
+        else:
+            # return None
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
     @staticmethod
     def builtin_profile_names() -> List[str]:
@@ -145,14 +148,14 @@ class Builtins:
             _profile = Builtins.dealias_builtin_profile(profile)
             return Builtins._builtin.builtin_client_authclient_config_dicts().get(_profile)  # type: ignore
         else:
-            raise BuiltinsException(message=f"profile {profile} is unknown.")
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
     # @staticmethod
     # def builtin_profile_auth_client_config(profile: str):
     #     return AuthClientConfig.from_dict(Builtins._builtin_profile_auth_client_configs.get(profile))
 
     @staticmethod
-    def load_auth_client_config(profile: str) -> AuthClientConfig:
+    def load_builtin_auth_client_config(profile: str) -> AuthClientConfig:
         Builtins._load_builtin_jit()
         if Builtins.is_builtin_profile(profile):
             logger.debug(
@@ -161,8 +164,7 @@ class Builtins:
             )
             client_config = AuthClientConfig.from_dict(Builtins.builtin_profile_auth_client_config_dict(profile))
         else:
-            # TODO: does this belong in this class anymore? This is a vestige of when "Builtins" was "Profiles"
-            client_config = Profile.load_client_config(profile)
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
         return client_config
 

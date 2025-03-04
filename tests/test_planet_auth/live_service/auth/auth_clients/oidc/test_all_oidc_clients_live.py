@@ -15,6 +15,7 @@
 import pytest
 from typing import Tuple
 
+from planet_auth.auth_client import AuthClientConfig
 from planet_auth.oidc.auth_client import OidcAuthClient
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
 from planet_auth.oidc.api_clients.introspect_api_client import IntrospectionApiException
@@ -51,7 +52,7 @@ class TestLiveService:
     @staticmethod
     def auth_from_test_resource_file(resource_file) -> Tuple[Auth, OidcAuthClient, FileBackedOidcCredential]:
         test_client_conf_file = tdata_resource_file_path("auth_client_configs/live_service/{}".format(resource_file))
-        auth = Auth.initialize_from_config_file(test_client_conf_file)
+        auth = Auth.initialize_from_config(client_config=AuthClientConfig.from_file(test_client_conf_file))
         oidc_auth_client = auth.auth_client()
         token = oidc_auth_client.login()
         return auth, oidc_auth_client, token
