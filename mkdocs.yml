@@ -1,7 +1,6 @@
 site_name: Planet Auth Library
 site_description: Planet Auth Library
 site_url: https://planet.com/
-# "strict: true" complains about __name__ not being a string in __all__, even though it is.
 strict: true
 
 #watch:
