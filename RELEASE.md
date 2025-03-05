@@ -35,11 +35,18 @@ To release a new version, complete the following steps:
    * `beta` - A beta release.
    * `alpha` - An alpha release
    * `dev` - A development release.  This is the default.
-5. Initiate a release by activating the [Release Orchestration Workflow](./.github/workflows/release-orchestrate.yml) pipeline:
+5. Determin where to publish the python package to.  This will be passed to the
+   release workflow pipeline as the `publish-to` argument:
+   * `none` - Skip actual publishing to PyPi servers.  This is a dry-run pipeline.
+     This is the default.
+   * `pypi-test` - Publish to the test PyPi server
+   * `pypi-prod` - Publish to the production PyPi server
+   * `all` - Publish to all PyPi servers.
+6. Initiate a release by activating the [Release Orchestration Workflow](./.github/workflows/release-orchestrate.yml) pipeline:
    * The release pipeline may be initiated in the GUI.
    * The release pipeline may be initiated by the `gh` CLI as follows:
      ```bash
-     gh workflow run .github/workflows/release-orchestrate.yml -f build-variant=_selected_release_variation_
+     gh workflow run .github/workflows/release-orchestrate.yml -f build-variant=_selected_release_variation_ -f publish-to=_selected_publication_target_
      ```
 
 ## Local Publishing

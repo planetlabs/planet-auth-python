@@ -17,6 +17,15 @@ on:
           - beta
           - rc
           - release
+      publish-to:
+        description: "Where to publish the package to"
+        type: choice
+        default: "none"
+        options:
+          - none
+          - all
+          - pypi-test
+          - pypi-prod
 
 env:
   PYTHON_VERSION: "3.13"
@@ -65,6 +74,8 @@ jobs:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
     needs: [package, generate-build-number]
+    with:
+      publish-to: "none"
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}

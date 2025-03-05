@@ -16,6 +16,11 @@ on:
     secrets:
       PYPI_API_TOKEN:
       PYPI_API_TOKEN_TEST:
+    inputs:
+      publish-to:
+        description: "Where to publish the package to"
+        type: string
+        default: "none"
 
 env:
   PYTHON_VERSION: "3.13"
@@ -23,6 +28,7 @@ env:
 jobs:
   release-pypi-test:
     name: "Release package to PyPi (Test)"
+    if: inputs.publish-to == 'pypi-test' || inputs.publish-to == 'all'
     runs-on: ubuntu-latest
     # environment: staging
     steps:
@@ -58,6 +64,7 @@ jobs:
 
   release-pypi-production:
     name: "Release package to PyPi (Production)"
+    if: inputs.publish-to == 'pypi-prod' || inputs.publish-to == 'all'
     runs-on: ubuntu-latest
     # environment: staging
     steps:
@@ -84,6 +91,34 @@ jobs:
           false
           # TODO: re-enable. Disabled for pipeline development
           # nox -s pkg_publish_pypi_prod
+
+  release-none:
+    name: "Release (None)"
+    if: inputs.publish-to == 'none'
+    runs-on: ubuntu-latest
+    # environment: none
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@v4
+      - name: Prepare common Python build environment
+        uses: ./.github/actions/python-build-env-setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Download Wheel Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-wheel
+          path: dist
+      - name: "Download Source Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-src-targz
+          path: dist
+      - name: "Nox: check package only. (Publishing NoOp / dry-run)"
+        run: |
+          echo "Skipping publishing of python package."
+          nox -s pkg_check
+
 
   # Read the docs is published via webhook GitHub webhook
   # release-readthedocs:
