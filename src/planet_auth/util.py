@@ -480,7 +480,10 @@ class FileBackedJsonObject:
         Lazy load the data and retrieve the requested field.
         """
         self.lazy_load()
-        return self._data.get(field)
+        if self._data:
+            return self._data.get(field, None)
+        else:
+            return None
 
     # This is probably a bad idea, since it would encourage development
     # that makes it more likely that data may change in between get()'s
