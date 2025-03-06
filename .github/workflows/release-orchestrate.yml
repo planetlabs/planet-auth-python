@@ -82,10 +82,10 @@ jobs:
       - name: "Create Github Release"
         uses: actions/create-release@v1
         with:
-          # tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
-          # release_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
-          tag_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
-          release_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
+          tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          release_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          # tag_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
+          # release_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
           draft: false
           prerelease: ${{ inputs.version-prerelease }}
   package:
