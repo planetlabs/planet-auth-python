@@ -46,7 +46,7 @@ To release a new version, complete the following steps:
    * The release pipeline may be initiated in the GUI.
    * The release pipeline may be initiated by the `gh` CLI as follows:
      ```bash
-     gh workflow run .github/workflows/release-orchestrate.yml -f build-variant=_selected_release_variation_ -f publish-to=_selected_publication_target_
+     gh workflow run .github/workflows/release-orchestrate.yml --ref _branch to release_ -f build-variant=_selected_release_variation_ -f publish-to=_selected_publication_target_
      ```
 
 ## Local Publishing
