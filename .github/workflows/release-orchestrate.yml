@@ -48,24 +48,36 @@ jobs:
         with:
           build-variant: ${{ inputs.build-variant }}
       - name: "Tag repository"
-        # Tagging is part of the build number generation in part because
-        # tag uniqueness serves as a synchronization mechanism to prevent
-        # multiple releases of the same version.
+        # Tagging is part of the build number generation at the start of the
+        # pipeline because tag uniqueness serves as a synchronization
+        # mechanism to prevent multiple releases of the same version.
         run: |
           set -x
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
           if [ "${{ steps.gen-buildnum.outputs.variant-raw }}" = "release" ]
           then
-            git tag -a -m "test tag comment for final release" "${{steps.gen-buildnum.outputs.version}}"
-            git push origin                                    "${{steps.gen-buildnum.outputs.version}}"
+            git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version}}"
+            git push origin                                             "${{steps.gen-buildnum.outputs.version}}"
           fi
-          git tag -a -m "test tag comment" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
-          git push origin                  "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
-    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time.
+    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time if attempting an illegal versioning clobbering release.
+  generate-release:
+    name: "Create Github Release"
+    runs-on: ubuntu-latest
+    needs: test  # Don't release builds that don't pass muster.
+    steps:
+      - name: "Create Github Release"
+        uses: actions/create-release@v1
+        with:
+          tag_name: release-${{ inputs.version-with-buildnumber }}
+          release_name: release-${{ inputs.version-with-buildnumber }}
+          draft: true # During dev
+          prerelease: ${{ inputs.version-prerelease }}
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
@@ -75,9 +87,7 @@ jobs:
     uses: ./.github/workflows/release-publish.yml
     needs: [package, generate-build-number]
     with:
-      publish-to: "none"
+      publish-to: ${{inputs.publish-to}}
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
-    # with:
-    #   version-with-buildnumber: ${{needs.generate-build-number.outputs.version-with-buildnum}}

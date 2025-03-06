@@ -1,18 +1,11 @@
 name: Publish Release
 
-# TODO: create a github release. This is needed to trigger webhooks.
-
 permissions:
   actions: read
   contents: read
 
 on:
   workflow_call:
-    # inputs:
-    #   version-with-buildnumber:
-    #     required: true
-    #     type: string
-    #     description: "The fully qualified unique version build number."
     secrets:
       PYPI_API_TOKEN:
       PYPI_API_TOKEN_TEST:
@@ -58,9 +51,7 @@ jobs:
         env:
           NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN_TEST }}
         run: |
-          false
-          # TODO: re-enable. Disabled for pipeline development
-          # nox -s pkg_publish_pypi_test
+          nox -s pkg_publish_pypi_test
 
   release-pypi-production:
     name: "Release package to PyPi (Production)"
@@ -88,9 +79,7 @@ jobs:
         env:
           NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          false
-          # TODO: re-enable. Disabled for pipeline development
-          # nox -s pkg_publish_pypi_prod
+          nox -s pkg_publish_pypi_prod
 
   release-none:
     name: "Release (None)"

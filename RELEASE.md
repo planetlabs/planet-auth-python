@@ -35,7 +35,7 @@ To release a new version, complete the following steps:
    * `beta` - A beta release.
    * `alpha` - An alpha release
    * `dev` - A development release.  This is the default.
-5. Determin where to publish the python package to.  This will be passed to the
+5. Determine where to publish the python package to.  This will be passed to the
    release workflow pipeline as the `publish-to` argument:
    * `none` - Skip actual publishing to PyPi servers.  This is a dry-run pipeline.
      This is the default.
