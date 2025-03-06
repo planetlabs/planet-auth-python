@@ -41,7 +41,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     outputs:
       version: ${{steps.gen-buildnum.outputs.version}}
-      version-with-buildnum: ${{steps.gen-buildnum.outputs.version}}
+      version-with-buildnum: ${{steps.gen-buildnum.outputs.version-with-buildnum}}
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -82,11 +82,9 @@ jobs:
       - name: "Create Github Release"
         uses: actions/create-release@v1
         with:
-          tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
-          release_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
-          # tag_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
-          # release_name: "release-${{ needs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}"
-          draft: false
+          tag_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          draft: true # During CICD testing and development
           prerelease: ${{ inputs.version-prerelease }}
   package:
     name: "Build Release Artifacts"
