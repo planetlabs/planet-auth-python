@@ -7,9 +7,34 @@ strict: true
 #  - src
 
 theme:
-    name: 'material'
-    logo: img/logo.svg
-    favicon: img/logo.svg
+  name: 'material'
+  logo: img/logo-white.svg
+  favicon: img/logo-color.svg
+  # custom_dir: 'docs/custom_theme/'
+  features:
+    - navigation.tabs
+    # - navigation.instant # Not compatible with i18n plugin
+    - navigation.tabs.sticky
+    - navigation.expand
+    - navigation.indexes
+    - navigation.top
+    - navigation.sections
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - toc.follow
+    - toc.integrate
+  palette:
+    - scheme: default
+      primary: #007f99
+      toggle:
+        icon: octicons/moon-24
+        name: Switch to dark mode
+    - scheme: slate
+      primary: #004352
+      toggle:
+        icon: octicons/sun-24
+        name: Switch to light mode
 
 plugins:
   # - search:
