@@ -39,6 +39,9 @@ jobs:
       contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # outputs:
+    #   version: ${{steps.gen-buildnum.outputs.version}}
+    #   version-with-buildnum: ${{steps.gen-buildnum.outputs.version}}
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -65,19 +68,22 @@ jobs:
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
-    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time if attempting an illegal versioning clobbering release.
+    # We do not really need the build number, but this gates the job so we do not waste
+    # time testing a build that is attempting an illegal clobbering of a released version.
+    needs: generate-build-number
   generate-release:
     name: "Create Github Release"
     runs-on: ubuntu-latest
     needs: [test, generate-build-number]  # Don't release builds that don't pass muster.
+    permissions: write-all
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Create Github Release"
         uses: actions/create-release@v1
         with:
-          tag_name: release-${{ inputs.version-with-buildnumber }}
-          release_name: release-${{ inputs.version-with-buildnumber }}
+          tag_name: release-${{ jobs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}
+          release_name: release-${{ jobs.generate-build-number.steps.gen-buildnum.outputs.version-with-buildnum }}
           draft: true # During dev
           prerelease: ${{ inputs.version-prerelease }}
   package:
