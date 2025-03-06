@@ -82,7 +82,7 @@ jobs:
     steps:
       - name: "Create Github Release (Version candidate release)"
         uses: actions/create-release@v1
-        if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
+        # if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
         with:
           tag_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
