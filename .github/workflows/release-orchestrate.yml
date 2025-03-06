@@ -69,7 +69,7 @@ jobs:
   generate-release:
     name: "Create Github Release"
     runs-on: ubuntu-latest
-    needs: test  # Don't release builds that don't pass muster.
+    needs: [test, generate-build-number]  # Don't release builds that don't pass muster.
     steps:
       - name: "Create Github Release"
         uses: actions/create-release@v1
@@ -85,7 +85,7 @@ jobs:
   publish:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
-    needs: [package, generate-build-number]
+    needs: [package, generate-release, generate-build-number]
     with:
       publish-to: ${{inputs.publish-to}}
     secrets:
