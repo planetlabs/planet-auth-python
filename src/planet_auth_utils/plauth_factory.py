@@ -62,9 +62,6 @@ class PlanetAuthFactory:
 
     @staticmethod
     def _update_saved_profile_config(plauth_context: Auth, storage_provider: Optional[ObjectStorageProvider] = None):
-        # FIXME: should we clobber or check? Options may change.
-        # FIXME: Should not save built-in profiles.
-
         _profile_name = plauth_context.profile_name()
         if not _profile_name:
             raise MissingArgumentException("A profile name must be provided if persisting the profile configuration")
