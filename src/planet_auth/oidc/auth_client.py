@@ -179,10 +179,6 @@ class OidcAuthClientConfig(AuthClientConfig, ABC):
                     "config_key": "auth_server",
                     "config_key_name": "Authorization Server",
                     "config_key_description": "Base URL for the OAuth2/OIDC authorization server",
-                    # FIXME: This was planet_auth_config.Production.PRIMARY_PUBLIC_OAUTH_AUTHORITY.get("auth_server"),
-                    #        but with knowledge of environments being pulled out of the core library we lost
-                    #        that friendly default.  This is really only a concern for downstream applications,
-                    #        like the CLI utility.
                     # "config_key_default": "auth server URL",
                 },
                 {
@@ -213,7 +209,7 @@ class OidcAuthClient(AuthClient, ABC):
         self.__jwks_client = None
         self.__token_validator = None
         self.__issuer = None
-        # FIXME: Need authorization_acknowledgement_body here or from OidcAuthClientConfig
+        # TODO: Need authorization_acknowledgement_body here or from OidcAuthClientConfig
         #        This is something that belongs to the client more than the library.
         #        It's also something that's only relevant in a narrow set of circumstances:
         #        An auth code client that is locally listening for and responding

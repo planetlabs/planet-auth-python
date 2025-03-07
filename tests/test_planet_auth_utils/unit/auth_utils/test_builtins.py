@@ -22,9 +22,6 @@ from planet_auth_utils.constants import EnvironmentVariables
 from tests.test_planet_auth_utils.util import TestWithHomeDirProfiles
 from tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl import BuiltinConfigurationProviderMockTestImpl
 
-# FIXME: We are presuming a particular implementation of the built-in provider interface for these tests.
-#        We should test with sometime self contained in this distribution package.
-
 
 class TestBuiltInProfiles:
     def test_load_auth_client_config_blank(self):

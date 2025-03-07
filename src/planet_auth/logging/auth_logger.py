@@ -95,7 +95,7 @@ class AuthLogger:
             if not event and isinstance(exception, AuthException):
                 event = exception.event()
 
-            # XXX A little hacky.  The lib is designed to handle more than just JWTs and OAuth,
+            # Note: This is a little hacky. The lib is designed to handle more than just JWTs and OAuth,
             #     but it is a very common use case and this makes for an ergonomic development experience,
             #     making it easy to have the raise pass context in the exception to a distant point
             #     in the code responsible for logging.
@@ -118,8 +118,8 @@ class AuthLogger:
             "auth_libraries": self._auth_libraries,
         }
 
-        # FIXME: Is this actually right?  The library is more general than OAuth and JWTs, but this
-        #        is a common need when we log, so we've done this in our logger.
+        # TODO: Is this actually right?  The library is more general than OAuth and JWTs, but this
+        #       is a common need when we log, so we've done this in our logger.
         if jwt_header_json:
             log_json["jwt_header"] = {"alg": jwt_header_json.get("alg")}
         if jwt_body_json:
@@ -136,7 +136,7 @@ class AuthLogger:
 
         if exception:
             log_json["error"] = str(exception)
-            # log_json["stack_trace"] = # TODO
+            # log_json["stack_trace"] =
 
         if _lib_global_do_structured_logging:
             final_log_msg = _log_msg

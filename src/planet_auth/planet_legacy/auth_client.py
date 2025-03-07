@@ -69,11 +69,7 @@ class PlanetLegacyAuthClientConfig(AuthClientConfig):
                     "config_key": "legacy_auth_endpoint",
                     "config_key_name": "Planet Legacy Authentication Endpoint",
                     "config_key_description": "API endpoint used to perform user authentication against the Planet cloud service.",
-                    # FIXME: This was planet_auth_config.Production.LEGACY_AUTH_AUTHORITY.get("legacy_auth_endpoint"),
-                    #        but with knowledge of environments being pulled out of the core library we lost
-                    #        that friendly default.  This is really only a concern for downstream applications,
-                    #        like the CLI utility.
-                    # "config_key_default": "FIXME",
+                    # "config_key_default": "",
                 },
                 {
                     "config_key": "api_key",

@@ -121,13 +121,13 @@ class PlanetAuthFactory:
         client_secret: str,
         token_file_opt: Optional[str] = None,
         save_token_file: bool = True,
-        # profile_name: Optional[str] = None, # XXXX Ad-Hoc?
+        # profile_name: Optional[str] = None, # TODO? Always currently ad-hoc with this initializer's use.
         save_profile_config: bool = False,
         # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> Auth:
         # TODO: support oauth service accounts that use pubkey, and not just client secrets.
         # TODO: Can we handle different trust realms when initializing a M2M client with
-        #       just the Client ID and secret? (akin to how AUTH0_DOMAIN works)
+        #       just the Client ID and secret? (akin to how Auth0 implements AUTH0_DOMAIN usage.)
         m2m_realm_name = Builtins.builtin_default_profile_name(client_type="oidc_client_credentials_secret")
         base_client_config = Builtins.builtin_profile_auth_client_config_dict(m2m_realm_name)
         constructed_client_config_dict = {
@@ -218,7 +218,7 @@ class PlanetAuthFactory:
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=None,
-            profile_name=adhoc_profile_name,  # XXX ???
+            profile_name=adhoc_profile_name,
         )
 
         # if save_profile_config:
@@ -308,7 +308,7 @@ class PlanetAuthFactory:
                 client_secret=auth_client_secret_opt,
                 token_file_opt=token_file_opt,
                 save_token_file=save_token_file,
-                # profile_name="FIXME1",
+                # profile_name="",  # Always ad-hoc in this path
                 save_profile_config=save_profile_config,
             )
 
@@ -359,7 +359,7 @@ class PlanetAuthFactory:
                 client_secret=effective_user_selected_client_secret,
                 token_file_opt=token_file_opt,
                 save_token_file=save_token_file,
-                # profile_name="FIXME2",
+                # profile_name="",  # Always ad-hoc in this path
                 save_profile_config=save_profile_config,
             )
 

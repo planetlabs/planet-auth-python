@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# FIXME: We are not entirely consistent.
-#        We use prompt_toolkit for major prompts
-#        and click or simple code for others.
+# TODO: We are not entirely consistent.
+#       We use prompt_toolkit for major prompts
+#       and click or simple code for others.
 
 import click
 

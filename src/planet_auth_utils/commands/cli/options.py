@@ -126,10 +126,11 @@ def opt_project(function):
     return function
 
 
-# FIXME - investigate the use of click prompts, esp for password. Currently, some of this IO is delegated
-#         to the planet_auth library.  I generally think user IO belongs with the app, and not the
-#         the library, but since the lib also handles things like browser interaction this is not
-#         entirely easy to abstract away.
+# TODO -  Consider switching to click prompts where we current rely on the lower level planet_auth
+#         to prompt the user. Currently, some of this IO is delegated to the planet_auth library.
+#         I generally think user IO belongs with the app, and not the the library, but since the
+#         lib also handles things like browser interaction this is not entirely easy to abstract
+#         away.
 def opt_password(hidden=True):
     def decorator(function):
         """
