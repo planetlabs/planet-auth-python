@@ -80,7 +80,8 @@ or another storage mechanism should be used.
 
 
 # TODO: do we need a concept of "list" for the storage provider?
-#     "profiles list" would be the only consumer at this time.
+#     The CLI's "profiles list" would be the only consumer at this time,
+#     and the CLI does not support custom storage providers yet.
 class ObjectStorageProvider(ABC):
     """
     Abstract interface used to persist objects to storage.
@@ -107,13 +108,15 @@ class ObjectStorageProvider(ABC):
         """
 
 
-# TODO: Should we also provide a storage provider for keyring? https://pypi.org/project/keyring/
+# TODO: Should we also provide a reference storage provider implementation for keyring?
 #    We would have to work out how we want independent installations
 #    to interact, if not through ~/.planet/.  How would QGIS interact with the CLI
 #    to manage a session, for example?
+#    (See https://pypi.org/project/keyring/)
 class _SOPSAwareSingleFileSingleObjectStorageProvider(ObjectStorageProvider):
     """
-    Storage provider geared around backing a single object in a single file.
+    Storage provider geared around backing a single object in a single file
+    with paths take from the root of the local file system.
     """
 
     @staticmethod
