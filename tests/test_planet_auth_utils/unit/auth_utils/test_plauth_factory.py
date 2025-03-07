@@ -25,7 +25,7 @@ from planet_auth_utils.plauth_factory import PlanetAuthFactory, MissingArgumentE
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 from planet_auth_utils.profile import Profile
 
-from .utest_builtins import MockProductionEnv, MockStagingEnv
+from .builtins_test_impl import MockProductionEnv, MockStagingEnv
 
 from tests.test_planet_auth_utils.util import tdata_resource_file_path, TestWithHomeDirProfiles
 
@@ -37,7 +37,7 @@ PROFILE3_NAME = "test_profile3"
 class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCase):
     def setUp(self):
         os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
-            "tests.test_planet_auth_utils.unit.auth_utils.utest_builtins.UTestMockBuiltinConfigurationProvider"
+            "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
         )
         Builtins._builtin = None  # Reset built-in state.
         self.setUp_testHomeDir()
@@ -391,7 +391,7 @@ INVALID_PRIMARY_CONFIGS = [{"auth_server": "https://login-fake.planet.com/oauth2
 class TestResourceServerValidatorInitHelper(TestWithHomeDirProfiles, unittest.TestCase):
     def setUp(self):
         os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
-            "tests.test_planet_auth_utils.unit.auth_utils.utest_builtins.UTestMockBuiltinConfigurationProvider"
+            "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
         )
         Builtins._builtin = None  # Reset built-in state.
         self.setUp_testHomeDir()

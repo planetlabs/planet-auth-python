@@ -24,17 +24,17 @@ from tests.test_planet_auth.util import tdata_resource_file_path
 from planet_auth.auth import Auth
 
 CLIENT_CONFIG_FOR_USER_LOGIN = [
-    "okta_test_pkce_auth_code.json",
-    "okta_test_pkce_auth_code_client_secret.sops.json",
-    "okta_test_pkce_auth_code_pubkey.sops.json",
-    "okta_test_resource_owner.sops.json",
-    "okta_test_resource_owner_client_secret.sops.json",
-    "okta_test_resource_owner_client_pubkey.sops.json",
+    "oauth_pkce_auth_code.json",
+    "oauth_pkce_auth_code_client_secret.sops.json",
+    "oauth_pkce_auth_code_pubkey.sops.json",
+    "oauth_resource_owner.sops.json",
+    "oauth_resource_owner_client_secret.sops.json",
+    "oauth_resource_owner_client_pubkey.sops.json",
 ]
 
 CLIENT_CONIGS_FOR_CLIENT_LOGIN = [
-    "okta_test_client_credentials_client_secret.sops.json",
-    "okta_test_client_credentials_pubkey_literal.sops.json",
+    "oauth_client_credentials_client_secret.sops.json",
+    "oauth_client_credentials_pubkey_literal.sops.json",
 ]
 
 ## from tests.util import is_not_interactive_shell
