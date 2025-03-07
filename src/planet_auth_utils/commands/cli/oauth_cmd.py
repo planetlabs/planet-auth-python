@@ -16,6 +16,7 @@ import click
 import json
 import sys
 import textwrap
+import time
 
 from planet_auth import (
     AuthException,
@@ -30,6 +31,7 @@ from .options import (
     opt_audience,
     opt_client_id,
     opt_client_secret,
+    opt_human_readable,
     opt_open_browser,
     opt_organization,
     opt_password,
@@ -43,7 +45,50 @@ from .options import (
 from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
 
 
-def _print_jwt(token_str):
+class _jwt_human_dumps:
+    """
+    Wrapper object for controlling the json.dumps behavior of JWTs so that
+    we can display a version different from what is stored in memory.
+
+    For pretty printing JWTs, we convert timestamps into
+    human-readable strings.
+    """
+
+    def __init__(self, data):
+        self._data = data
+
+    def __json_pretty_dumps__(self):
+        def _human_timestamp_iso(d):
+            for key, value in list(d.items()):
+                if key in ["iat", "exp", "nbf"] and isinstance(value, int):
+                    fmt_time = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(value))
+                    if (key == "exp") and (d[key] < time.time()):
+                        fmt_time += " (Expired)"
+                    d[key] = fmt_time
+                elif isinstance(value, dict):
+                    _human_timestamp_iso(value)
+            return d
+
+        json_dumps = self._data.copy()
+        _human_timestamp_iso(json_dumps)
+        return json_dumps
+
+
+def _custom_json_dumps(obj):
+    try:
+        return obj.__json_pretty_dumps__()
+    except Exception:
+        return obj
+
+
+def _dumps_json_for_jwt(data: dict, human_readable: bool):
+    if human_readable:
+        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=_custom_json_dumps)
+    else:
+        return json.dumps(data, indent=2, sort_keys=True)
+
+
+def _print_jwt(token_str, human_readable):
     print("Untrusted JWT Decoding\n")
     print(f"RAW:\n    {token_str}\n")
     if token_str:
@@ -61,8 +106,10 @@ def _print_jwt(token_str):
             pretty_hex_signature += "{:02x}".format(c)
             i += 1
 
-        print(f'HEADER:\n{textwrap.indent(json.dumps(header, indent=2, sort_keys=True),prefix="    ")}\n')
-        print(f'BODY:\n{textwrap.indent(json.dumps(body, indent=2, sort_keys=True), prefix="    ")}\n')
+        print(
+            f'HEADER:\n{textwrap.indent(_dumps_json_for_jwt(data=header, human_readable=human_readable), prefix="    ")}\n'
+        )
+        print(f'BODY:\n{textwrap.indent(_dumps_json_for_jwt(body, human_readable=human_readable), prefix="    ")}\n')
         print(f'SIGNATURE:\n{textwrap.indent(pretty_hex_signature, prefix="    ")}\n')
 
 
@@ -388,8 +435,9 @@ def cmd_oauth_print_access_token(ctx, refresh):
 
 @cmd_oauth.command("decode-access-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_decode_jwt_access_token(ctx):
+def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
     """
     Decode a JWT access token locally and display its contents.  NO
     VALIDATION IS PERFORMED.  This function is intended for local
@@ -398,26 +446,28 @@ def cmd_oauth_decode_jwt_access_token(ctx):
     access tokens in other formats.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.access_token())
+    _print_jwt(saved_token.access_token(), human_readable=human_readable)
 
 
 @cmd_oauth.command("decode-id-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_decode_jwt_id_token(ctx):
+def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
     """
     Decode a JWT ID token locally and display its contents.  NO
     VALIDATION IS PERFORMED.  This function is intended for local
     debugging purposes.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.id_token())
+    _print_jwt(saved_token.id_token(), human_readable=human_readable)
 
 
 @cmd_oauth.command("decode-refresh-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_decode_jwt_refresh_token(ctx):
+def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     """
     Decode a JWT refresh token locally and display its contents.  NO
     VALIDATION IS PERFORMED.  This function is intended for local
@@ -426,4 +476,4 @@ def cmd_oauth_decode_jwt_refresh_token(ctx):
     refresh tokens in other formats.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.refresh_token())
+    _print_jwt(saved_token.refresh_token(), human_readable=human_readable)

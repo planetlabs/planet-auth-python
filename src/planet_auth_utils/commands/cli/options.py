@@ -275,6 +275,20 @@ def opt_audience(required=False):
     return decorator
 
 
+def opt_human_readable(function):
+    """
+    Click option to toggle raw / human-readable formatting.
+    """
+    function = click.option(
+        "--human-readable/--no-human-readable",
+        "-H",
+        help="Reformat fields to be human readable.",
+        default=False,
+        show_default=True,
+    )(function)
+    return function
+
+
 def opt_refresh(function):
     """
     Click option specifying a refresh should be attempted if applicable.
