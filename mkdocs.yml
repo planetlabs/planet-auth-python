@@ -37,8 +37,7 @@ theme:
         name: Switch to light mode
 
 plugins:
-  # - search:
-  #     indexing: 'full'
+  - search:
   - macros:
       include_dir: 'docs/examples'
       on_error_fail: true
