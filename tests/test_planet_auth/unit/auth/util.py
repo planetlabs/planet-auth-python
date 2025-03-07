@@ -27,7 +27,7 @@ import uuid
 
 from requests.auth import AuthBase
 
-from planet_auth.util import ObjectStorageProvider, ObjectStorageProvider_KeyType, FileBackedJsonObjectException
+from planet_auth.storage_utils import FileBackedJsonObjectException, ObjectStorageProvider_KeyType, ObjectStorageProvider
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator, ForbiddenRequestAuthenticator
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential

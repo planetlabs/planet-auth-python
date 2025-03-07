@@ -17,7 +17,7 @@ import pathlib
 import logging
 from typing import Optional
 
-from planet_auth.util import FileBackedJsonObject
+from planet_auth.storage_utils import FileBackedJsonObject
 from planet_auth.constants import USER_CONFIG_FILE
 
 

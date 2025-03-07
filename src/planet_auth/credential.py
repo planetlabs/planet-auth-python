@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from planet_auth.util import FileBackedJsonObject
+from planet_auth.storage_utils import FileBackedJsonObject
 
 
 class Credential(FileBackedJsonObject):

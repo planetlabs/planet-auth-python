@@ -17,6 +17,7 @@ import shutil
 import unittest
 
 import planet_auth
+import planet_auth.storage_utils
 from planet_auth.constants import AUTH_CONFIG_FILE_PLAIN
 
 from planet_auth_utils.builtins import Builtins
@@ -60,7 +61,7 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
             self.profile3_dir_path.joinpath(planet_auth.constants.AUTH_CONFIG_FILE_PLAIN),
         )
 
-        self.under_test_storage_provider = planet_auth.FileBackedJsonObject._default_storage_provider
+        self.under_test_storage_provider = planet_auth.storage_utils.FileBackedJsonObject._default_storage_provider
 
     def tearDown(self) -> None:
         self.tearDown_testHomeDir()

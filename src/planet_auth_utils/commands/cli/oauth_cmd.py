@@ -26,7 +26,7 @@ from planet_auth import (
     ClientCredentialsAuthClientBase,
     TokenValidator,
 )
-from planet_auth.util import _custom_json_class_dumper
+from planet_auth.util import custom_json_class_dumper
 
 from .options import (
     opt_audience,
@@ -77,7 +77,7 @@ class _jwt_human_dumps:
 
 def _json_dumps_for_jwt_dict(data: dict, human_readable: bool):
     if human_readable:
-        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=_custom_json_class_dumper)
+        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=custom_json_class_dumper)
     else:
         return json.dumps(data, indent=2, sort_keys=True)
 

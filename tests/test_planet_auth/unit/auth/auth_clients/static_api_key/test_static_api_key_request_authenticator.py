@@ -19,7 +19,7 @@ import pathlib
 
 from planet_auth.static_api_key.request_authenticator import FileBackedApiKeyRequestAuthenticator
 from planet_auth.static_api_key.static_api_key import FileBackedApiKey
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.storage_utils import FileBackedJsonObjectException
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 

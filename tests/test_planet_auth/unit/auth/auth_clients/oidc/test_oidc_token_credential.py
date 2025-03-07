@@ -15,7 +15,7 @@
 import unittest
 
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
-from planet_auth.util import FileBackedJsonObjectException
+from planet_auth.storage_utils import FileBackedJsonObjectException
 from tests.test_planet_auth.util import tdata_resource_file_path
 
 

@@ -20,7 +20,7 @@ from typing import Optional, Union
 from planet_auth.auth_client import AuthClient, AuthClientConfig
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
-from planet_auth.util import ObjectStorageProvider
+from planet_auth.storage_utils import ObjectStorageProvider
 
 
 # class AuthClientContextException(AuthException):

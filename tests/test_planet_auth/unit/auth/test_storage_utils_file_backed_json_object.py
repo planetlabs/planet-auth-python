@@ -26,10 +26,10 @@ import pytest
 
 from planet_auth.credential import Credential
 from planet_auth.static_api_key.request_authenticator import FileBackedApiKey
-from planet_auth.util import (
-    FileBackedJsonObject,
+from planet_auth.storage_utils import (
     FileBackedJsonObjectException,
     InvalidDataException,
+    FileBackedJsonObject,
 )
 
 from tests.test_planet_auth.unit.auth.util import MockObjectStorageProvider, MockStorageObjectNotFound

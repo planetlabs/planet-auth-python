@@ -15,7 +15,7 @@
 from typing import Optional
 
 from planet_auth.credential import Credential
-from planet_auth.util import InvalidDataException, ObjectStorageProvider
+from planet_auth.storage_utils import InvalidDataException, ObjectStorageProvider
 
 
 class FileBackedPlanetLegacyApiKey(Credential):

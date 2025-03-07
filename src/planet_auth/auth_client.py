@@ -22,7 +22,7 @@ import planet_auth.logging.auth_logger
 from planet_auth.auth_exception import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
-from planet_auth.util import FileBackedJsonObject, InvalidDataException, ObjectStorageProvider
+from planet_auth.storage_utils import InvalidDataException, ObjectStorageProvider, FileBackedJsonObject
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
