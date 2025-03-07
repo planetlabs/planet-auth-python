@@ -19,6 +19,7 @@ import logging
 
 import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
+from planet_auth.util import _custom_json_class_dumper
 
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
@@ -44,13 +45,6 @@ def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
         return wrapper
 
     return decorator
-
-
-def _custom_json_class_dumper(obj):
-    try:
-        return obj.__json_pretty_dumps__()
-    except Exception:
-        return obj
 
 
 def print_obj(obj):

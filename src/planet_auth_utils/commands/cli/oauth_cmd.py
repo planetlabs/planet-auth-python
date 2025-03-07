@@ -26,6 +26,7 @@ from planet_auth import (
     ClientCredentialsAuthClientBase,
     TokenValidator,
 )
+from planet_auth.util import _custom_json_class_dumper
 
 from .options import (
     opt_audience,
@@ -74,16 +75,9 @@ class _jwt_human_dumps:
         return json_dumps
 
 
-def _custom_json_dumps(obj):
-    try:
-        return obj.__json_pretty_dumps__()
-    except Exception:
-        return obj
-
-
-def _dumps_json_for_jwt(data: dict, human_readable: bool):
+def _json_dumps_for_jwt_dict(data: dict, human_readable: bool):
     if human_readable:
-        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=_custom_json_dumps)
+        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=_custom_json_class_dumper)
     else:
         return json.dumps(data, indent=2, sort_keys=True)
 
@@ -107,9 +101,11 @@ def _print_jwt(token_str, human_readable):
             i += 1
 
         print(
-            f'HEADER:\n{textwrap.indent(_dumps_json_for_jwt(data=header, human_readable=human_readable), prefix="    ")}\n'
+            f'HEADER:\n{textwrap.indent(_json_dumps_for_jwt_dict(data=header, human_readable=human_readable), prefix="    ")}\n'
         )
-        print(f'BODY:\n{textwrap.indent(_dumps_json_for_jwt(body, human_readable=human_readable), prefix="    ")}\n')
+        print(
+            f'BODY:\n{textwrap.indent(_json_dumps_for_jwt_dict(body, human_readable=human_readable), prefix="    ")}\n'
+        )
         print(f'SIGNATURE:\n{textwrap.indent(pretty_hex_signature, prefix="    ")}\n')
 
 

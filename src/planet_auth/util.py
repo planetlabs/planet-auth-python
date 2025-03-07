@@ -494,3 +494,10 @@ class FileBackedJsonObject:
     #    if self._data:
     #        return self._data.get(field)
     #    return None
+
+
+def _custom_json_class_dumper(obj):
+    try:
+        return obj.__json_pretty_dumps__()
+    except Exception:
+        return obj
