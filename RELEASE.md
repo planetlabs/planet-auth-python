@@ -19,12 +19,15 @@ changes (like documentation).
 The `main` branch is intended to be kept stable with the most up-to-date
 feature set, and should normally be the branch used for new feature releases.
 Patch branches may be necessary when the need to fix older versions arises.
+The release pipelines supports releasing from any branch.
 
 To release a new version, complete the following steps:
 
 1. Create a release branch off of `main` that bumps the version number in
-   [version.txt](./version.txt), and updates the
-   [changelog.md](./docs/changelog.md).
+   branch invariant [version.txt](./version.txt) file, and updates the
+   [changelog.md](./docs/changelog.md).  The [version-with-buildnum.txt](./version-with-buildnum.txt)
+   should also be kept up to date, and is used to assign versions to local
+   builds.
 2. Collect all features targeted for the intended release in the branch, and
    create a PR to merge the release branch into `main`.
 3. Ensure that all tests are passing on `main` branch after all merges.
