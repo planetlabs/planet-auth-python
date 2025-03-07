@@ -232,8 +232,9 @@ def cmd_oauth_list_scopes(ctx):
 
 @cmd_oauth.command("validate-access-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_validate_access_token_remote(ctx):
+def cmd_oauth_validate_access_token_remote(ctx, human_readable):
     """
     Validate the access token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -246,16 +247,17 @@ def cmd_oauth_validate_access_token_remote(ctx):
     if not validation_json or not validation_json.get("active"):
         print_obj("INVALID")
         sys.exit(1)
-    # print_obj("OK")
-    print_obj(validation_json)
+    # print_obj(validation_json)
+    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-access-token-local")
 @click.pass_context
 @opt_audience()
 @opt_scope
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_validate_access_token_local(ctx, audience, scope):
+def cmd_oauth_validate_access_token_local(ctx, audience, scope, human_readable):
     """
     Validate the access token locally.
 
@@ -278,13 +280,15 @@ def cmd_oauth_validate_access_token_local(ctx, audience, scope):
     validation_json = auth_client.validate_access_token_local(
         access_token=saved_token.access_token(), required_audience=audience, scopes_anyof=scope
     )
-    print_obj(validation_json)
+    # print_obj(validation_json)
+    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-id-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_validate_id_token_remote(ctx):
+def cmd_oauth_validate_id_token_remote(ctx, human_readable):
     """
     Validate the ID token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -297,14 +301,15 @@ def cmd_oauth_validate_id_token_remote(ctx):
     if not validation_json or not validation_json.get("active"):
         print_obj("INVALID")
         sys.exit(1)
-    # print_obj("OK")
-    print_obj(validation_json)
+    # print_obj(validation_json)
+    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-id-token-local")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_validate_id_token_local(ctx):
+def cmd_oauth_validate_id_token_local(ctx, human_readable):
     """
     Validate the ID token. This command validates the ID token locally,
     checking the token signature and claims against expected values.
@@ -316,14 +321,15 @@ def cmd_oauth_validate_id_token_local(ctx):
     saved_token.load()
     # Throws on error.
     validation_json = auth_client.validate_id_token_local(saved_token.id_token())
-    # print_obj("OK")
-    print_obj(validation_json)
+    # print_obj(validation_json)
+    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-refresh-token")
 @click.pass_context
+@opt_human_readable
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def cmd_oauth_validate_refresh_token_remote(ctx):
+def cmd_oauth_validate_refresh_token_remote(ctx, human_readable):
     """
     Validate the refresh token. Validation is performed by calling
     out to the auth provider's token introspection network service.
@@ -336,8 +342,8 @@ def cmd_oauth_validate_refresh_token_remote(ctx):
     if not validation_json or not validation_json.get("active"):
         print_obj("INVALID")
         sys.exit(1)
-    # print_obj("OK")
-    print_obj(validation_json)
+    # print_obj(validation_json)
+    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("revoke-access-token")
