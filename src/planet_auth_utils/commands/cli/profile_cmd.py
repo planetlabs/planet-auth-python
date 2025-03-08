@@ -100,15 +100,12 @@ def cmd_profile(ctx):
 
 
 def _load_all_on_disk_profiles() -> dict:
-    # Any directory in ~/.planet is only a potential profile. We only
-    # consider it an actual profile if a valid client config file can be found.
-    candidate_profile_names = [x.name for x in Profile.profile_root().iterdir() if x.is_dir()]
-    candidate_profile_names.sort()
+    candidate_profile_names = Profile.list_on_disk_profiles()
     profiles_dicts = OrderedDict()
     for candidate_profile_name in candidate_profile_names:
         try:
-            # normalized_profile_name, conf = PlanetAuthFactory.load_auth_client_config_from_profile(candidate_profile_name)
-            conf = Profile.load_auth_client_config(candidate_profile_name)
+            # conf = Profile.load_auth_client_config(candidate_profile_name)
+            _, conf = PlanetAuthFactory.load_auth_client_config_from_profile(candidate_profile_name)
             profiles_dicts[candidate_profile_name] = conf
         except Exception as ex:
             logger.debug(msg=f'"{candidate_profile_name}" was not a valid locally defined profile directory: {ex}')

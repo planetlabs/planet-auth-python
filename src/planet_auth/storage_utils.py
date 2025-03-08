@@ -63,6 +63,17 @@ class ObjectStorageProvider(ABC):
         Check whether a given object exists in storage.
         """
 
+    @staticmethod
+    def _default_storage_provider():
+        # Always create JIT to better handle cases where runtime changes to
+        # the env may impact behavior (like code that sets HOME in the env).
+        # Not great for performance.  Probably an edge case, but one unit
+        # tests depend on.  There should be a better way.
+        return _SOPSAwareFilesystemObjectStorageProvider()
+        # if not ObjectStorageProvider._default_storage_provider_impl:
+        #     ObjectStorageProvider._default_storage_provider_impl = _SOPSAwareFilesystemObjectStorageProvider()
+        # return ObjectStorageProvider._default_storage_provider_impl
+
 
 # TODO: Should we also provide a reference storage provider implementation for keyring?
 #    We would have to work out how we want independent installations
@@ -80,8 +91,8 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
             self._storage_root = root
         else:
             # self._storage_root = pathlib.Path.home() / ".planet"
-            # self._storage_root = pathlib.Path.home()
-            self._storage_root = pathlib.Path("/")
+            # self._storage_root = pathlib.Path("/")
+            self._storage_root = pathlib.Path.home()
 
     def _obj_filepath(self, obj_key):
         if obj_key.is_absolute():
@@ -152,13 +163,16 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
             _SOPSAwareFilesystemObjectStorageProvider._write_json(file_path, data)
 
     def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
-        return self._load_file(file_path=self._obj_filepath(obj_key=key))
+        obj_filepath = self._obj_filepath(key)
+        return self._load_file(file_path=obj_filepath)
 
     def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
-        self._save_file(file_path=self._obj_filepath(obj_key=key), data=data)
+        obj_filepath = self._obj_filepath(key)
+        self._save_file(file_path=obj_filepath, data=data)
 
     def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
-        return self._obj_filepath(obj_key=key).exists()
+        obj_filepath = self._obj_filepath(key)
+        return obj_filepath.exists()
 
 
 class FileBackedJsonObjectException(AuthException):
@@ -218,8 +232,6 @@ class FileBackedJsonObject:
     # TODO: Consider a shift to a schema framework for validation?
     #       E.g. schematics Model.
 
-    _default_storage_provider = _SOPSAwareFilesystemObjectStorageProvider()
-
     def __init__(
         self,
         data: Optional[Dict[str, Any]] = None,
@@ -244,7 +256,7 @@ class FileBackedJsonObject:
         if storage_provider:
             self._object_storage_provider = storage_provider
         else:
-            self._object_storage_provider = self._default_storage_provider
+            self._object_storage_provider = ObjectStorageProvider._default_storage_provider()
 
     def __json_pretty_dumps__(self):
         # This function is provided so json.dumps can display
@@ -289,7 +301,7 @@ class FileBackedJsonObject:
         if storage_provider:
             self._object_storage_provider = storage_provider
         else:
-            self._object_storage_provider = self._default_storage_provider
+            self._object_storage_provider = ObjectStorageProvider._default_storage_provider()
 
     def storage_provider(self) -> ObjectStorageProvider:
         """

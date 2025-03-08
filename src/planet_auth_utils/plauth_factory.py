@@ -87,7 +87,10 @@ class PlanetAuthFactory:
             auth_client_config = Builtins.load_builtin_auth_client_config(normalized_profile_name)
         else:
             normalized_profile_name = profile_name.lower()
-            auth_client_config = Profile.load_auth_client_config(normalized_profile_name)
+            auth_client_config = Profile.load_auth_client_config(
+                profile=normalized_profile_name,
+                # storage_provider=storage_provider,
+            )
 
         return normalized_profile_name, auth_client_config
 
@@ -99,7 +102,8 @@ class PlanetAuthFactory:
         # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> Auth:
         normalized_selected_profile, auth_client_config = PlanetAuthFactory.load_auth_client_config_from_profile(
-            profile_name=profile_name
+            profile_name=profile_name,
+            # storage_provider=storage_provider,
         )
 
         token_file_path = PlanetAuthFactory._token_file_path(

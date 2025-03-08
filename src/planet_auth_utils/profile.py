@@ -22,6 +22,8 @@ from planet_auth.constants import (
     AUTH_CONFIG_FILE_SOPS,
     AUTH_CONFIG_FILE_PLAIN,
 )
+from planet_auth.storage_utils import ObjectStorageProvider
+
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
@@ -41,7 +43,13 @@ class Profile:
         """
         Root directory used for profile storage.
         """
-        return pathlib.Path.home().joinpath(".planet")
+        # return pathlib.Path.home().joinpath(".planet")
+        # We used to assume file storage.  We now support pluggable storage implementation.
+        # We let the storage provider determine the real path (if there is one) and in this
+        # Profile class we now (mostly) deal in the abstract idea of the path as an object
+        # identifier that may or may not be file system based, depending on the storage
+        # provider in use.
+        return pathlib.Path(".planet")
 
     @staticmethod
     def get_profile_dir_path(profile: str) -> pathlib.Path:
@@ -66,7 +74,10 @@ class Profile:
 
     @staticmethod
     def get_profile_file_path_with_priority(
-        filenames: List[str], profile: str, override_path: Union[str, pathlib.PurePath, None] = None
+        filenames: List[str],
+        profile: str,
+        override_path: Union[str, pathlib.PurePath, None] = None,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> pathlib.Path:
         """
         Given a list of candidate filenames, choose the first that that
@@ -84,21 +95,27 @@ class Profile:
                 filename=candidate_filename, profile=profile, override_path=None
             )
             last_candidate_path = candidate_path
-            if candidate_path.exists():  # TODO - use storage provider when profiles support custom storage provider
+            # TODO: custom storage providers not yet supported in this path
+            _storage_provider = ObjectStorageProvider._default_storage_provider()
+            if _storage_provider.obj_exists(candidate_path):
                 return candidate_path
 
         return last_candidate_path  # type: ignore
 
     @staticmethod
-    def load_auth_client_config(profile: str) -> AuthClientConfig:
+    def load_auth_client_config(
+        profile: str,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
+    ) -> AuthClientConfig:
         auth_config_path = Profile.get_profile_file_path_with_priority(
             filenames=[AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN],
             profile=profile,
         )
-        if auth_config_path.exists():  # TODO - use storage provider when profiles support custom storage provider
+        # TODO: custom storage providers not yet supported in this path
+        _storage_provider = ObjectStorageProvider._default_storage_provider()
+        if _storage_provider.obj_exists(auth_config_path):
             auth_logger.debug(msg='Using auth client configuration from "{}"'.format(str(auth_config_path)))
-            # client_config = AuthClientConfig.from_file(file_path=auth_config_path, storage_provider=XXX_What)
-            client_config = AuthClientConfig.from_file(auth_config_path)
+            client_config = AuthClientConfig.from_file(file_path=auth_config_path, storage_provider=_storage_provider)
         else:
             raise FileNotFoundError('Auth configuration file "{}" not found.'.format(str(auth_config_path)))
 
@@ -109,7 +126,13 @@ class Profile:
         # Any directory in ~/.planet is only a potential profile. We only
         # consider it an actual profile if a client config file can be found.
         # Whether or not a profile is valid is not considered.
-        candidate_profile_names = [x.name for x in Profile.profile_root().iterdir() if x.is_dir()]
+
+        # TODO: This assumes the default storage provider default behavior, since
+        #   The placement under is now set by the storage provider, and not the Profile class.
+        profile_abs_dir = pathlib.Path.home() / Profile.profile_root()
+        if not profile_abs_dir.is_dir():
+            return []
+        candidate_profile_names = [x.name for x in profile_abs_dir.iterdir() if x.is_dir()]
         profile_names = []
         for candidate_profile_name in candidate_profile_names:
             config_file = Profile.get_profile_file_path_with_priority(
@@ -117,7 +140,9 @@ class Profile:
                 filenames=[AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN],
                 override_path=None,
             )
-            if config_file.exists():  # TODO - use storage provider when profiles support custom storage provider
+            # TODO: custom storage providers not yet supported in this path
+            _storage_provider = ObjectStorageProvider._default_storage_provider()
+            if _storage_provider.obj_exists(config_file):
                 profile_names.append(candidate_profile_name)
 
         profile_names.sort()
