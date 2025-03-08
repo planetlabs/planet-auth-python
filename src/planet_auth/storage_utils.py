@@ -96,7 +96,8 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
 
     def _obj_filepath(self, obj_key):
         if obj_key.is_absolute():
-            obj_path = self._storage_root / obj_key.relative_to("/")
+            # obj_path = self._storage_root / obj_key.relative_to("/")
+            obj_path = obj_key
         else:
             obj_path = self._storage_root / obj_key
         return obj_path
