@@ -17,7 +17,7 @@ import logging
 import importlib.metadata
 import sys
 
-from planet_auth import Auth, AuthException
+from planet_auth import Auth, AuthException, setStructuredLogging
 
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
 
@@ -58,6 +58,9 @@ def cmd_plauth(ctx, loglevel, auth_profile, token_file):
         click.echo(ctx.get_help())
         sys.exit(0)
 
+    # cli_logger = logging.getLogger("plauth-logger")
+    # setPyLoggerForAuthLogger(cli_logger)
+    setStructuredLogging(nested_key=None)
     logging.basicConfig(level=loglevel)
 
     ctx.ensure_object(dict)
