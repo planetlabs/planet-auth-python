@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib
-import logging
 import os
 from typing import List, Optional
 
 from planet_auth import AuthClientConfig
 from planet_auth_utils.profile import ProfileException
 from planet_auth_utils.constants import EnvironmentVariables
+from planet_auth.logging.auth_logger import getAuthLogger
 from .builtins_provider import BuiltinConfigurationProviderInterface, EmptyBuiltinProfileConstants
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 class BuiltinsException(ProfileException):
@@ -37,25 +37,20 @@ def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
         try:
             builtin_provider_module = importlib.import_module(module_name)  # nosemgrep - WARNING - See below
             if class_name not in builtin_provider_module.__dict__:
-                logger.warning(
-                    "Error loading built-in provider. Module %s does not contain class %s.",
-                    module_name,
-                    class_name,
+                auth_logger.warning(
+                    msg=f"Error loading built-in provider. Module {module_name} does not contain class {class_name}.",
                 )
             else:
                 provider_instance = builtin_provider_module.__dict__[class_name]()
                 return provider_instance
         except ImportError as ie:
             if log_warning:
-                logger.warning(
-                    "Error loading built-in provider %s. Error: %s.",
-                    builtin_provider_fq_class_name,
-                    ie.msg,
+                auth_logger.warning(
+                    msg=f'Error loading built-in provider "{builtin_provider_fq_class_name}". Error: {ie.msg}.',
                 )
     else:
-        logger.warning(
-            "'%s' could not be parsed for module and class name while loading built-in provider.",
-            builtin_provider_fq_class_name,
+        auth_logger.warning(
+            msg=f'"{builtin_provider_fq_class_name}" could not be parsed for module and class name while loading built-in provider.',
         )
     return None
 
@@ -158,9 +153,8 @@ class Builtins:
     def load_builtin_auth_client_config(profile: str) -> AuthClientConfig:
         Builtins._load_builtin_jit()
         if Builtins.is_builtin_profile(profile):
-            logger.debug(
-                'Using built-in "%s" auth client configuration (ignoring on disk config, if it exists)',
-                profile.lower(),
+            auth_logger.debug(
+                msg=f'Using built-in "{profile.lower()}" auth client configuration (ignoring on disk config, if it exists)',
             )
             client_config = AuthClientConfig.from_dict(Builtins.builtin_profile_auth_client_config_dict(profile))
         else:
