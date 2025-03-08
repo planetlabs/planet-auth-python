@@ -45,31 +45,6 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
 
     The factory methods in the base class accept a dictionary, and will
     return an instance of an appropriate subclass.
-
-    Example:
-        ```python
-        from planet_auth import AuthClientConfig
-        config_dict = {
-            "client_type": "oidc_auth_code",
-            "auth_server": "https://your_oauth_server/oauth2",
-            "client_id": "your_client_id",
-            "redirect_uri": "https://your_client_redirect_uri",
-            "scopes": [
-                "planet",
-                "offline_access",
-                "openid",
-                "profile"]
-        }
-        my_auth_config = AuthClientConfig.from_dict(config_dict)
-        # an instance of AuthCodeClientConfig will be created
-        ```
-
-    Example:
-        ```python
-        from planet_auth import AuthClientConfig
-        my_auth_config = AuthClientConfig.from_file("/path/to/json/file/client_config.json")
-        # an instance of AuthCodeClientConfig will be created
-        ```
     """
 
     _typename_map: Dict[str, AuthClientConfig] = {}

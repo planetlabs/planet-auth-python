@@ -31,13 +31,13 @@ _lib_global_py_logger = logging.getLogger("planet_auth")
 _lib_global_do_structured_logging = False
 _lib_global_nested_logging_key = None
 
-# Services like pda-admin use the `json_logging` module which expects
+# Some services use the `json_logging` module which expects
 # additional logging parameters to be stored under the 'props' key. This is
-# the default for now so we don't break pda-admin
+# the default for now so we don't break those dependant services' logging.
 DEFAULT_NESTED_KEY = "props"
 
 
-# class AuthLogger(logging.Logger):  # TODO: is this a good idea, or a better approach?
+# class AuthLogger(logging.Logger):  # TODO?: is this a good idea, or a better approach?
 class AuthLogger:
     """
     Class that wraps the Python logger so that all logs emitted from
