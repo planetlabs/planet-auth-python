@@ -61,7 +61,7 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
             self.profile3_dir_path.joinpath(planet_auth.constants.AUTH_CONFIG_FILE_PLAIN),
         )
 
-        self.under_test_storage_provider = planet_auth.storage_utils.FileBackedJsonObject._default_storage_provider
+        self.under_test_storage_provider = planet_auth.storage_utils.ObjectStorageProvider._default_storage_provider()
 
     def tearDown(self) -> None:
         self.tearDown_testHomeDir()

@@ -72,7 +72,7 @@ class ProfileTest(TestWithHomeDirProfiles, unittest.TestCase):
     def test_filepath(self):
         under_test = Profile.get_profile_file_path(filename="testfile.dat", profile="test_profile", override_path=None)
         self.assertIsInstance(under_test, pathlib.Path)
-        self.assertEqual(pathlib.Path.home().joinpath(".planet/test_profile/testfile.dat"), under_test)
+        self.assertEqual(pathlib.Path(".planet/test_profile/testfile.dat"), under_test)
 
     def test_pathfile_override(self):
         under_test = Profile.get_profile_file_path(
@@ -91,7 +91,7 @@ class ProfileTest(TestWithHomeDirProfiles, unittest.TestCase):
         under_test = Profile.get_profile_file_path_with_priority(
             filenames=["does_not_exist_1", "does_not_exist_2"], profile="test_profile", override_path=None
         )
-        self.assertEqual(pathlib.Path.home().joinpath(".planet/test_profile/does_not_exist_2"), under_test)
+        self.assertEqual(pathlib.Path(".planet/test_profile/does_not_exist_2"), under_test)
 
     def test_priority_path_first_choice_wins_if_exists(self):
         profile_dir = pathlib.Path.home().joinpath(".planet/test_profile")
@@ -100,7 +100,7 @@ class ProfileTest(TestWithHomeDirProfiles, unittest.TestCase):
         under_test = Profile.get_profile_file_path_with_priority(
             filenames=["does_exist_1", "does_not_exist_2"], profile="test_profile", override_path=None
         )
-        self.assertEqual(pathlib.Path.home().joinpath(".planet/test_profile/does_exist_1"), under_test)
+        self.assertEqual(pathlib.Path(".planet/test_profile/does_exist_1"), under_test)
 
     def test_load_client_none(self):
         with self.assertRaises(ProfileException):

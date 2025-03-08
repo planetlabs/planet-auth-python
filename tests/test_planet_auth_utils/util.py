@@ -44,6 +44,8 @@ class TestWithHomeDirProfiles:
             os.environ.pop("HOME")
 
     def mkProfileDir(self, profile_name) -> pathlib.Path:
-        new_profile_dir_path = Profile.get_profile_dir_path(profile_name)
+        # Mimic the behavior of the default storage provider
+        new_profile_dir_path = pathlib.Path.home() / Profile.get_profile_dir_path(profile_name)
+        # new_profile_dir_path = Profile.get_profile_dir_path(profile_name)
         new_profile_dir_path.mkdir()
         return new_profile_dir_path
