@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import warnings
 
 from typing import List, Optional, Tuple
@@ -36,8 +35,9 @@ from planet_auth_utils.profile import Profile
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfigEnhanced
 from planet_auth_utils.constants import EnvironmentVariables
+from planet_auth.logging.auth_logger import getAuthLogger
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 class PlanetAuthFactory:
@@ -335,14 +335,10 @@ class PlanetAuthFactory:
                     save_token_file=save_token_file,
                 )
             except Exception as e:
-                logger.warning(
-                    'Unable to initialize user selected profile "%s".'
-                    ' Profile was selected from %s environment variable or "%s" configuration file.'
-                    " Error: %s",
-                    effective_user_selected_profile,
-                    EnvironmentVariables.AUTH_PROFILE,
-                    user_config_file.path(),
-                    e,
+                auth_logger.warning(
+                    msg=f'Unable to initialize user selected profile "{effective_user_selected_profile}".'
+                    f' Profile was selected from {EnvironmentVariables.AUTH_PROFILE} environment variable or "{user_config_file.path()}" configuration file.'
+                    f" Error: {e}"
                 )
                 log_fallback_warning = True
 
@@ -387,7 +383,9 @@ class PlanetAuthFactory:
         # Fall back to a built-in default configuration when all else fails.
         #
         if log_fallback_warning:
-            logger.warning('Loading built-in profile "%s" as a fallback.', Builtins.builtin_default_profile_name())
+            auth_logger.warning(
+                msg=f'Loading built-in profile "{Builtins.builtin_default_profile_name()}" as a fallback.'
+            )
 
         return PlanetAuthFactory._init_context_from_profile(
             profile_name=Builtins.builtin_default_profile_name(),

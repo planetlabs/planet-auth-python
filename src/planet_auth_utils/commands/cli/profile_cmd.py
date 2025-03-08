@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import click
-import logging
 import sys
 from collections import OrderedDict
 from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
 
 from planet_auth import AuthClient, AuthClientConfig, AuthException
+from planet_auth.logging.auth_logger import getAuthLogger
 from planet_auth.constants import (
     AUTH_CONFIG_FILE_PLAIN,
     AUTH_CONFIG_FILE_SOPS,
@@ -32,7 +32,7 @@ from planet_auth_utils.constants import EnvironmentVariables
 from .options import opt_long, opt_sops
 from .util import recast_exceptions_to_click, print_obj
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 def _handle_canceled():
@@ -108,7 +108,9 @@ def _load_all_on_disk_profiles() -> dict:
             _, conf = PlanetAuthFactory.load_auth_client_config_from_profile(candidate_profile_name)
             profiles_dicts[candidate_profile_name] = conf
         except Exception as ex:
-            logger.debug(msg=f'"{candidate_profile_name}" was not a valid locally defined profile directory: {ex}')
+            auth_logger.debug(
+                msg=f'"{candidate_profile_name}" was not a valid locally defined profile directory: {ex}'
+            )
 
     return profiles_dicts
 

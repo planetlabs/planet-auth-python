@@ -15,7 +15,6 @@
 import click
 import functools
 import json
-import logging
 
 import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
@@ -24,9 +23,6 @@ from planet_auth.util import custom_json_class_dumper
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
 from .prompts import prompt_change_user_default_profile_if_different
-
-
-logger = logging.getLogger(__name__)
 
 
 def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
