@@ -14,14 +14,14 @@
 
 import os
 import pathlib
-import logging
 from typing import Optional
 
 from planet_auth.util import FileBackedJsonObject
 from planet_auth.constants import USER_CONFIG_FILE
+from planet_auth.logging.auth_logger import getAuthLogger
 
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 class PlanetAuthUserConfig(FileBackedJsonObject):
@@ -104,6 +104,6 @@ class PlanetAuthUserConfigEnhanced(PlanetAuthUserConfig):
                 if config_file_value:
                     return config_file_value
             except Exception as ex:
-                logger.debug(f"{ex}")  # pylint: disable=W1203
+                auth_logger.debug(msg=f"{ex}")
 
         return fallback_value
