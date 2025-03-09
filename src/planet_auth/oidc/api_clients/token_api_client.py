@@ -26,6 +26,10 @@ class TokenApiException(OidcApiClientException):
         super().__init__(**kwargs)
 
 
+class TokenApiTimeoutException(TokenApiException):
+    pass
+
+
 class TokenApiClient(OidcApiClient):
     """
     Low level API client for the OAuth Token endpoint. See
@@ -63,7 +67,7 @@ class TokenApiClient(OidcApiClient):
         return json_response
 
     def _polling_checked_call(self, token_params, timeout, poll_interval, auth_enricher=None):
-        sleep_counter = 0
+        start_time = time.time()
         while True:
             try:
                 json_response = self._checked_call(token_params=token_params, auth_enricher=auth_enricher)
@@ -75,14 +79,13 @@ class TokenApiClient(OidcApiClient):
                     poll_interval += 5  # See RFC 8628
                 else:
                     raise oe
-            if sleep_counter < timeout:
-                # FIXME: a weakness here is we are not counting the time spent in the HTTP call against the timeout.
+            now_time = time.time()
+            if (now_time - start_time) < timeout:
                 time.sleep(poll_interval)
-                sleep_counter += poll_interval
             else:
                 # We expect a expired_token error code, but the caller could
                 # indicate they don't want to wait as long as the server is willing to.
-                raise TokenApiException(message="Timeout exceeded")
+                raise TokenApiTimeoutException(message="Timeout exceeded")
 
     def get_token_from_refresh(
         self,
