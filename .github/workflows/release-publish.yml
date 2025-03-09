@@ -23,7 +23,7 @@ jobs:
     name: "Release package to PyPi (Test)"
     if: inputs.publish-to == 'pypi-test' || inputs.publish-to == 'all'
     runs-on: ubuntu-latest
-    # environment: staging
+    # environment: pypi-test
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -57,7 +57,10 @@ jobs:
     name: "Release package to PyPi (Production)"
     if: inputs.publish-to == 'pypi-prod' || inputs.publish-to == 'all'
     runs-on: ubuntu-latest
-    # environment: staging
+    # environment: pypi-prod
+    permissions:
+      # Needed for Trusted Publishing
+      id-token: write
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -76,10 +79,16 @@ jobs:
           name: planet-auth-src-targz
           path: dist
       - name: "Nox: Publish to PyPi (Production)"
+        if: False # Disabled.  Using action which uses OIDC.
         env:
           NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           nox -s pkg_publish_pypi_prod
+      - name: "Trusted Publishing - Publish to PyPi (Production)"
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          username: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
 
   release-none:
     name: "Release (None)"
