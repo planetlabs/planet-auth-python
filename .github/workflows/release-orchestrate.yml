@@ -109,3 +109,40 @@ jobs:
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
+  publish-2:
+    # Python trusted publishing does not currently support
+    # reusable workflows.  I really would prefer this be part
+    # of "uses: ./.github/workflows/release-publish.yml" for
+    # better encapsulation.
+    name: "Publish Release Artifacts (Trusted)"
+    needs: [package, generate-release, generate-build-number]
+    runs-on: ubuntu-latest
+    # environment: pypi-prod
+    permissions:
+      # Needed for Trusted Publishing
+      id-token: write
+    steps:
+      # - name: "Checkout code"
+      #   uses: actions/checkout@v4
+      # - name: Prepare common Python build environment
+      #   uses: ./.github/actions/python-build-env-setup
+      #   with:
+      #     python-version: ${{ env.PYTHON_VERSION }}
+      - name: "Download Wheel Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-wheel
+          path: dist
+      - name: "Download Source Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-src-targz
+          path: dist
+      # - name: "Nox: Publish to PyPi (Production)"
+      #   if: False # Disabled.  Using action which uses OIDC.
+      #   env:
+      #     NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      #   run: |
+      #     nox -s pkg_publish_pypi_prod
+      - name: "Trusted Publishing - Publish to PyPi (Production)"
+        uses: pypa/gh-action-pypi-publish@release/v1
