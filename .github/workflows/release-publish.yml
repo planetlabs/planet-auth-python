@@ -86,9 +86,6 @@ jobs:
           nox -s pkg_publish_pypi_prod
       - name: "Trusted Publishing - Publish to PyPi (Production)"
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          username: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
 
   release-none:
     name: "Release (None)"
