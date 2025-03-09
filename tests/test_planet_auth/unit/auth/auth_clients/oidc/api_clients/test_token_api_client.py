@@ -247,7 +247,7 @@ class TokenApiClientTest(unittest.TestCase):
         fg_mock_sleep = FreezeGunMockSleep(frozen_time)
         with mock.patch("time.sleep", side_effect=fg_mock_sleep.mock_sleep):
             under_test = TokenApiClient(token_uri=TEST_API_ENDPOINT)
-            with self.assertRaises(TokenApiTimeoutException) as ex:
+            with self.assertRaises(TokenApiTimeoutException):
                 under_test.poll_for_token_from_device_code(
                     client_id=TEST_CLIENT_ID,
                     device_code="__utest_mock_device_code__",
