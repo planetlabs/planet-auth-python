@@ -124,7 +124,7 @@ implicit_optional = true
 [tool.pylint.main]
 disable = [
     "format",  # We use black for formatting, so disable all formatting checks
-    "fixme",  # Don't fail our build for TODO/FIXME comments.
+    # "fixme",
     #
     "broad-exception-caught",
     "consider-using-f-string",
@@ -143,6 +143,11 @@ disable = [
     # "F", # fatal, if an error occurred which prevented pylint from doing
     "protected-access"
 ]
+
+[tool.pylint.miscellaneous]
+# List of note tags to take in consideration for the "fixme" rule, separated by a comma.
+# notes = ["FIXME", "XXX", "TODO"]
+notes = ["FIXME", "XXX"]
 
 #[tool.pylint.format]
 #max-line-length = 119
