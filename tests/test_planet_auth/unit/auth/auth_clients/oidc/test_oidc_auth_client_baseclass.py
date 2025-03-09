@@ -516,6 +516,7 @@ class OidcAuthClientWithPubKeyClientConfigTest(unittest.TestCase):
             under_test.client_privkey_data()
 
     def test_lazy_load_only_once(self):
+        # pylint: disable=fixme
         # FIXME: wrapping the object in this way doesn't seem to actually
         #   catch call counts for internal method calls.  Stepping through
         #   debugger seems to indicate proper behavior.
@@ -529,9 +530,9 @@ class OidcAuthClientWithPubKeyClientConfigTest(unittest.TestCase):
         under_test.check()
         self.assertEqual(0, under_test._load_private_key.call_count)
         under_test.client_privkey_data()
-        # self.assertEqual(1, under_test_with_username_password._load_private_key.call_count)
+        # self.assertEqual(1, under_test._load_private_key.call_count)
         under_test.client_privkey_data()
-        # self.assertEqual(1, under_test_with_username_password._load_private_key.call_count)
+        # self.assertEqual(1, under_test._load_private_key.call_count)
 
 
 @mock.patch(
