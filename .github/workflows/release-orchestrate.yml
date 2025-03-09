@@ -117,18 +117,13 @@ jobs:
     # See https://github.com/pypi/warehouse/issues/11096
     name: "Publish Release Artifacts (Trusted)"
     needs: [package, generate-release, generate-build-number]
+    if: inputs.publish-to == 'pypi-prod' || inputs.publish-to == 'all'
     runs-on: ubuntu-latest
     environment: pypi-prod
     permissions:
       # Needed for Trusted Publishing
       id-token: write
     steps:
-      # - name: "Checkout code"
-      #   uses: actions/checkout@v4
-      # - name: Prepare common Python build environment
-      #   uses: ./.github/actions/python-build-env-setup
-      #   with:
-      #     python-version: ${{ env.PYTHON_VERSION }}
       - name: "Download Wheel Package"
         uses: actions/download-artifact@v4
         with:
@@ -139,11 +134,5 @@ jobs:
         with:
           name: planet-auth-src-targz
           path: dist
-      # - name: "Nox: Publish to PyPi (Production)"
-      #   if: False # Disabled.  Using action which uses OIDC.
-      #   env:
-      #     NOX_PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-      #   run: |
-      #     nox -s pkg_publish_pypi_prod
       - name: "Trusted Publishing - Publish to PyPi (Production)"
         uses: pypa/gh-action-pypi-publish@release/v1
