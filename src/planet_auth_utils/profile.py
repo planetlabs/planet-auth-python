@@ -41,7 +41,7 @@ class Profile:
     @staticmethod
     def profile_root() -> pathlib.Path:
         """
-        Root directory used for profile storage.
+        Root storage directory used for profile data.
         """
         # return pathlib.Path.home().joinpath(".planet")
         # We used to assume file storage.  We now support pluggable storage implementation.
