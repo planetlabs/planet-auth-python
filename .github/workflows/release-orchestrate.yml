@@ -114,10 +114,11 @@ jobs:
     # reusable workflows.  I really would prefer this be part
     # of "uses: ./.github/workflows/release-publish.yml" for
     # better encapsulation.
+    # See https://github.com/pypi/warehouse/issues/11096
     name: "Publish Release Artifacts (Trusted)"
     needs: [package, generate-release, generate-build-number]
     runs-on: ubuntu-latest
-    # environment: pypi-prod
+    environment: pypi-prod
     permissions:
       # Needed for Trusted Publishing
       id-token: write
