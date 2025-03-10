@@ -74,6 +74,9 @@ class AuthClientTestImpl(AuthClient):
         # return SimpleInMemoryRequestAuthenticator(token_body=None)
         assert 0  # abstract method not under test
 
+    def can_login_unattended(self) -> bool:
+        return False
+
 
 class TestAuthClientBase(unittest.TestCase):
     def test_no_impl_exception(self):

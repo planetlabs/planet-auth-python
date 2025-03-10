@@ -58,7 +58,7 @@ class OidcAuthClientWithPubKeyClientConfig(OidcAuthClientConfig, ABC):
     def client_privkey(self) -> str:
         return self.lazy_get("client_privkey")
 
-    def client_privkey_data(self):  # FIXME: typing.
+    def client_privkey_data(self):
         # TODO: handle key refresh if the file has changed?
         if not self._client_privkey_data:
             self._load_private_key()

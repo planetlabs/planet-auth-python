@@ -22,6 +22,27 @@ from planet_auth.oidc.request_authenticator import (
     RefreshOrReloginOidcTokenRequestAuthenticator,
     RefreshingOidcTokenRequestAuthenticator,
 )
+from planet_auth.oidc.auth_client import OidcAuthClient
+
+
+def _common_prepare_oidc_credential(self: OidcAuthClient, credential: Union[pathlib.Path, Credential]):
+    storage_provider = self._auth_client_config.storage_provider()
+    if isinstance(credential, pathlib.Path):
+        _credential = FileBackedOidcCredential(credential_file=credential, storage_provider=storage_provider)
+    elif isinstance(credential, FileBackedOidcCredential):
+        _credential = credential
+    elif credential is None:
+        # An empty, path-less (in memory) credential to start the request authenticator off with.
+        # Authenticators are permitted to obtain credentials JIT. (E.g. Client Credentials Grant.)
+        # Otherwise, the request authenticator will be brain-dead until update_credential()
+        # or update_credential_data() is called.  This is still useful for initializing properly
+        # typed credential objects.
+        _credential = FileBackedOidcCredential(storage_provider=storage_provider)
+    else:
+        raise TypeError(
+            f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedOidcCredential."
+        )
+    return _credential
 
 
 class OidcAuthClientWithRefreshOrReloginOidcTokenRequestAuthenticator(ABC):
@@ -33,19 +54,7 @@ class OidcAuthClientWithRefreshOrReloginOidcTokenRequestAuthenticator(ABC):
     def default_request_authenticator(
         self, credential: Union[pathlib.Path, Credential]
     ) -> RefreshOrReloginOidcTokenRequestAuthenticator:
-        if isinstance(credential, pathlib.Path):
-            _credential = FileBackedOidcCredential(credential_file=credential)
-        elif isinstance(credential, FileBackedOidcCredential):
-            _credential = credential
-        elif credential is None:
-            # An empty, path-less (in memory) credential to start the request authenticator off with.
-            # Authenticators are permitted to obtain credentials JIT. (E.g. Client Credentials Grant.)
-            _credential = FileBackedOidcCredential()
-        else:
-            raise TypeError(
-                f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedOidcCredential."
-            )
-
+        _credential = _common_prepare_oidc_credential(self, credential)  # type: ignore
         return RefreshOrReloginOidcTokenRequestAuthenticator(credential=_credential, auth_client=self)  # type: ignore
 
 
@@ -58,22 +67,5 @@ class OidcAuthClientWithRefreshingOidcTokenRequestAuthenticator(ABC):
     def default_request_authenticator(
         self, credential: Union[pathlib.Path, Credential]
     ) -> RefreshingOidcTokenRequestAuthenticator:
-        if isinstance(credential, pathlib.Path):
-            _credential = FileBackedOidcCredential(credential_file=credential)
-        elif isinstance(credential, FileBackedOidcCredential):
-            _credential = credential
-        # elif credential is None:
-        #   This makes sense above, since login is permitted and the authenticator
-        #   may obtain an initial credential. The refresh path needs a credential
-        #   with a refresh token to bootstrap operations.  So, this option
-        #   does not make sense here.
-        #
-        #     # An empty, path-less (in memory) credential to start the request authenticator off with.
-        #     # Authenticators are permitted to obtain credentials JIT.
-        #     _credential = FileBackedOidcCredential()
-        else:
-            raise TypeError(
-                f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedOidcCredential."
-            )
-
+        _credential = _common_prepare_oidc_credential(self, credential)  # type: ignore
         return RefreshingOidcTokenRequestAuthenticator(credential=_credential, auth_client=self)  # type: ignore

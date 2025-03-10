@@ -51,7 +51,7 @@ For example, to create a custom profile named "my-custom-profile", create the fo
 {% include 'auth-client-config/oauth-auth-code-grant-public-client.json' %}
 ```
 2. Initialize the client library with the specified profile.  Note: if the environment variable
-`PL_AUTH_PROFILE` is set, it will be detected automatically by [planet_auth.Auth.initialize_from_profile][],
+`PL_AUTH_PROFILE` is set, it will be detected automatically by [planet_auth_utils.PlanetAuthFactory][],
 and it will not be necessary to explicitly pass in the profile name:
 ```python linenums="1"
 {% include 'auth-client/oauth/initialize-client-lib-on-disk-profile.py' %}

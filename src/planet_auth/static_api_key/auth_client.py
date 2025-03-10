@@ -93,30 +93,32 @@ class StaticApiKeyAuthClient(AuthClient):
     ) -> FileBackedApiKeyRequestAuthenticator:
         # If an API key has been configured in the client config, use that and ignore
         # any separate credential file.
+        storage_provider = self._auth_client_config.storage_provider()
         if self._static_api_key_config.api_key():
             _credential = FileBackedApiKey(
                 api_key=self._static_api_key_config.api_key(),
                 prefix=self._static_api_key_config.bearer_token_prefix(),
                 api_key_file=self._static_api_key_config.path(),
+                storage_provider=self._static_api_key_config.storage_provider(),
             )
         else:
             if isinstance(credential, pathlib.Path):
-                _credential = FileBackedApiKey(api_key_file=credential)
+                _credential = FileBackedApiKey(api_key_file=credential, storage_provider=storage_provider)
             elif isinstance(credential, FileBackedApiKey):
                 _credential = credential
             elif credential is None:
-                # This is kinda brain-damaged.  Even though Authenticators are allowed to obtain
-                # credentials JIT, in this case it cannot possibly do anything useful.
-                # It is effectively a NoOp Authenticator.
-                # An empty, path-less (in memory) credential to start the request authenticator off with.
-                _credential = FileBackedApiKey()
-                auth_logger.warning(
-                    msg="Useless API Key Request Authenticator created."
-                    "  No api key in the client config, and no credentials object provided."
-                )
+                # This will be brain-dead until update_credential() or update_credential_data()
+                # is called.  This is useful for initializing properly typed credential objects.
+                _credential = FileBackedApiKey(storage_provider=storage_provider)
             else:
                 raise TypeError(
                     f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedApiKey."
                 )
 
         return FileBackedApiKeyRequestAuthenticator(api_key_credential=_credential)
+
+    def can_login_unattended(self) -> bool:
+        # We could enhance login() to prompt for a static API key
+        # if it's not in the config, but the current implementation
+        # considered it a required field, so this should always be true.
+        return True

@@ -12,21 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import importlib
-import logging
 import os
 from typing import List, Optional
 
-from planet_auth import AuthClientConfig, AuthException
-from planet_auth_utils.profile import Profile
+from planet_auth import AuthClientConfig
+from planet_auth_utils.profile import ProfileException
 from planet_auth_utils.constants import EnvironmentVariables
+from planet_auth.logging.auth_logger import getAuthLogger
 from .builtins_provider import BuiltinConfigurationProviderInterface, EmptyBuiltinProfileConstants
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
-class BuiltinsException(AuthException):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+class BuiltinsException(ProfileException):
+    pass
 
 
 def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
@@ -38,25 +37,20 @@ def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
         try:
             builtin_provider_module = importlib.import_module(module_name)  # nosemgrep - WARNING - See below
             if class_name not in builtin_provider_module.__dict__:
-                logger.warning(
-                    "Error loading built-in provider. Module %s does not contain class %s.",
-                    module_name,
-                    class_name,
+                auth_logger.warning(
+                    msg=f"Error loading built-in provider. Module {module_name} does not contain class {class_name}.",
                 )
             else:
                 provider_instance = builtin_provider_module.__dict__[class_name]()
                 return provider_instance
         except ImportError as ie:
             if log_warning:
-                logger.warning(
-                    "Error loading built-in provider %s. Error: %s.",
-                    builtin_provider_fq_class_name,
-                    ie.msg,
+                auth_logger.warning(
+                    msg=f'Error loading built-in provider "{builtin_provider_fq_class_name}". Error: {ie.msg}.',
                 )
     else:
-        logger.warning(
-            "'%s' could not be parsed for module and class name while loading built-in provider.",
-            builtin_provider_fq_class_name,
+        auth_logger.warning(
+            msg=f'"{builtin_provider_fq_class_name}" could not be parsed for module and class name while loading built-in provider.',
         )
     return None
 
@@ -73,6 +67,11 @@ def _load_builtins() -> BuiltinConfigurationProviderInterface:
 
     # Next priority : Well known implementations (Planet engineering internal)
     builtin_provider = _load_builtins_worker("planet_auth_config.BuiltinConfigurationProvider")
+    if builtin_provider:
+        return builtin_provider
+
+    # Next priority : Well known implementations (Planet Python SDK)
+    builtin_provider = _load_builtins_worker("planet.auth_builtins._BuiltinConfigurationProvider")
     if builtin_provider:
         return builtin_provider
 
@@ -111,14 +110,18 @@ class Builtins:
         return _profile in Builtins._builtin.builtin_client_profile_aliases()
 
     @staticmethod
-    def dealias_builtin_profile(profile: str) -> Optional[str]:
+    def dealias_builtin_profile(profile: str) -> str:
         Builtins._load_builtin_jit()
-        if Builtins.is_builtin_profile_alias(profile):
-            return Builtins._builtin.builtin_client_profile_aliases().get(profile.lower())
-        elif Builtins.is_builtin_profile(profile):
-            return profile.lower()
+
+        if Builtins.is_builtin_profile(profile):
+            _dealiased = profile.lower()
+            while Builtins.is_builtin_profile_alias(_dealiased):
+                _dealiased = Builtins._builtin.builtin_client_profile_aliases().get(_dealiased)  # type: ignore
+
+            return _dealiased
         else:
-            return None
+            # return None
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
     @staticmethod
     def builtin_profile_names() -> List[str]:
@@ -140,24 +143,22 @@ class Builtins:
             _profile = Builtins.dealias_builtin_profile(profile)
             return Builtins._builtin.builtin_client_authclient_config_dicts().get(_profile)  # type: ignore
         else:
-            raise BuiltinsException(message=f"profile {profile} is unknown.")
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
     # @staticmethod
     # def builtin_profile_auth_client_config(profile: str):
     #     return AuthClientConfig.from_dict(Builtins._builtin_profile_auth_client_configs.get(profile))
 
     @staticmethod
-    def load_auth_client_config(profile: str) -> AuthClientConfig:
+    def load_builtin_auth_client_config(profile: str) -> AuthClientConfig:
         Builtins._load_builtin_jit()
         if Builtins.is_builtin_profile(profile):
-            logger.debug(
-                'Using built-in "%s" auth client configuration (ignoring on disk config, if it exists)',
-                profile.lower(),
+            auth_logger.debug(
+                msg=f'Using built-in "{profile.lower()}" auth client configuration (ignoring on disk config, if it exists)',
             )
             client_config = AuthClientConfig.from_dict(Builtins.builtin_profile_auth_client_config_dict(profile))
         else:
-            # TODO: does this belong in this class anymore? This is a vestige of when "Builtins" was "Profiles"
-            client_config = Profile.load_client_config(profile)
+            raise BuiltinsException(message=f"profile {profile} is not a built-in profile.")
 
         return client_config
 

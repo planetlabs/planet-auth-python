@@ -75,7 +75,6 @@ class DeviceAuthorizationApiClient(OidcApiClient):
         json_response = self._checked_post_json_response(request_params, request_auth)
         return self._check_device_auth_response(json_response)
 
-    # FIXME: is requested_audiences supported? I don't think it's in the RFC.
     def request_device_code(self, client_id: str, requested_scopes, requested_audiences, auth_enricher, extra):
         request_params = self._prep_device_code_request_payload(
             client_id=client_id,

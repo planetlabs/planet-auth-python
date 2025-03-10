@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 # TODO: Update (look at current planet SDK)
 @click.group(help="my cli main help message")
-@planet_auth_utils.opt_auth_profile
+@planet_auth_utils.opt_profile
 @planet_auth_utils.opt_token_file
 @click.pass_context
 def my_cli_main(ctx, auth_profile, token_file):
@@ -48,7 +48,7 @@ def do_cmd2(ctx):
     print("Payload:\n{}".format(result.text))
 
 
-my_cli_main.add_command(planet_auth_utils.embedded_plauth_cmd_group)
+my_cli_main.add_command(planet_auth_utils.cmd_plauth_embedded)
 
 if __name__ == "__main__":
     my_cli_main()  # pylint: disable=E1120

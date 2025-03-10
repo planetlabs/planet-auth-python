@@ -141,7 +141,15 @@ class TokenValidator:
     @TokenValidatorException.recast(jwt.PyJWTError)
     @InvalidTokenException.recast(jwt.InvalidTokenError)
     @ExpiredTokenException.recast(jwt.ExpiredSignatureError)
-    def validate_token(self, token_str, issuer, audience, required_claims=None, scopes_anyof: list = None, nonce=None):
+    def validate_token(
+        self,
+        token_str: str,
+        issuer: str,
+        audience: str,
+        required_claims: list = None,
+        scopes_anyof: list = None,
+        nonce: str = None,
+    ):
         """
         Validate the provided token string.  Required claims are validated
         for their presence only. It is up to the application to assert
@@ -247,6 +255,13 @@ class TokenValidator:
             )
 
         return validated_claims
+
+    @staticmethod
+    def unverified_decode(token_str):
+        # WARNING: Treat unverified token claims like toxic waste.
+        #          Nothing can be trusted until the token is verified.
+        unverified_complete = jwt.decode_complete(token_str, options={"verify_signature": False})  # nosemgrep
+        return unverified_complete["header"], unverified_complete["payload"], unverified_complete["signature"]
 
     # TODO: should we error if the token has a nonce, and none was given to
     #       verify?

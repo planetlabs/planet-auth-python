@@ -112,7 +112,6 @@ class OidcApiClient(ABC):
         self.__check_oidc_payload_json_error(response)
         self.__check_http_error(response)
 
-    # FIXME / Audit: do we always want json?
     def _checked_get(self, params, request_auth):
         response = self._session.get(
             self._endpoint_uri,

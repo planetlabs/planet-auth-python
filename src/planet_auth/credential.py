@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from planet_auth.util import FileBackedJsonObject
+from planet_auth.storage_utils import FileBackedJsonObject
 
 
 class Credential(FileBackedJsonObject):
     """
-    A file backed credential.
-    A credential is expected to be a json dict.  Per the base class implementation,
-    clear-text .json files or .sops.json files with field level encryption are supported.
+    A storage backed credential.
+    A credential is expected to be a json dict.  Per the base class default
+    storage provider implementation, clear-text .json files or .sops.json files
+    with field level encryption are supported.  Custom storage providers may
+    offer different functionality.
     """
 
-    def __init__(self, data=None, file_path=None):
-        super().__init__(data=data, file_path=file_path)
+    def __init__(self, data=None, file_path=None, storage_provider=None):
+        super().__init__(data=data, file_path=file_path, storage_provider=storage_provider)

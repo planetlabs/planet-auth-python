@@ -17,7 +17,7 @@ import click
 from planet_auth_utils.constants import EnvironmentVariables
 
 
-def opt_auth_api_key(function):
+def opt_api_key(function):
     """
     Click option for specifying an API key
     """
@@ -33,7 +33,7 @@ def opt_auth_api_key(function):
     return function
 
 
-def opt_auth_client_id(function):
+def opt_client_id(function):
     """
     Click option for specifying an OAuth client ID.
     """
@@ -49,7 +49,7 @@ def opt_auth_client_id(function):
     return function
 
 
-def opt_auth_client_secret(function):
+def opt_client_secret(function):
     """
     Click option for specifying an OAuth client secret.
     """
@@ -65,7 +65,7 @@ def opt_auth_client_secret(function):
     return function
 
 
-def opt_auth_profile(function):
+def opt_profile(function):
     """
     Click option for specifying an auth profile for the
     planet_auth package's click commands.
@@ -74,12 +74,12 @@ def opt_auth_profile(function):
         "--auth-profile",
         type=str,
         envvar=EnvironmentVariables.AUTH_PROFILE,
-        help="Select the client profile to use.  Builtins are defined by"
-        " creating a subdirectory ~/.planet/.  Additionally, a number of"
+        help="Select the client profile to use.  User created profiles are "
+        " defined by creating a subdirectory ~/.planet/.  Additionally, a number of"
         ' built-in profiles are understood.  See the "profile list" command'
-        " for built-in profiles.  The auth profile controls how the software"
-        " interacts with Planet authentication services, as well as how it"
-        " authenticates to other Planet APIs.  If this option is not set,"
+        " for defined profiles.  The auth profile controls how the software"
+        " interacts with authentication services, as well as how it"
+        " authenticates to other APIs.  If this option is not set,"
         " a profile will be selected according to environment variables or"
         ' a preference registered with the "profile set" command.',
         default=None,
@@ -90,7 +90,7 @@ def opt_auth_profile(function):
     return function
 
 
-def opt_auth_organization(function):
+def opt_organization(function):
     """
     Click option for specifying an Organization.
     """
@@ -108,7 +108,7 @@ def opt_auth_organization(function):
     return function
 
 
-def opt_auth_project(function):
+def opt_project(function):
     """
     Click option for specifying a project ID.
     """
@@ -126,43 +126,52 @@ def opt_auth_project(function):
     return function
 
 
-# FIXME - investigate the use of click prompts, esp for password. Currently, some of this IO is delegated
-#         to the planet_auth library.  I generally think user IO belongs with the app, and not the
-#         the library, but since the lib also handles things like browser interaction this is not
-#         entirely easy to abstract away.
-def opt_auth_password(function):
-    """
-    Click option for specifying a password for the
-    planet_auth package's click commands.
-    """
-    function = click.option(
-        "--password",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_PASSWORD,
-        help="Password used for authentication.  May not be used by all authentication mechanisms.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+# TODO -  Consider switching to click prompts where we current rely on the lower level planet_auth
+#         to prompt the user. Currently, some of this IO is delegated to the planet_auth library.
+#         I generally think user IO belongs with the app, and not the the library, but since the
+#         lib also handles things like browser interaction this is not entirely easy to abstract
+#         away.
+def opt_password(hidden=True):
+    def decorator(function):
+        """
+        Click option for specifying a password for the
+        planet_auth package's click commands.
+        """
+        function = click.option(
+            "--password",
+            type=str,
+            envvar=EnvironmentVariables.AUTH_PASSWORD,
+            help="Password used for authentication.  May not be used by all authentication mechanisms.",
+            default=None,
+            show_envvar=True,
+            show_default=True,
+            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_auth_username(function):
-    """
-    Click option for specifying a username for the
-    planet_auth package's click commands.
-    """
-    function = click.option(
-        "--username",
-        "--email",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_USERNAME,
-        help="Username used for authentication.  May not be used by all authentication mechanisms.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+def opt_username(hidden=True):
+    def decorator(function):
+        """
+        Click option for specifying a username for the
+        planet_auth package's click commands.
+        """
+        function = click.option(
+            "--username",
+            "--email",
+            type=str,
+            envvar=EnvironmentVariables.AUTH_USERNAME,
+            help="Username used for authentication.  May not be used by all authentication mechanisms.",
+            default=None,
+            show_envvar=True,
+            show_default=True,
+            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
+        )(function)
+        return function
+
+    return decorator
 
 
 def opt_loglevel(function):
@@ -177,6 +186,20 @@ def opt_loglevel(function):
         type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], case_sensitive=False),
         default="INFO",
         show_envvar=True,
+        show_default=True,
+    )(function)
+    return function
+
+
+def opt_human_readable(function):
+    """
+    Click option to toggle raw / human-readable formatting.
+    """
+    function = click.option(
+        "--human-readable/--no-human-readable",
+        "-H",
+        help="Reformat fields to be human readable.",
+        default=False,
         show_default=True,
     )(function)
     return function
@@ -241,7 +264,7 @@ def opt_token_file(function):
     return function
 
 
-def opt_token_audience(required=False):
+def opt_audience(required=False):
     def decorator(function):
         """
         Click option for specifying an OAuth token audience for the
@@ -266,7 +289,20 @@ def opt_token_audience(required=False):
     return decorator
 
 
-def opt_token_scope(function):
+def opt_refresh(function):
+    """
+    Click option specifying a refresh should be attempted if applicable.
+    """
+    function = click.option(
+        "--refresh/--no-refresh",
+        help="Automatically perform a credential refresh if required.",
+        default=True,
+        show_default=True,
+    )(function)
+    return function
+
+
+def opt_scope(function):
     """
     Click option for specifying an OAuth token scope for the
     planet_auth package's click commands.

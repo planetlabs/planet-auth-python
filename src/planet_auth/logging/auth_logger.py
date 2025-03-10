@@ -15,7 +15,7 @@
 import functools
 import json
 import logging
-import pkg_resources
+import importlib.metadata
 
 from contextlib import suppress
 from typing import Dict
@@ -31,13 +31,13 @@ _lib_global_py_logger = logging.getLogger("planet_auth")
 _lib_global_do_structured_logging = False
 _lib_global_nested_logging_key = None
 
-# Services like pda-admin use the `json_logging` module which expects
+# Some services use the `json_logging` module which expects
 # additional logging parameters to be stored under the 'props' key. This is
-# the default for now so we don't break pda-admin
+# the default for now so we don't break those dependant services' logging.
 DEFAULT_NESTED_KEY = "props"
 
 
-# class AuthLogger(logging.Logger):  # TODO: is this a good idea, or a better approach?
+# class AuthLogger(logging.Logger):  # TODO?: is this a good idea, or a better approach?
 class AuthLogger:
     """
     Class that wraps the Python logger so that all logs emitted from
@@ -53,13 +53,14 @@ class AuthLogger:
         self._auth_libraries = self._get_auth_libraries()
 
     def _get_auth_libraries(self):
-        libs = {"planet-auth": pkg_resources.get_distribution("planet-auth").version}
+        libs = {"planet-auth": importlib.metadata.version("planet-auth")}
         for optional_lib in (
             "planet-auth-config",
             "planet-auth-django",
         ):
-            with suppress(pkg_resources.DistributionNotFound):
-                libs[optional_lib] = pkg_resources.get_distribution(optional_lib).version
+            libs[optional_lib] = "N/A"
+            with suppress(importlib.metadata.PackageNotFoundError):
+                libs[optional_lib] = importlib.metadata.version(optional_lib)
         return libs
 
     def _get_py_logger(self):
@@ -94,7 +95,7 @@ class AuthLogger:
             if not event and isinstance(exception, AuthException):
                 event = exception.event()
 
-            # XXX A little hacky.  The lib is designed to handle more than just JWTs and OAuth,
+            # Note: This is a little hacky. The lib is designed to handle more than just JWTs and OAuth,
             #     but it is a very common use case and this makes for an ergonomic development experience,
             #     making it easy to have the raise pass context in the exception to a distant point
             #     in the code responsible for logging.
@@ -117,8 +118,8 @@ class AuthLogger:
             "auth_libraries": self._auth_libraries,
         }
 
-        # FIXME: Is this actually right?  The library is more general than OAuth and JWTs, but this
-        #        is a common need when we log, so we've done this in our logger.
+        # TODO: Is this actually right?  The library is more general than OAuth and JWTs, but this
+        #       is a common need when we log, so we've done this in our logger.
         if jwt_header_json:
             log_json["jwt_header"] = {"alg": jwt_header_json.get("alg")}
         if jwt_body_json:
@@ -135,7 +136,7 @@ class AuthLogger:
 
         if exception:
             log_json["error"] = str(exception)
-            # log_json["stack_trace"] = # TODO
+            # log_json["stack_trace"] =
 
         if _lib_global_do_structured_logging:
             final_log_msg = _log_msg

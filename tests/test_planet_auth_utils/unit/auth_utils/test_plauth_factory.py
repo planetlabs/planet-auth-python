@@ -17,13 +17,16 @@ import shutil
 import unittest
 
 import planet_auth
+import planet_auth.storage_utils
+from planet_auth.constants import AUTH_CONFIG_FILE_PLAIN
 
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory, MissingArgumentException
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
+from planet_auth_utils.profile import Profile
 
-from .utest_builtins import MockProductionEnv, MockStagingEnv
+from .builtins_test_impl import MockProductionEnv, MockStagingEnv
 
 from tests.test_planet_auth_utils.util import tdata_resource_file_path, TestWithHomeDirProfiles
 
@@ -35,7 +38,7 @@ PROFILE3_NAME = "test_profile3"
 class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCase):
     def setUp(self):
         os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
-            "tests.test_planet_auth_utils.unit.auth_utils.utest_builtins.UTestMockBuiltinConfigurationProvider"
+            "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
         )
         Builtins._builtin = None  # Reset built-in state.
         self.setUp_testHomeDir()
@@ -57,6 +60,8 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
             tdata_resource_file_path("auth_client_configs/utest/static_api_key.json"),
             self.profile3_dir_path.joinpath(planet_auth.constants.AUTH_CONFIG_FILE_PLAIN),
         )
+
+        self.under_test_storage_provider = planet_auth.storage_utils.ObjectStorageProvider._default_storage_provider()
 
     def tearDown(self) -> None:
         self.tearDown_testHomeDir()
@@ -317,6 +322,56 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
         )
         self.assertIsNone(token_in_memory_only_under_test.token_file_path())
 
+    def test_save_profile_saves_when_true(self):
+        utest_profile_name = "new-utest-profile-save"
+        client_conf_storage_path = Profile.get_profile_file_path(
+            profile=utest_profile_name, filename=AUTH_CONFIG_FILE_PLAIN
+        )
+        self.assertFalse(self.under_test_storage_provider.obj_exists(client_conf_storage_path))
+
+        _ = PlanetAuthFactory.initialize_auth_client_context_from_custom_config(
+            client_config={
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://login-utest.planet.com/",
+                "audiences": ["https://utest.planet.com/"],
+                "client_id": "__UTEST_CLIENT_ID__",
+                "client_secret": "__UTEST_CLIENT_SECRET__",
+            },
+            save_token_file=True,
+            save_profile_config=True,
+            profile_name=utest_profile_name,
+        )
+        self.assertTrue(
+            self.under_test_storage_provider.obj_exists(
+                Profile.get_profile_file_path(profile=utest_profile_name, filename=AUTH_CONFIG_FILE_PLAIN)
+            )
+        )
+
+    def test_save_profile_does_not_save_when_false(self):
+        utest_profile_name = "new-utest-profile-nosave"
+        client_conf_storage_path = Profile.get_profile_file_path(
+            profile=utest_profile_name, filename=AUTH_CONFIG_FILE_PLAIN
+        )
+        self.assertFalse(self.under_test_storage_provider.obj_exists(client_conf_storage_path))
+
+        _ = PlanetAuthFactory.initialize_auth_client_context_from_custom_config(
+            client_config={
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://login-utest.planet.com/",
+                "audiences": ["https://utest.planet.com/"],
+                "client_id": "__UTEST_CLIENT_ID__",
+                "client_secret": "__UTEST_CLIENT_SECRET__",
+            },
+            save_token_file=False,
+            save_profile_config=False,
+            profile_name=utest_profile_name,
+        )
+        self.assertFalse(
+            self.under_test_storage_provider.obj_exists(
+                Profile.get_profile_file_path(profile=utest_profile_name, filename=AUTH_CONFIG_FILE_PLAIN)
+            )
+        )
+
 
 ISSUER_PRIORITIES = ["_trusted"]
 VALID_PRIMARY_CONFIGS = [
@@ -337,7 +392,7 @@ INVALID_PRIMARY_CONFIGS = [{"auth_server": "https://login-fake.planet.com/oauth2
 class TestResourceServerValidatorInitHelper(TestWithHomeDirProfiles, unittest.TestCase):
     def setUp(self):
         os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
-            "tests.test_planet_auth_utils.unit.auth_utils.utest_builtins.UTestMockBuiltinConfigurationProvider"
+            "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
         )
         Builtins._builtin = None  # Reset built-in state.
         self.setUp_testHomeDir()

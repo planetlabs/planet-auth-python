@@ -51,22 +51,7 @@ class TestTokenValidator(unittest.TestCase):
 
     @staticmethod
     def initialize_token_builder(keypair_name):
-        public_key_file = tdata_resource_file_path("keys/{}_pub_jwk.json".format(keypair_name))
-        signing_key_file = tdata_resource_file_path("keys/{}_priv_nopassword.test_pem".format(keypair_name))
-
-        with open(public_key_file, "r", encoding="UTF-8") as file_r:
-            pubkey_data = json.load(file_r)
-
-        signing_key_id = pubkey_data["kid"]
-        signing_key_algorithm = pubkey_data["alg"]
-        token_builder = TestTokenBuilder(
-            issuer="test_token_issuer_for_" + keypair_name,
-            audience="test_token_audience_for_" + keypair_name,
-            signing_key_file=signing_key_file,
-            signing_key_id=signing_key_id,
-            signing_key_algorithm=signing_key_algorithm,
-        )
-        return pubkey_data, token_builder
+        return TestTokenBuilder.test_token_builder_factory(keypair_name=keypair_name)
 
     @staticmethod
     def initialize_fake_token_builder(keypair_name):

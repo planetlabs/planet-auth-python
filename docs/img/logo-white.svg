@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 214.33 214.33"
+   version="1.1"
+   id="svg2"
+   sodipodi:docname="logo-white.svg"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="namedview2"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="4.0358326"
+     inkscape:cx="107.165"
+     inkscape:cy="107.165"
+     inkscape:window-width="1392"
+     inkscape:window-height="1212"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg2" />
+  <title
+     id="title1">Untitled-5</title>
+  <path
+     d="M115.12,58.77c-10.35,0-21.44,4.08-28.73,14.59H86.09A14.2,14.2,0,0,0,71.89,59.15H71.46v97A16,16,0,0,0,87.4,172.08v-42H87.7c3.06,5.1,11.52,13.71,28.44,13.71,25.52,0,40.84-21,40.84-41.42C157,80.8,142.54,58.77,115.12,58.77ZM114.53,130c-15.31,0-27.42-12.4-27.42-28.73,0-14.88,11.09-28.59,27-28.59,16.48,0,27.71,14.44,27.71,28.88C141.81,118.57,128.83,130,114.53,130Z"
+     fill="#5b5d62"
+     id="path1"
+     style="fill:#ffffff;fill-opacity:1" />
+  <path
+     d="M107.17,214.33A107.17,107.17,0,1,1,214.33,107.17,107.29,107.29,0,0,1,107.17,214.33Zm0-204.12a97,97,0,1,0,97,97A97.07,97.07,0,0,0,107.17,10.21Z"
+     fill="#009da5"
+     id="path2"
+     style="fill:#ffffff;fill-opacity:1" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:title>Untitled-5</dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+</svg>

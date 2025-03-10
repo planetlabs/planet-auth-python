@@ -1,8 +1,8 @@
 {
-    "_comment": "Carl-PLNative-1 in staging",
+    "_comment": "TODO",
     "client_type": "oidc_auth_code",
-    "auth_server": "https://account-next.planet.com/oauth2/ausx9ngg7df0u0zxU0h7",
-    "client_id": "0oaywn5fzvrC8Z6Iq0h7",
+    "auth_server": "TODO",
+    "client_id": "TODO",
     "redirect_uri": "http://localhost:8080/login/callback",
     "local_redirect_uri": "http://localhost:8080",
     "scopes": ["planet", "offline_access", "openid", "profile"]

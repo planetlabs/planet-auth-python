@@ -56,7 +56,10 @@ class ClientCredentialsClientSecretClientConfig(OidcAuthClientWithClientSecretCl
 class ClientCredentialsAuthClientBase(
     OidcAuthClientWithRefreshOrReloginOidcTokenRequestAuthenticator, OidcAuthClient, ABC
 ):
-    pass
+    def can_login_unattended(self) -> bool:
+        # A valid config should always have everything we need.
+        # What exactly that is will vary between the client auth methods.
+        return True
 
 
 class ClientCredentialsClientSecretAuthClient(

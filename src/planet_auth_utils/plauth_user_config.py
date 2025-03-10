@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import os
-import pathlib
-import logging
 from typing import Optional
 
-from planet_auth.util import FileBackedJsonObject
+from planet_auth.storage_utils import FileBackedJsonObject, ObjectStorageProvider_KeyType
+from planet_auth.constants import USER_CONFIG_FILE
+from planet_auth.logging.auth_logger import getAuthLogger
 
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 class PlanetAuthUserConfig(FileBackedJsonObject):
@@ -29,15 +29,19 @@ class PlanetAuthUserConfig(FileBackedJsonObject):
     part of a particular AuthClient configuration profile.
     """
 
-    @staticmethod
-    def default_user_config_file():
-        # return Profile.profile_root().joinpath("plauth_conf.json")
-        return pathlib.Path.home().joinpath(".planet.json")
-
-    def __init__(self, data: Optional[dict] = None, file_path: Optional[pathlib.Path] = None):
-        if file_path is None:
-            file_path = PlanetAuthUserConfig.default_user_config_file()
-        super().__init__(data=data, file_path=file_path)
+    def __init__(
+        self,
+        data: Optional[dict] = None,
+        # file_path: Optional[pathlib.Path] = None,
+        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
+    ):
+        # if file_path is None:
+        #     file_path = PlanetAuthUserConfig._default_user_config_obj_path()
+        super().__init__(
+            data=data,
+            file_path=ObjectStorageProvider_KeyType(USER_CONFIG_FILE),
+            # storage_provider=storage_provider
+        )
 
 
 class PlanetAuthUserConfigEnhanced(PlanetAuthUserConfig):
@@ -103,6 +107,6 @@ class PlanetAuthUserConfigEnhanced(PlanetAuthUserConfig):
                 if config_file_value:
                     return config_file_value
             except Exception as ex:
-                logger.debug(f"{ex}")  # pylint: disable=W1203
+                auth_logger.debug(msg=f"{ex}")
 
         return fallback_value

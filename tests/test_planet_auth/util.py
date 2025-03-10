@@ -89,5 +89,12 @@ def background(f):
 
 
 def mock_sleep_skip(seconds):
-    # TODO: a fancier mock would also advance freezegun time.
     pass
+
+
+class FreezeGunMockSleep:
+    def __init__(self, frozen_time):
+        self.frozen_time = frozen_time
+
+    def mock_sleep(self, seconds):
+        self.frozen_time.tick(seconds)

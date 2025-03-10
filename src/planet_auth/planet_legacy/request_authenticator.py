@@ -31,3 +31,16 @@ class PlanetLegacyRequestAuthenticator(CredentialRequestAuthenticator):
 
     def pre_request_hook(self):
         self._token_body = self._api_key_file.legacy_api_key()
+
+    def update_credential(self, new_credential):
+        if not isinstance(new_credential, FileBackedPlanetLegacyApiKey):
+            raise TypeError(
+                f"{type(self).__name__} does not support {type(new_credential)} credentials.  Use FileBackedPlanetLegacyApiKey."
+            )
+        super().update_credential(new_credential)
+        self._api_key_file = new_credential
+
+    # def update_credential_data(self, new_credential_data: dict):
+    #     super().update_credential_data(new_credential_data=new_credential_data)
+    #     # The super class is not changing the instance, so we don't need to update our reference
+    #     # self._api_key_file = self._credential

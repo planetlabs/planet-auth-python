@@ -87,3 +87,6 @@ class NoOpAuthClient(AuthClient):
 
     def get_scopes(self):
         return []
+
+    def can_login_unattended(self) -> bool:
+        return True

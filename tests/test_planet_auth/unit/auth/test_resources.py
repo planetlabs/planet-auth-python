@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import unittest
-import importlib.resources as pkg_resources
+import importlib.resources
 
 from planet_auth.oidc import resources as planet_auth_oidc_resources
 
@@ -25,7 +25,7 @@ class TestResources(unittest.TestCase):
         # Running against the local dev tree doesn't catch
         # all problems (like a missed MANIFEST.in file)
         under_test = (
-            pkg_resources.files(planet_auth_oidc_resources)
+            importlib.resources.files(planet_auth_oidc_resources)
             .joinpath("callback_acknowledgement.html")
             .read_text("utf-8")
         )

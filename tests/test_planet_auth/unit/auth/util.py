@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import json
 from abc import ABC, abstractmethod
 
@@ -26,14 +27,19 @@ import uuid
 
 from requests.auth import AuthBase
 
+from planet_auth.storage_utils import (
+    FileBackedJsonObjectException,
+    ObjectStorageProvider_KeyType,
+    ObjectStorageProvider,
+)
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator, ForbiddenRequestAuthenticator
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
 from planet_auth.oidc.api_clients.jwks_api_client import JwksApiClient
 from planet_auth.oidc.api_clients.token_api_client import TokenApiException
 from planet_auth.oidc.auth_client import OidcAuthClientConfig, OidcAuthClient
-from tests.test_planet_auth.util import load_rsa_private_key
 
+from tests.test_planet_auth.util import load_rsa_private_key, tdata_resource_file_path
 
 _SCOPE_CLAIM_RFC8693 = "scope"  # See RFC 8693, 9068
 _SCOPE_CLAIM_OKTA = "scp"  # Okta uses a different claim
@@ -170,6 +176,25 @@ class TestTokenBuilder(UtilTokenBuilderBase):
 
     def encode(self, body, extra_headers):
         return jwt.encode(body, self.signing_key, algorithm=self.signing_key_algorithm, headers=extra_headers)
+
+    @staticmethod
+    def test_token_builder_factory(keypair_name):
+        public_key_file = tdata_resource_file_path("keys/{}_pub_jwk.json".format(keypair_name))
+        signing_key_file = tdata_resource_file_path("keys/{}_priv_nopassword.test_pem".format(keypair_name))
+
+        with open(public_key_file, "r", encoding="UTF-8") as file_r:
+            pubkey_data = json.load(file_r)
+
+        signing_key_id = pubkey_data["kid"]
+        signing_key_algorithm = pubkey_data["alg"]
+        token_builder = TestTokenBuilder(
+            issuer="test_token_issuer_for_" + keypair_name,
+            audience="test_token_audience_for_" + keypair_name,
+            signing_key_file=signing_key_file,
+            signing_key_id=signing_key_id,
+            signing_key_algorithm=signing_key_algorithm,
+        )
+        return pubkey_data, token_builder
 
 
 class FakeTokenBuilder(UtilTokenBuilderBase):
@@ -404,3 +429,29 @@ class StubOidcAuthClient(OidcAuthClient):
     ) -> CredentialRequestAuthenticator:
         # Abstract in the base class. Not under test here.
         return ForbiddenRequestAuthenticator()
+
+    def can_login_unattended(self) -> bool:
+        return True
+
+
+class MockStorageObjectNotFound(FileBackedJsonObjectException):
+    pass
+
+
+class MockObjectStorageProvider(ObjectStorageProvider):
+    def __init__(self, initial_mock_storage):
+        self._mock_storage = copy.deepcopy(initial_mock_storage)
+
+    def _peek(self):
+        return self._mock_storage
+
+    def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
+        if key not in self._mock_storage:
+            raise MockStorageObjectNotFound
+        return self._mock_storage[key]
+
+    def save_obj(self, key: ObjectStorageProvider_KeyType, data: dict) -> None:
+        self._mock_storage[key] = data
+
+    def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
+        return key in self._mock_storage

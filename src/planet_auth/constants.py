@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pkg_resources
+import importlib.metadata
 
 AUTH_CONFIG_FILE_PLAIN = "auth_client.json"
 AUTH_CONFIG_FILE_SOPS = "auth_client.sops.json"
 TOKEN_FILE_PLAIN = "token.json"
 TOKEN_FILE_SOPS = "token.sops.json"
-X_PLANET_APP = "planet-auth-library-" + pkg_resources.get_distribution("planet-auth").version
+USER_CONFIG_FILE = ".planet.json"
+X_PLANET_APP = f"planet-auth-library-{importlib.metadata.version('planet-auth')}"
 X_PLANET_APP_HEADER = "X-Planet-App"

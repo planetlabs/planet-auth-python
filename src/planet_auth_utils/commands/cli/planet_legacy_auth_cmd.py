@@ -22,13 +22,21 @@ from planet_auth import (
     PlanetLegacyAuthClientConfig,
 )
 
-from .options import opt_auth_password, opt_auth_username
-from .util import recast_exceptions_to_click
+from .options import opt_password, opt_sops, opt_username
+from .util import recast_exceptions_to_click, post_login_cmd_helper
+
+
+def _check_client_type(ctx):
+    if not isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient):
+        raise click.ClickException(
+            f'"legacy" auth commands can only be used with "{PlanetLegacyAuthClientConfig.meta()["client_type"]}" type auth profiles.'
+            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+        )
 
 
 @click.group("legacy", invoke_without_command=True)
 @click.pass_context
-def pllegacy_auth_cmd_group(ctx):
+def cmd_pllegacy(ctx):
     """
     Auth commands specific to Planet legacy authentication mechanisms.
     """
@@ -36,50 +44,53 @@ def pllegacy_auth_cmd_group(ctx):
         click.echo(ctx.get_help())
         sys.exit(0)
 
-    if not isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient):
-        raise click.ClickException(
-            f'"legacy" auth command can only be used with "{PlanetLegacyAuthClientConfig.meta()["client_type"]}" type auth profiles.'
-            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
-        )
+    _check_client_type(ctx)
 
 
-@pllegacy_auth_cmd_group.command("login")
-@opt_auth_password
-@opt_auth_username
+@cmd_pllegacy.command("login")
+@opt_password(hidden=False)
+@opt_username(hidden=False)
+@opt_sops
 @click.pass_context
-def pllegacy_do_login(ctx, username, password):
+def cmd_pllegacy_login(ctx, username, password, sops):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
     """
-    _ = ctx.obj["AUTH"].login(
+    _check_client_type(ctx)
+    current_auth_context = ctx.obj["AUTH"]
+    current_auth_context.login(
         allow_tty_prompt=True,
         username=username,
         password=password,
     )
     print("Login succeeded.")  # Errors should throw.
+    post_login_cmd_helper(
+        override_auth_context=current_auth_context,
+        use_sops=sops,
+    )
 
 
-@pllegacy_auth_cmd_group.command("print-api-key")
+@cmd_pllegacy.command("print-api-key")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_print_api_key(ctx):
+def cmd_pllegacy_print_api_key(ctx):
     """
     Show the API Key used by the currently selected authentication profile.
-    Auth profiles that do not use API keys will not support this command.
     """
+    _check_client_type(ctx)
     saved_token = FileBackedPlanetLegacyApiKey(api_key_file=ctx.obj["AUTH"].token_file_path())
     # Not using object print for API keys printing. We don't want object quoting and escaping.
     # print_obj(saved_token.legacy_api_key())
     print(saved_token.legacy_api_key())
 
 
-@pllegacy_auth_cmd_group.command("print-access-token")
+@cmd_pllegacy.command("print-access-token")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
-def do_print_access_token(ctx):
+def cmd_pllegacy_print_access_token(ctx):
     """
-    Show the legacy JWT.
-    Auth profiles that do not use legacy JWTs will not support this command.
+    Show the legacy JWT currently held by the selected authentication profile.
     """
+    _check_client_type(ctx)
     saved_token = FileBackedPlanetLegacyApiKey(api_key_file=ctx.obj["AUTH"].token_file_path())
     print(saved_token.legacy_jwt())

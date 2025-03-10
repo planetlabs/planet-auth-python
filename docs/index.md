@@ -18,6 +18,5 @@ This library does not make any assumptions about the specific environment in whi
 it is operating, leaving that for higher level applications to configure.
 
 The [Planet SDK for Python](https://developers.planet.com/docs/pythonclient/)
-leverages this library, and is pre-configured for the Planet Cloud Service used
+leverages this library, and is pre-configured for the Planet Insights Platform used
 by customers.
-s

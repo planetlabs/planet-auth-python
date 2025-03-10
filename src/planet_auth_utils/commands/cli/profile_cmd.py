@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import click
-import logging
 import sys
 from collections import OrderedDict
 from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog
 
 from planet_auth import AuthClient, AuthClientConfig, AuthException
+from planet_auth.logging.auth_logger import getAuthLogger
 from planet_auth.constants import (
     AUTH_CONFIG_FILE_PLAIN,
     AUTH_CONFIG_FILE_SOPS,
@@ -26,12 +26,13 @@ from planet_auth.constants import (
 
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.builtins import Builtins
+from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 from planet_auth_utils.constants import EnvironmentVariables
 from .options import opt_long, opt_sops
 from .util import recast_exceptions_to_click, print_obj
 
-logger = logging.getLogger(__name__)
+auth_logger = getAuthLogger()
 
 
 def _handle_canceled():
@@ -89,7 +90,7 @@ def _dialogue_enter_auth_profile_name():
 
 @click.group("profile", invoke_without_command=True)
 @click.pass_context
-def profile_cmd_group(ctx):
+def cmd_profile(ctx):
     """
     Manage auth profiles.
     """
@@ -99,25 +100,25 @@ def profile_cmd_group(ctx):
 
 
 def _load_all_on_disk_profiles() -> dict:
-    # Any directory in ~/.planet is only a potential profile. We only
-    # consider it an actual profile if a valid client config file can be found.
-    candidate_profile_names = [x.name for x in Profile.profile_root().iterdir() if x.is_dir()]
-    candidate_profile_names.sort()
+    candidate_profile_names = Profile.list_on_disk_profiles()
     profiles_dicts = OrderedDict()
     for candidate_profile_name in candidate_profile_names:
         try:
-            conf = Profile.load_client_config(candidate_profile_name)
+            # conf = Profile.load_auth_client_config(candidate_profile_name)
+            _, conf = PlanetAuthFactory.load_auth_client_config_from_profile(candidate_profile_name)
             profiles_dicts[candidate_profile_name] = conf
         except Exception as ex:
-            logger.debug(msg=f'"{candidate_profile_name}" was not a valid local profile directory: {ex}')
+            auth_logger.debug(
+                msg=f'"{candidate_profile_name}" was not a valid locally defined profile directory: {ex}'
+            )
 
     return profiles_dicts
 
 
-@profile_cmd_group.command("list")
+@cmd_profile.command("list")
 @opt_long
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_list(long):
+def cmd_profile_list(long):
     """
     List auth profiles.
     """
@@ -145,11 +146,11 @@ def do_list(long):
         print_obj(profile_names)
 
 
-@profile_cmd_group.command("create")
+@cmd_profile.command("create")
 @opt_sops
 @click.argument("new_profile_name", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_create(sops, new_profile_name):
+def cmd_profile_create(sops, new_profile_name):
     """
     Wizard to create a new authentication profile.
     """
@@ -194,21 +195,21 @@ def do_create(sops, new_profile_name):
     new_auth_client_config.save()
 
 
-@profile_cmd_group.command("edit")
+@cmd_profile.command("edit")
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_edit():
+def cmd_profile_edit():
     """
     Edit an existing profile.
     """
     raise AuthException("Function not implemented")
 
 
-@profile_cmd_group.command("copy")
+@cmd_profile.command("copy")
 @click.argument("src")
 @click.argument("dst")
 @opt_sops
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_copy(sops, src, dst):
+def cmd_profile_copy(sops, src, dst):
     """
     Copy an existing profile to create a new profile.  Only the persistent
     profile configuration will be copied.  User access tokens initialized
@@ -231,20 +232,23 @@ def do_copy(sops, src, dst):
     #       pubkeys are used.  To do that properly, their paths should be
     #       relative to the profile dir, and not absolute, but that is not
     #       currently implemented.
-    auth_config = Builtins.load_auth_client_config(src)
+    _, auth_config = PlanetAuthFactory.load_auth_client_config_from_profile(src)
     if sops:
         dst_config_filepath = Profile.get_profile_file_path(profile=dst, filename=AUTH_CONFIG_FILE_SOPS)
     else:
         dst_config_filepath = Profile.get_profile_file_path(profile=dst, filename=AUTH_CONFIG_FILE_PLAIN)
 
     auth_config.set_path(dst_config_filepath)
+    # No need to specify provider. The CLI is only concerned with the
+    # default file based storage provider for now.
+    # auth_config.auth_client().config().set_storage_provider()
     auth_config.save()
 
 
-@profile_cmd_group.command("set")
+@cmd_profile.command("set")
 @click.argument("selected_profile", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_set(selected_profile):
+def cmd_profile_set(selected_profile):
     """
     Configure the default authentication profile to use when one is not otherwise specified.
     """
@@ -261,10 +265,10 @@ def do_set(selected_profile):
     user_profile_config_file.save()
 
 
-@profile_cmd_group.command("show")
+@cmd_profile.command("show")
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def do_show(ctx):
+def cmd_profile_show(ctx):
     """
     Show the current authentication profiles.
     """
@@ -275,4 +279,5 @@ def do_show(ctx):
     except Exception:  #  as ex:
         # print(f'User Default: {ex}')
         print("User Default: N/A")
-    print(f"Global Built-in Default: {Builtins.dealias_builtin_profile(Builtins.builtin_default_profile_name())}")
+
+    print(f"Global Built-in Default: {Builtins.builtin_default_profile_name()}")

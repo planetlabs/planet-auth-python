@@ -41,6 +41,7 @@ class AuthCodeClientConfig(OidcAuthClientConfig):
     Configuration required for [planet_auth.AuthCodeAuthClient][]
     """
 
+    # TODO: simplify down to just one url, I think
     def __init__(self, redirect_uri: str = None, local_redirect_uri: str = None, **kwargs):
         super().__init__(**kwargs)
         # Redirect URI must match the client config on the OIDC service,
@@ -166,6 +167,10 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
             # extra=extra,  # passed to Auth, not code redemption.
         )
         return FileBackedOidcCredential(token_json)
+
+    def can_login_unattended(self) -> bool:
+        # Always requires user interaction
+        return False
 
 
 class AuthCodeAuthClient(AuthCodeAuthClientBase, OidcAuthClientWithNoneClientAuth):

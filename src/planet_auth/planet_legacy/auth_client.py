@@ -69,11 +69,7 @@ class PlanetLegacyAuthClientConfig(AuthClientConfig):
                     "config_key": "legacy_auth_endpoint",
                     "config_key_name": "Planet Legacy Authentication Endpoint",
                     "config_key_description": "API endpoint used to perform user authentication against the Planet cloud service.",
-                    # FIXME: This was planet_auth_config.Production.LEGACY_AUTH_AUTHORITY.get("legacy_auth_endpoint"),
-                    #        but with knowledge of environments being pulled out of the core library we lost
-                    #        that friendly default.  This is really only a concern for downstream applications,
-                    #        like the CLI utility.
-                    # "config_key_default": "FIXME",
+                    # "config_key_default": "",
                 },
                 {
                     "config_key": "api_key",
@@ -222,29 +218,31 @@ class PlanetLegacyAuthClient(AuthClient):
     ) -> CredentialRequestAuthenticator:
         # If an API key has been configured in the client config, use that and ignore
         # any separate credential file.
+        storage_provider = self._auth_client_config.storage_provider()
         if self._legacy_client_config.api_key():
             _credential = FileBackedPlanetLegacyApiKey(
-                api_key=self._legacy_client_config.api_key(), api_key_file=self._legacy_client_config.path()
+                api_key=self._legacy_client_config.api_key(),
+                api_key_file=self._legacy_client_config.path(),
+                storage_provider=storage_provider,
             )
         else:
             if isinstance(credential, pathlib.Path):
-                _credential = FileBackedPlanetLegacyApiKey(api_key_file=credential)
+                _credential = FileBackedPlanetLegacyApiKey(api_key_file=credential, storage_provider=storage_provider)
             elif isinstance(credential, FileBackedPlanetLegacyApiKey):
                 _credential = credential
             elif credential is None:
-                # This is kinda brain-damaged.  Even though Authenticators are allowed to obtain
-                # credentials JIT, in this case it cannot possibly do anything useful. The legacy
-                # authenticator does not have any plumbing to trade-in passwords for credentials
-                # at auth time.
-                # This is effectively a NoOp Authenticator.
-                _credential = FileBackedPlanetLegacyApiKey()
-                auth_logger.warning(
-                    msg="Useless Planet Legacy Request Authenticator created."
-                    "  No api key in the client config, and no credentials object provided."
-                )
+                # This will be brain-dead until update_credential() or update_credential_data()
+                # is called.  This is useful for initializing properly typed credential objects.
+                _credential = FileBackedPlanetLegacyApiKey(storage_provider=storage_provider)
             else:
                 raise TypeError(
                     f"{type(self).__name__} does not support {type(credential)} credentials.  Use file path or FileBackedPlanetLegacyApiKey."
                 )
 
         return PlanetLegacyRequestAuthenticator(planet_legacy_credential=_credential)
+
+    def can_login_unattended(self) -> bool:
+        # We could allow username/password to be specified in the client
+        # config, and forgo prompts in login(), but we've not implemented
+        # what would be a bad security practice of saving passwords.
+        return False

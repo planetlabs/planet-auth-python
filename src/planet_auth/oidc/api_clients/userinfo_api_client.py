@@ -35,7 +35,7 @@ class UserinfoApiClient(OidcApiClient):
     def _checked_userinfo_call(self, access_token):
         return self._checked_get_json_response(params=None, request_auth=self.TokenBearerAuth(access_token))
 
-    def userinfo_from_access_token(self, access_token):
+    def userinfo_from_access_token(self, access_token: str) -> dict:
         """
         Obtain user information from the authorization server for the user who owns
         the presented access token.

@@ -17,6 +17,15 @@ on:
           - beta
           - rc
           - release
+      publish-to:
+        description: "Where to publish the package to"
+        type: choice
+        default: "none"
+        options:
+          - none
+          - all
+          - pypi-test
+          - pypi-prod
 
 env:
   PYTHON_VERSION: "3.13"
@@ -30,6 +39,10 @@ jobs:
       contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    outputs:
+      version: ${{steps.gen-buildnum.outputs.version}}
+      version-with-buildnum: ${{steps.gen-buildnum.outputs.version-with-buildnum}}
+      version-variant-raw: ${{steps.gen-buildnum.outputs.variant-raw}}
     steps:
       - name: "Checkout code"
         uses: actions/checkout@v4
@@ -39,24 +52,50 @@ jobs:
         with:
           build-variant: ${{ inputs.build-variant }}
       - name: "Tag repository"
-        # Tagging is part of the build number generation in part because
-        # tag uniqueness serves as a synchronization mechanism to prevent
-        # multiple releases of the same version.
+        # Tagging is part of the build number generation at the start of the
+        # pipeline because tag uniqueness serves as a synchronization
+        # mechanism to prevent multiple releases of the same version.
         run: |
           set -x
           git config --global user.email "planet-auth-python-github-cicd@planet.com"
           git config --global user.name  "CICD for github repository ${GITHUB_REPOSITORY}"
           if [ "${{ steps.gen-buildnum.outputs.variant-raw }}" = "release" ]
           then
-            git tag -a -m "test tag comment for final release" "${{steps.gen-buildnum.outputs.version}}"
-            git push origin                                    "${{steps.gen-buildnum.outputs.version}}"
+            git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version}}"
+            git push origin                                             "${{steps.gen-buildnum.outputs.version}}"
           fi
-          git tag -a -m "test tag comment" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
-          git push origin                  "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+          git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
-    needs: generate-build-number # Doesn't really need it, but gates the pipeline to not waste time.
+    # We do not really need the build number, but this gates the job so we do not waste
+    # time testing a build that is attempting an illegal clobbering of a released version.
+    needs: generate-build-number
+  generate-release:
+    name: "Create Github Release"
+    runs-on: ubuntu-latest
+    needs: [test, generate-build-number]
+    permissions: write-all
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: "Create Github Release (Version candidate release)"
+        # if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
+        uses: actions/create-release@v1
+        with:
+          tag_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          draft: false
+          prerelease: ${{ inputs.version-prerelease }}
+      - name: "Create Github Release (Final version release)"
+        if:  needs.generate-build-number.outputs.version-variant-raw == 'release'
+        uses: actions/create-release@v1
+        with:
+          tag_name: "${{ needs.generate-build-number.outputs.version }}"
+          release_name: "${{ needs.generate-build-number.outputs.version }}"
+          draft: false
+          prerelease: ${{ inputs.version-prerelease }}
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
@@ -64,9 +103,36 @@ jobs:
   publish:
     name: "Publish Release Artifacts"
     uses: ./.github/workflows/release-publish.yml
-    needs: [package, generate-build-number]
+    needs: [package, generate-release, generate-build-number]
+    with:
+      publish-to: ${{inputs.publish-to}}
     secrets:
       PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       PYPI_API_TOKEN_TEST: ${{ secrets.PYPI_API_TOKEN_TEST }}
-    # with:
-    #   version-with-buildnumber: ${{needs.generate-build-number.outputs.version-with-buildnum}}
+  publish-2:
+    # Python trusted publishing does not currently support
+    # reusable workflows.  I really would prefer this be part
+    # of "uses: ./.github/workflows/release-publish.yml" for
+    # better encapsulation.
+    # See https://github.com/pypi/warehouse/issues/11096
+    name: "Publish Release Artifacts (Trusted)"
+    needs: [package, generate-release, generate-build-number]
+    if: inputs.publish-to == 'pypi-prod' || inputs.publish-to == 'all'
+    runs-on: ubuntu-latest
+    environment: pypi-prod
+    permissions:
+      # Needed for Trusted Publishing
+      id-token: write
+    steps:
+      - name: "Download Wheel Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-wheel
+          path: dist
+      - name: "Download Source Package"
+        uses: actions/download-artifact@v4
+        with:
+          name: planet-auth-src-targz
+          path: dist
+      - name: "Trusted Publishing - Publish to PyPi (Production)"
+        uses: pypa/gh-action-pypi-publish@release/v1

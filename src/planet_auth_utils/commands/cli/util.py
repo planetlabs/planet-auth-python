@@ -15,16 +15,14 @@
 import click
 import functools
 import json
-import logging
 
+import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
+from planet_auth.util import custom_json_class_dumper
 
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
 from .prompts import prompt_change_user_default_profile_if_different
-
-
-logger = logging.getLogger(__name__)
 
 
 def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
@@ -45,41 +43,48 @@ def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
     return decorator
 
 
-def _custom_json_class_dumper(obj):
-    try:
-        return obj.__json_pretty_dumps__()
-    except Exception:
-        return obj
-
-
 def print_obj(obj):
-    json_str = json.dumps(obj, indent=2, sort_keys=True, default=_custom_json_class_dumper)
+    json_str = json.dumps(obj, indent=2, sort_keys=True, default=custom_json_class_dumper)
     print(json_str)
 
 
-def post_login_cmd_helper(override_auth_context, current_auth_context, use_sops):
-    # If someone performed a login with a non-default profile, it's
-    # reasonable to ask if they intend to change their defaults
-    prompt_change_user_default_profile_if_different(candidate_profile_name=override_auth_context.profile_name())
+def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
+    override_profile_name = override_auth_context.profile_name()
+    if not override_profile_name:
+        # Can't save to a profile if there is none.  We don't really expect this in the cases
+        # where this is used for the CLI, but this keeps linters happy.
+        return
 
-    # If the client config was created ad-hoc, offer to save it.  If the
-    # config was created ad-hoc, the factory does not associate it with
-    # a file to support factory use in a context where in memory
-    # operations are desired.
-    if (override_auth_context.profile_name() != current_auth_context.profile_name()) and (
-        not Builtins.is_builtin_profile(override_auth_context.profile_name())
-    ):
+    # If someone performed a login with a non-default profile, it's
+    # reasonable to ask if they intend to change their defaults.
+    prompt_change_user_default_profile_if_different(candidate_profile_name=override_profile_name)
+
+    # If the config was created ad-hoc by the factory, the factory does
+    # not associate it with a file to support factory use in a context
+    # where in-memory operations are desired.  This util function is for
+    # helping CLI commands, we can be more opinionated about what is to
+    # be done.
+
+    # Don't clobber built-in profiles.
+    if not Builtins.is_builtin_profile(override_profile_name):
         if use_sops:
             new_profile_config_file_path = Profile.get_profile_file_path(
-                profile=override_auth_context.profile_name(), filename=AUTH_CONFIG_FILE_SOPS
+                profile=override_profile_name, filename=AUTH_CONFIG_FILE_SOPS
             )
         else:
             new_profile_config_file_path = Profile.get_profile_file_path(
-                profile=override_auth_context.profile_name(), filename=AUTH_CONFIG_FILE_PLAIN
+                profile=override_profile_name, filename=AUTH_CONFIG_FILE_PLAIN
             )
 
+        # TODO? should we update if it exists with any command line options?
+        #       The way things are currently structured, options added to the
+        #       login command (like --scope) are not pushed down into the profile,
+        #       but considered runtime overrides.
         if not new_profile_config_file_path.exists():
             override_auth_context.auth_client().config().set_path(new_profile_config_file_path)
+            # No need to specify provider. The CLI is only concerned with the
+            # default file based storage provider for now.
+            # override_auth_context.auth_client().config().set_storage_provider()
             override_auth_context.auth_client().config().save()
 
     # TODO? Set ctx.obj["AUTH"] to override_auth_context?

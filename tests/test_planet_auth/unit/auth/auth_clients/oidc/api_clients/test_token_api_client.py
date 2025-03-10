@@ -19,12 +19,13 @@ from requests.models import Response
 from requests.auth import AuthBase
 from typing import Tuple, Optional
 from unittest import mock
+import freezegun
 
 from planet_auth.oidc.api_clients.api_client import OidcApiClientException
-from planet_auth.oidc.api_clients.token_api_client import TokenApiClient, TokenApiException
+from planet_auth.oidc.api_clients.token_api_client import TokenApiClient, TokenApiException, TokenApiTimeoutException
 from planet_auth.oidc.util import create_pkce_challenge_verifier_pair
 
-from tests.test_planet_auth.util import mock_sleep_skip
+from tests.test_planet_auth.util import mock_sleep_skip, FreezeGunMockSleep
 
 TEST_API_ENDPOINT = "https://blackhole.unittest.planet.com/api"
 TEST_CLIENT_ID = "__test_client_id__"
@@ -240,41 +241,43 @@ class TokenApiClientTest(unittest.TestCase):
         self.assertEqual(API_RESPONSE_VALID, token_response)
         self.assertEqual(mock_post.call_count, 2)
 
-    @mock.patch("time.sleep", mock_sleep_skip)
+    @freezegun.freeze_time(as_kwarg="frozen_time")
     @mock.patch("requests.sessions.Session.post", side_effect=mocked_response_slow_down)
-    def test_token_from_device_code_slow_down(self, mock_post):
-        # FIXME: we get away with only mocking sleep() and not the
-        #     the clock because the timout implementation is a little weak.
-        under_test = TokenApiClient(token_uri=TEST_API_ENDPOINT)
-        with self.assertRaises(TokenApiException):
-            under_test.poll_for_token_from_device_code(
-                client_id=TEST_CLIENT_ID,
-                device_code="__utest_mock_device_code__",
-                timeout=16,
-                poll_interval=1,
-                auth_enricher=self._test_auth_enricher,
-            )
-        # A bit loose of a check. We expect a slow down of +5 seconds each time
-        # the service tells us to slow down. Our mock is simple and always tells us
-        # to slow, and we exit with the client provided timeout.
-        # So, we expect sleeps/checks at t = 1, 6, 11, <timeout>
-        self.assertEqual(mock_post.call_count, 3)
-        # TODO check wall-clock time?
+    def test_token_from_device_code_slow_down(self, mock_post, frozen_time):
+        fg_mock_sleep = FreezeGunMockSleep(frozen_time)
+        with mock.patch("time.sleep", side_effect=fg_mock_sleep.mock_sleep):
+            under_test = TokenApiClient(token_uri=TEST_API_ENDPOINT)
+            with self.assertRaises(TokenApiTimeoutException):
+                under_test.poll_for_token_from_device_code(
+                    client_id=TEST_CLIENT_ID,
+                    device_code="__utest_mock_device_code__",
+                    timeout=16,
+                    poll_interval=1,
+                    auth_enricher=self._test_auth_enricher,
+                )
 
-    @mock.patch("time.sleep", mock_sleep_skip)
+            # A bit loose of a check. We expect a slow-down of +5 seconds each time
+            # the service tells us to slow down. Our mock is simple and always tells us
+            # to slow, and we exit with the client provided timeout.
+            # So, we expect sleeps/checks at t = 1, 6, 11, <timeout>
+            self.assertEqual(mock_post.call_count, 3)
+
+    @freezegun.freeze_time(as_kwarg="frozen_time")
     @mock.patch("requests.sessions.Session.post", side_effect=mocked_response_pending)
-    def test_token_from_device_code_client_provided_timeout(self, mock_post):
-        under_test = TokenApiClient(token_uri=TEST_API_ENDPOINT)
-        with self.assertRaises(TokenApiException):
-            under_test.poll_for_token_from_device_code(
-                client_id=TEST_CLIENT_ID,
-                device_code="__utest_mock_device_code__",
-                timeout=4,
-                poll_interval=1,
-                auth_enricher=self._test_auth_enricher,
-            )
-        # a bit loose of a check?
-        self.assertEqual(mock_post.call_count, 5)
+    def test_token_from_device_code_client_provided_timeout(self, mock_post, frozen_time):
+        fg_mock_sleep = FreezeGunMockSleep(frozen_time)
+        with mock.patch("time.sleep", side_effect=fg_mock_sleep.mock_sleep):
+            under_test = TokenApiClient(token_uri=TEST_API_ENDPOINT)
+            with self.assertRaises(TokenApiException):
+                under_test.poll_for_token_from_device_code(
+                    client_id=TEST_CLIENT_ID,
+                    device_code="__utest_mock_device_code__",
+                    timeout=4,
+                    poll_interval=1,
+                    auth_enricher=self._test_auth_enricher,
+                )
+            # a bit loose of a check?
+            self.assertEqual(mock_post.call_count, 5)
 
     @mock.patch("requests.sessions.Session.post", side_effect=mocked_response_denied)
     def test_token_from_device_code_service_generated_error(self, mock_post):

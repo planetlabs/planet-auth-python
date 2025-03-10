@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from planet_auth import Credential
-from planet_auth.util import FileBackedJsonObjectException
+from typing import Optional
+
+from planet_auth.credential import Credential
+from planet_auth.storage_utils import InvalidDataException, ObjectStorageProvider
 
 
 class FileBackedOidcCredential(Credential):
@@ -21,8 +23,8 @@ class FileBackedOidcCredential(Credential):
     Credential object for storing OAuth/OIDC tokens.
     """
 
-    def __init__(self, data=None, credential_file=None):
-        super().__init__(data=data, file_path=credential_file)
+    def __init__(self, data=None, credential_file=None, storage_provider: Optional[ObjectStorageProvider] = None):
+        super().__init__(data=data, file_path=credential_file, storage_provider=storage_provider)
 
     def check_data(self, data):
         """
@@ -30,7 +32,7 @@ class FileBackedOidcCredential(Credential):
         """
         super().check_data(data)
         if not data.get("access_token") and not data.get("id_token") and not data.get("refresh_token"):
-            raise FileBackedJsonObjectException(
+            raise InvalidDataException(
                 message="'access_token', 'id_token', or 'refresh_token' not found in file {}".format(self._file_path)
             )
 
