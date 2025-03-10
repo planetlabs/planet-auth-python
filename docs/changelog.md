@@ -1,7 +1,7 @@
 # Changelog
 
-## 2.0.4 - 2025-03-08
-- Initial Alpha release series to shakedown public release pipelines and
+## 2.0.4.X - 2025-03-09
+- Initial Beta release series to shakedown public release pipelines and
   initial integrations.
 
 ## [Unreleased: 2.0.0 - 2.0.3] - YYYY-MM-DD

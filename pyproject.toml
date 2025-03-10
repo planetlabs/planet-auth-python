@@ -146,7 +146,7 @@ disable = [
 
 [tool.pylint.miscellaneous]
 # List of note tags to take in consideration for the "fixme" rule, separated by a comma.
-# notes = ["FIXME", "XXX", "TODO"]
+# notes = ["FIXME", "XXX", "TODO", "TODO?"]
 notes = ["FIXME", "XXX"]
 
 #[tool.pylint.format]
