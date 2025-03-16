@@ -106,8 +106,15 @@ def cmd_plauth_version():
     """
     Show the version of planet auth components.
     """
-    print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
-    # TODO: put config back. print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
+    def _pkg_display_version(pkg_name):
+        try:
+            return importlib.metadata.version(pkg_name)
+        except importlib.metadata.PackageNotFoundError:
+            return "N/A"
+    # Well known packages with built-in profile configs we commonly use.
+    print(f"planet-auth : {_pkg_display_version('planet-auth')}")
+    print(f"planet-auth-config : {_pkg_display_version('planet-auth-config')}")
+    print(f"planet : {_pkg_display_version('planet')}")
 
 
 @cmd_plauth.command("login")
