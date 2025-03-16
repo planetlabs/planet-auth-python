@@ -57,6 +57,7 @@ def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
 
     # If someone performed a login with a non-default profile, it's
     # reasonable to ask if they intend to change their defaults.
+    # TODO: provide a no-prompt option (or a -n/-y option?)  Allow setting via planet.json
     prompt_change_user_default_profile_if_different(candidate_profile_name=override_profile_name)
 
     # If the config was created ad-hoc by the factory, the factory does

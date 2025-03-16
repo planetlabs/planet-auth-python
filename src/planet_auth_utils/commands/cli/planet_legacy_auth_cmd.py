@@ -64,6 +64,7 @@ def cmd_pllegacy_login(ctx, username, password, sops):
         password=password,
     )
     print("Login succeeded.")  # Errors should throw.
+    # TODO: Manage prompts
     post_login_cmd_helper(
         override_auth_context=current_auth_context,
         use_sops=sops,

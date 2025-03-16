@@ -107,6 +107,7 @@ def cmd_plauth_version():
     Show the version of planet auth components.
     """
     print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
+    # TODO: put config back. print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
 
 
 @cmd_plauth.command("login")
@@ -182,6 +183,7 @@ def cmd_plauth_login(
     )
     print("Login succeeded.")  # Errors should throw.
 
+    # TODO: Manage prompts
     post_login_cmd_helper(
         override_auth_context=override_auth_context,
         use_sops=sops,
