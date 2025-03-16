@@ -42,6 +42,7 @@ from .options import (
     opt_show_qr_code,
     opt_sops,
     opt_username,
+    opt_yes_no,
 )
 from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
 
@@ -142,6 +143,7 @@ def cmd_oauth(ctx):
 @opt_client_id
 @opt_client_secret
 @opt_sops
+@opt_yes_no
 @click.pass_context
 @recast_exceptions_to_click(AuthException)
 def cmd_oauth_login(
@@ -156,6 +158,7 @@ def cmd_oauth_login(
     auth_client_id,
     auth_client_secret,
     sops,
+    yes,
     project,
 ):
     """
@@ -184,11 +187,7 @@ def cmd_oauth_login(
         extra=extra,
     )
     print("Login succeeded.")  # Errors should throw.
-    # TODO: Manage prompts
-    post_login_cmd_helper(
-        override_auth_context=current_auth_context,
-        use_sops=sops,
-    )
+    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
 @cmd_oauth.command("refresh")

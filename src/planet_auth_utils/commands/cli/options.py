@@ -191,6 +191,20 @@ def opt_loglevel(function):
     return function
 
 
+def opt_yes_no(function):
+    """
+    Click option to bypass prompts with a yes or no selection.
+    """
+    function = click.option(
+        "--yes/--no",
+        "-y/-n",
+        help='Skip user prompts with a "yes" or "no" selection',
+        default=None,
+        show_default=True,
+    )(function)
+    return function
+
+
 def opt_human_readable(function):
     """
     Click option to toggle raw / human-readable formatting.

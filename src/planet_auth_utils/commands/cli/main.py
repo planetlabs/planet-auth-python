@@ -37,6 +37,7 @@ from .options import (
     opt_audience,
     opt_token_file,
     opt_scope,
+    opt_yes_no,
 )
 from .oauth_cmd import cmd_oauth
 from .planet_legacy_auth_cmd import cmd_pllegacy
@@ -106,11 +107,13 @@ def cmd_plauth_version():
     """
     Show the version of planet auth components.
     """
+
     def _pkg_display_version(pkg_name):
         try:
             return importlib.metadata.version(pkg_name)
         except importlib.metadata.PackageNotFoundError:
             return "N/A"
+
     # Well known packages with built-in profile configs we commonly use.
     print(f"planet-auth : {_pkg_display_version('planet-auth')}")
     print(f"planet-auth-config : {_pkg_display_version('planet-auth-config')}")
@@ -131,6 +134,7 @@ def cmd_plauth_version():
 @opt_username()
 @opt_password()
 @opt_sops
+@opt_yes_no
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth_login(
@@ -148,6 +152,7 @@ def cmd_plauth_login(
     username,
     password,
     sops,
+    yes,
 ):
     """
     Perform an initial login, obtain user authorization, and save access
@@ -190,11 +195,7 @@ def cmd_plauth_login(
     )
     print("Login succeeded.")  # Errors should throw.
 
-    # TODO: Manage prompts
-    post_login_cmd_helper(
-        override_auth_context=override_auth_context,
-        use_sops=sops,
-    )
+    post_login_cmd_helper(override_auth_context=override_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
 cmd_plauth.add_command(cmd_oauth)

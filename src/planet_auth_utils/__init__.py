@@ -70,6 +70,7 @@ from .commands.cli.options import (
     opt_sops,
     opt_token_file,
     opt_username,
+    opt_yes_no,
 )
 from .commands.cli.util import recast_exceptions_to_click
 from planet_auth_utils.constants import EnvironmentVariables
@@ -123,6 +124,7 @@ __all__ = [
     "opt_sops",
     "opt_token_file",
     "opt_username",
+    "opt_yes_no",
     "recast_exceptions_to_click",
     #
     "Builtins",

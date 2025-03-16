@@ -15,6 +15,7 @@
 import click
 import functools
 import json
+from typing import Optional
 
 import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
@@ -22,7 +23,7 @@ from planet_auth.util import custom_json_class_dumper
 
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
-from .prompts import prompt_change_user_default_profile_if_different
+from .prompts import prompt_and_change_user_default_profile_if_different
 
 
 def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
@@ -48,7 +49,9 @@ def print_obj(obj):
     print(json_str)
 
 
-def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
+def post_login_cmd_helper(
+    override_auth_context: planet_auth.Auth, use_sops, prompt_pre_selection: Optional[bool] = None
+):
     override_profile_name = override_auth_context.profile_name()
     if not override_profile_name:
         # Can't save to a profile if there is none.  We don't really expect this in the cases
@@ -57,8 +60,9 @@ def post_login_cmd_helper(override_auth_context: planet_auth.Auth, use_sops):
 
     # If someone performed a login with a non-default profile, it's
     # reasonable to ask if they intend to change their defaults.
-    # TODO: provide a no-prompt option (or a -n/-y option?)  Allow setting via planet.json
-    prompt_change_user_default_profile_if_different(candidate_profile_name=override_profile_name)
+    prompt_and_change_user_default_profile_if_different(
+        candidate_profile_name=override_profile_name, change_default_selection=prompt_pre_selection
+    )
 
     # If the config was created ad-hoc by the factory, the factory does
     # not associate it with a file to support factory use in a context
