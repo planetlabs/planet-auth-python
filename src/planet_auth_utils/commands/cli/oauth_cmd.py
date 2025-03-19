@@ -55,7 +55,7 @@ def _check_client_type(ctx):
 @click.pass_context
 def cmd_oauth(ctx):
     """
-    Auth commands specific to OAuth authentication mechanisms.
+    OAuth2 authentication commands.
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
