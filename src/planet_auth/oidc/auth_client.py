@@ -588,6 +588,14 @@ class OidcAuthClient(AuthClient, ABC):
         """
         return self.userinfo_client().userinfo_from_access_token(access_token=access_token)
 
+    def oidc_discovery(self) -> dict:
+        """
+        Query the authorization server's OIDC discovery endpoint for server information.
+        Returns:
+            Returns the OIDC discovery dictionary.
+        """
+        return self._discovery()
+
     def get_scopes(self) -> List[str]:
         """
         Query the authorization server for a list of scopes.

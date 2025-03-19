@@ -39,6 +39,7 @@ from .commands.cli.oauth_cmd import (
     cmd_oauth_revoke_access_token,
     cmd_oauth_revoke_refresh_token,
     cmd_oauth_userinfo,
+    cmd_oauth_discovery,
     cmd_oauth_list_scopes,
     cmd_oauth_print_access_token,
 )
@@ -103,6 +104,7 @@ __all__ = [
     "cmd_oauth_revoke_access_token",
     "cmd_oauth_revoke_refresh_token",
     "cmd_oauth_userinfo",
+    "cmd_oauth_discovery",
     "cmd_oauth_list_scopes",
     "cmd_oauth_print_access_token",
     "cmd_pllegacy",
