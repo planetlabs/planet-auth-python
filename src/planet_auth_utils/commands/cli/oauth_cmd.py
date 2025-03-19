@@ -27,6 +27,7 @@ from .options import (
     opt_audience,
     opt_client_id,
     opt_client_secret,
+    opt_extra,
     opt_human_readable,
     opt_open_browser,
     opt_organization,
@@ -77,8 +78,9 @@ def cmd_oauth(ctx):
 @opt_client_secret
 @opt_sops
 @opt_yes_no
+@opt_extra
 @click.pass_context
-@recast_exceptions_to_click(AuthException)
+@recast_exceptions_to_click(AuthException, ValueError)
 def cmd_oauth_login(
     ctx,
     scope,
@@ -93,18 +95,23 @@ def cmd_oauth_login(
     sops,
     yes,
     project,
+    extra,
 ):
     """
     Perform an initial login using OAuth.
     """
-    extra = {}
+    login_extra = {}
+    if extra:
+        for extra_opt in extra:
+            key, value = extra_opt.split("=", 1)
+            login_extra[key] = value
     if project:
         # Planet Labs OAuth extension to request a token for a particular project
-        extra["project_id"] = project
+        login_extra["project_id"] = project
     if organization:
         # Used by Auth0's OAuth implementation to support their concept of selecting
         # a particular organization at login when the user belongs to more than one.
-        extra["organization"] = organization
+        login_extra["organization"] = organization
 
     current_auth_context = ctx.obj["AUTH"]
     current_auth_context.login(
@@ -117,7 +124,7 @@ def cmd_oauth_login(
         password=password,
         client_id=auth_client_id,
         client_secret=auth_client_secret,
-        extra=extra,
+        extra=login_extra,
     )
     print("Login succeeded.")  # Errors should throw.
     post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
