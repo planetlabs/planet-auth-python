@@ -163,6 +163,18 @@ def cmd_oauth_list_scopes(ctx):
         print_obj([])
 
 
+@cmd_oauth.command("discovery")
+@click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
+def cmd_oauth_discovery(ctx):
+    """
+    Look up OAuth server discovery information.
+    """
+    auth_client = ctx.obj["AUTH"].auth_client()
+    discovery_json = auth_client.oidc_discovery()
+    print_obj(discovery_json)
+
+
 @cmd_oauth.command("validate-access-token")
 @click.pass_context
 @opt_human_readable

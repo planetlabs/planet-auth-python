@@ -450,6 +450,26 @@ class AuthClient(ABC):
             message="User information lookup is not implemented for the current authentication mechanism"
         )
 
+    def oidc_discovery(self) -> dict:
+        """
+        Query the authorization server's OIDC discovery endpoint for server information.
+        Returns:
+            Returns the OIDC discovery dictionary.
+        """
+        raise AuthClientException(
+            message="OIDC discovery is not implemented for the current authentication mechanism."
+        )
+
+    # def oauth_discovery(self) -> dict:
+    #     """
+    #     Query the authorization server's OAuth2 discovery endpoint for server information.
+    #     Returns:
+    #         Returns the OAuth2 discovery dictionary.
+    #     """
+    #     raise AuthClientException(
+    #         message="OAuth2 discovery is not implemented for the current authentication mechanism."
+    #     )
+
     def get_scopes(self) -> List[str]:
         """
         Query the authorization server for a list of scopes.
