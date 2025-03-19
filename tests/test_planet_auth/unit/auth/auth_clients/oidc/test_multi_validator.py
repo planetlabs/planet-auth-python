@@ -15,6 +15,9 @@
 import inspect
 import jwt.utils
 import secrets
+import time
+import uuid
+import re
 from unittest import mock
 
 import pytest
@@ -33,11 +36,16 @@ from tests.test_planet_auth.util import tdata_resource_file_path
 TEST_PRIMARY_ISSUER = "test_primary_issuer"
 TEST_PRIMARY_SIGNING_KEY = tdata_resource_file_path("keys/keypair1_priv_nopassword.test_pem")
 TEST_PRIMARY_PUB_KEY = tdata_resource_file_path("keys/keypair1_pub_jwk.json")
+
 TEST_SECONDARY_ISSUER = "test_secondary_issuer"
 TEST_SECONDARY_SIGNING_KEY = tdata_resource_file_path("keys/keypair2_priv_nopassword.test_pem")
 TEST_SECONDARY_PUB_KEY = tdata_resource_file_path("keys/keypair2_pub_jwk.json")
-TEST_AUDIENCE = "test_audience"
+
 TEST_UNTRUSTED_ISSUER = "test_untrusted_issuer"
+TEST_UNTRUSTED_SIGNING_KEY = tdata_resource_file_path("keys/keypair3_priv_nopassword.test_pem")
+TEST_UNTRUSTED_PUB_KEY = tdata_resource_file_path("keys/keypair3_pub_jwk.json")
+
+TEST_AUDIENCE = "test_audience"
 
 TEST_TOKEN_TTL = 60
 
@@ -135,9 +143,8 @@ untrusted_issuer_config_dict = {
     "audiences": [TEST_AUDIENCE],
     "stub_authority_ttl": TEST_TOKEN_TTL,
     "stub_authority_access_token_audience": TEST_AUDIENCE,
-    "stub_authority_signing_key_file": TEST_PRIMARY_SIGNING_KEY,
-    # for the tests we use this for, it doesn't matter we reuse a signing key.
-    "stub_authority_pub_key_file": TEST_PRIMARY_PUB_KEY,
+    "stub_authority_signing_key_file": TEST_UNTRUSTED_SIGNING_KEY,
+    "stub_authority_pub_key_file": TEST_UNTRUSTED_PUB_KEY,
 }
 untrusted_issuer_config = StubOidcClientConfig(**untrusted_issuer_config_dict)
 
@@ -289,6 +296,61 @@ class TestMultiValidator:
 
         with pytest.raises(InvalidTokenException):
             under_test.validate_access_token(token=fake_jwt)
+
+    def test_malformed_token_5_iss_liars(self):
+        test_case_name = inspect.currentframe().f_code.co_name
+        test_username = self.username(test_case_name)
+        under_test = self.under_test__only_primary_validator()
+
+        now = int(time.time())
+        token_body = {
+            "iss": primary_issuer.token_builder.issuer,
+            "sub": test_username,
+            "aud": primary_issuer.token_builder.audience,
+            "iat": now,
+            "exp": now + 100,
+            "jti": str(uuid.uuid4()),
+        }
+        token_header = {
+            "alg": primary_issuer.token_builder.signing_key_algorithm,
+            "kid": primary_issuer.token_builder.signing_key_id,
+        }
+
+        # TC 0
+        # Build a valid token first, just to make sure our test method is valid
+        test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        under_test.validate_access_token(token=test_jwt)  # No throw
+
+        # TC 1
+        # Use the real signing key, but make the iss an invalid type.
+        # You can make the argument this is still valid, because the signature is still
+        # from a trusted issuer. But, we reject it based on bad structure.
+        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
+        test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        with pytest.raises(
+            InvalidTokenException,
+            match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
+        ):
+            under_test.validate_access_token(token=test_jwt)
+
+        # TC 2
+        # Liar token.  Untrusted issuer signing key claiming to be valid issuer
+        token_body["iss"] = primary_issuer.token_builder.issuer
+        test_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        with pytest.raises(
+            InvalidTokenException, match=re.escape("Signature verification failed (InvalidSignatureError)")
+        ):
+            under_test.validate_access_token(token=test_jwt)
+
+        # TC 3
+        # Double-talk liar.  Using the untrusted signing key, claiming to be ourselves and the trusted issuer.
+        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
+        test_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        with pytest.raises(
+            InvalidTokenException,
+            match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
+        ):
+            under_test.validate_access_token(token=test_jwt)
 
     def test_missing_signature(self):
         # QE TC11 - JWT without a signature
