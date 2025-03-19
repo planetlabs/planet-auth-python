@@ -294,6 +294,38 @@ def opt_token_file(function):
     return function
 
 
+def opt_key(function):
+    """
+    Click option for specifying a key literal.
+    """
+    function = click.option(
+        "--key",
+        help="Key string.",
+        type=str,
+        # envvar=EnvironmentVariables.AUTH_KEY,
+        show_envvar=False,
+        show_default=False,
+    )(function)
+    return function
+
+
+def opt_key_file(function):
+    """
+    Click option for specifying a key file location for the
+    planet_auth package's click commands.
+    """
+    function = click.option(
+        "--key-file",
+        type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
+        # envvar=EnvironmentVariables.AUTH_KEY_FILE,
+        help="File containing a key.",
+        default=None,
+        show_envvar=False,
+        show_default=True,
+    )(function)
+    return function
+
+
 def opt_issuer(required=False):
     def decorator(function):
         """

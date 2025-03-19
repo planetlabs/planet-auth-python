@@ -14,6 +14,7 @@
 
 import click
 import json
+import jwt
 import pathlib
 import sys
 import textwrap
@@ -30,6 +31,8 @@ from planet_auth.util import custom_json_class_dumper
 from .options import (
     opt_audience,
     opt_issuer,
+    opt_key,
+    opt_key_file,
     opt_token,
     opt_token_file,
     opt_human_readable,
@@ -225,21 +228,54 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     )
 
 
-@cmd_jwt.command("validate-rs256", hidden=True)
+@cmd_jwt.command("validate-rs256")
 @click.pass_context
 @opt_human_readable
 @opt_token
 @opt_token_file
+@opt_key
+@opt_key_file
 @recast_exceptions_to_click(AuthException, FileNotFoundError, NotImplementedError)
-def cmd_jwt_validate_rs256(ctx, token, token_file, human_readable):
+def cmd_jwt_validate_rs256(ctx, token, token_file, key, key_file, human_readable):
     """
     Validate a JWT signed with a RS256 signature
     """
-    # token_to_validate = _get_token_or_fail(token_opt=token, token_file_opt=token_file)
+    # The TokenValidator is geared for OAuth2 JWTs.
+    # This helper is lower level, and doesn't make the same assumptions.
+    # TODO: it might be nice to still have this more adjacent to the TokenValidator
+    #   to keep practices aligned.
+    # validator = TokenValidator()
+    token_to_validate = _get_token_or_fail(token_opt=token, token_file_opt=token_file)
+    signing_key: jwt.PyJWK = None
+    # required_claims = []
+    validated_complete = jwt.decode_complete(  # Throws when invalid.
+        token_to_validate,
+        signing_key,
+        algorithms=["rs256", "RS256"],
+        # issuer=issuer,
+        # audience=audience,
+        options={
+            # "require": required_claims,
+            # "verify_aud": True,
+            "verify_exp": True,
+            # "verify_iss": True,
+            "verify_signature": True,
+        },
+    )
+    # XXX check - validation throws on error
+    click.echo("TOKEN OK")
+    print_jwt_parts(
+        raw=token_to_validate,
+        header=validated_complete["header"],
+        body=validated_complete["payload"],
+        signature=validated_complete["signature"],
+        human_readable=human_readable,
+    )
+
     raise NotImplementedError("Command not implemented")
 
 
-@cmd_jwt.command("validate-hs512", hidden=True)
+@cmd_jwt.command("validate-hs512")
 @click.pass_context
 @opt_human_readable
 @opt_token
