@@ -231,6 +231,10 @@ class OidcMultiIssuerValidator:
             # PyJWT does not seem to raise if the issuer is explicitly None, even when
             # verify_iss was selected.
             raise InvalidTokenException(message="Cannot validate token that does not include an issuer ('iss') claim")
+        if not isinstance(issuer, str):
+            raise InvalidTokenException(
+                message=f"Issuer claim ('iss') must be a of string type. '{type(issuer).__name__}' type was detected."
+            )
 
         validator = self._trusted.get(issuer)
         if validator:
