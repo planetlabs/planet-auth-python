@@ -385,3 +385,24 @@ def opt_sops(function):
         show_default=True,
     )(function)
     return function
+
+
+def opt_extra(function):
+    """
+    Click option for specifying extra options.
+    """
+    function = click.option(
+        "--extra",
+        "-O",
+        multiple=True,
+        type=str,
+        envvar=EnvironmentVariables.AUTH_EXTRA,
+        help="Specify an extra option.  Specify multiple options to specify"
+        " multiple extra options.  The format of an option is <key>=<value>."
+        " When set via environment variable, values should be delimited by"
+        " whitespace.",
+        default=None,
+        show_envvar=True,
+        show_default=True,
+    )(function)
+    return function
