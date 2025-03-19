@@ -392,7 +392,8 @@ def opt_extra(function):
     Click option for specifying extra options.
     """
     function = click.option(
-        "--extra", "-O",
+        "--extra",
+        "-O",
         multiple=True,
         type=str,
         envvar=EnvironmentVariables.AUTH_EXTRA,
