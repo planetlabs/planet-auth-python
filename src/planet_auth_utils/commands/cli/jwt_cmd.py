@@ -34,7 +34,7 @@ from .options import (
     opt_token_file,
     opt_human_readable,
 )
-from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
+from .util import recast_exceptions_to_click
 
 
 class _jwt_human_dumps:
@@ -193,7 +193,7 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     else:
         if not hazmat_body.get("iss"):
             raise click.BadParameter(
-                "The provided token does not contain an `iss` claim." "  Is the provided JWT RFC 9068 compliant?"
+                "The provided token does not contain an `iss` claim.  Is the provided JWT RFC 9068 compliant?"
             )
         validation_iss = hazmat_body.get("iss")
 
@@ -202,7 +202,7 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     else:
         if not hazmat_body.get("aud"):
             raise click.BadParameter(
-                "The provided token does not contain an `aud` claim." "  Is the provided JWT RFC 9068 compliant?"
+                "The provided token does not contain an `aud` claim.  Is the provided JWT RFC 9068 compliant?"
             )
         hazmat_aud = hazmat_body.get("aud")
         if isinstance(hazmat_aud, list):

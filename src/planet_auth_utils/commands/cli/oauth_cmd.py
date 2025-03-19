@@ -21,9 +21,7 @@ from planet_auth import (
     OidcAuthClient,
     ExpiredTokenException,
     ClientCredentialsAuthClientBase,
-    TokenValidator,
 )
-from planet_auth.util import custom_json_class_dumper
 
 from .options import (
     opt_audience,

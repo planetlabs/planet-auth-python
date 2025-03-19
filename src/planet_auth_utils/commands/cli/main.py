@@ -35,7 +35,6 @@ from .options import (
     opt_show_qr_code,
     opt_sops,
     opt_audience,
-    opt_token_file,
     opt_scope,
     opt_yes_no,
 )
