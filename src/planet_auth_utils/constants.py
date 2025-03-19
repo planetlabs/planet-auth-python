@@ -38,14 +38,24 @@ class EnvironmentVariables:
     Name of a profile to use for auth client configuration.
     """
 
+    AUTH_TOKEN = "PL_AUTH_TOKEN"
+    """
+    Literal token string.
+    """
+
     AUTH_TOKEN_FILE = "PL_AUTH_TOKEN_FILE"
     """
-    File path to use for storing OAuth tokens.
+    File path to use for storing tokens.
+    """
+
+    AUTH_ISSUER = "PL_AUTH_ISSUER"
+    """
+    Issuer to use when requesting or validating OAuth tokens.
     """
 
     AUTH_AUDIENCE = "PL_AUTH_AUDIENCE"
     """
-    Audience to use when requesting OAuth tokens.
+    Audience to use when requesting or validating OAuth tokens.
     """
 
     AUTH_ORGANIZATION = "PL_AUTH_ORGANIZATION"

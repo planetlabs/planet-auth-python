@@ -17,6 +17,7 @@
 #       and click or simple code for others.
 
 import click
+from typing import Optional
 
 # from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog, yes_no_dialog
 
@@ -25,8 +26,8 @@ from planet_auth_utils.plauth_user_config import PlanetAuthUserConfigEnhanced
 from planet_auth_utils.constants import EnvironmentVariables
 
 
-def prompt_change_user_default_profile_if_different(
-    candidate_profile_name: str,
+def prompt_and_change_user_default_profile_if_different(
+    candidate_profile_name: str, change_default_selection: Optional[bool] = None
 ):
     config_file = PlanetAuthUserConfigEnhanced()
     try:
@@ -39,6 +40,8 @@ def prompt_change_user_default_profile_if_different(
         # Since CLI options and env vars are higher priority than this file,
         # it should not cause surprises.
         do_change_default = True
+    elif change_default_selection is not None:
+        do_change_default = change_default_selection
     else:
         do_change_default = False
         if saved_profile_name != candidate_profile_name:

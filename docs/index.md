@@ -1,15 +1,15 @@
 # Planet Auth Utility Library
 
 The Planet Auth Library provides generic authentication utilities for clients
-and for services.  For clients, it provides means to obtain access tokens that
+and services.  For clients, it provides the means to obtain access tokens that
 can be used to access network services.  For services, it provides tools to
 validate the same access tokens.
 
 The architecture of the code was driven by OAuth2, but is intended to be easily
-extensible to new authentication protocols in the future.  Since both clients
+extensible to new authentication protocols in the future.  Since clients
 and resource servers are both themselves clients to authorization servers in
-an OAuth2 deployment, this combining of resource client and resource server
-concerns in a single library was seen as natural.
+an OAuth2 deployment, this combining of client and server concerns in a single
+library was seen as natural.
 
 Currently, this library supports OAuth2, Planet's legacy proprietary
 authentication protocols, and static API keys.

@@ -51,12 +51,18 @@ from .commands.cli.profile_cmd import (
     cmd_profile_set,
     cmd_profile_show,
 )
+from .commands.cli.jwt_cmd import (
+    cmd_jwt,
+    cmd_jwt_decode,
+    cmd_jwt_validate_oauth,
+)
 from .commands.cli.options import (
     opt_api_key,
     opt_audience,
     opt_client_id,
     opt_client_secret,
     opt_human_readable,
+    opt_issuer,
     opt_loglevel,
     opt_long,
     opt_open_browser,
@@ -68,8 +74,10 @@ from .commands.cli.options import (
     opt_scope,
     opt_show_qr_code,
     opt_sops,
+    opt_token,
     opt_token_file,
     opt_username,
+    opt_yes_no,
 )
 from .commands.cli.util import recast_exceptions_to_click
 from planet_auth_utils.constants import EnvironmentVariables
@@ -81,6 +89,9 @@ from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 __all__ = [
     "cmd_plauth_embedded",
     "cmd_plauth_login",
+    "cmd_jwt",
+    "cmd_jwt_decode",
+    "cmd_jwt_validate_oauth",
     "cmd_oauth",
     "cmd_oauth_login",
     "cmd_oauth_refresh",
@@ -110,6 +121,7 @@ __all__ = [
     "opt_client_id",
     "opt_client_secret",
     "opt_human_readable",
+    "opt_issuer",
     "opt_loglevel",
     "opt_long",
     "opt_open_browser",
@@ -121,8 +133,10 @@ __all__ = [
     "opt_scope",
     "opt_show_qr_code",
     "opt_sops",
+    "opt_token",
     "opt_token_file",
     "opt_username",
+    "opt_yes_no",
     "recast_exceptions_to_click",
     #
     "Builtins",

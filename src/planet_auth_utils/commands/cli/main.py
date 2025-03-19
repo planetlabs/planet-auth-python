@@ -35,22 +35,22 @@ from .options import (
     opt_show_qr_code,
     opt_sops,
     opt_audience,
-    opt_token_file,
     opt_scope,
+    opt_yes_no,
 )
 from .oauth_cmd import cmd_oauth
 from .planet_legacy_auth_cmd import cmd_pllegacy
 from .profile_cmd import cmd_profile
+from .jwt_cmd import cmd_jwt
 from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
 @opt_loglevel
 @opt_profile
-@opt_token_file  # Remove?  The interactions with changing the profile in login are not great.
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
-def cmd_plauth(ctx, loglevel, auth_profile, token_file):
+def cmd_plauth(ctx, loglevel, auth_profile):
     """
     Planet Auth Utility commands
     """
@@ -67,7 +67,7 @@ def cmd_plauth(ctx, loglevel, auth_profile, token_file):
 
     ctx.obj["AUTH"] = PlanetAuthFactory.initialize_auth_client_context(
         auth_profile_opt=auth_profile,
-        token_file_opt=token_file,
+        # token_file_opt=token_file,
     )
 
 
@@ -106,7 +106,17 @@ def cmd_plauth_version():
     """
     Show the version of planet auth components.
     """
-    print(f"planet-auth : {importlib.metadata.version('planet-auth')}")
+
+    def _pkg_display_version(pkg_name):
+        try:
+            return importlib.metadata.version(pkg_name)
+        except importlib.metadata.PackageNotFoundError:
+            return "N/A"
+
+    # Well known packages with built-in profile configs we commonly use.
+    print(f"planet-auth : {_pkg_display_version('planet-auth')}")
+    print(f"planet-auth-config : {_pkg_display_version('planet-auth-config')}")
+    print(f"planet : {_pkg_display_version('planet')}")
 
 
 @cmd_plauth.command("login")
@@ -123,6 +133,7 @@ def cmd_plauth_version():
 @opt_username()
 @opt_password()
 @opt_sops
+@opt_yes_no
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth_login(
@@ -140,6 +151,7 @@ def cmd_plauth_login(
     username,
     password,
     sops,
+    yes,
 ):
     """
     Perform an initial login, obtain user authorization, and save access
@@ -182,19 +194,18 @@ def cmd_plauth_login(
     )
     print("Login succeeded.")  # Errors should throw.
 
-    post_login_cmd_helper(
-        override_auth_context=override_auth_context,
-        use_sops=sops,
-    )
+    post_login_cmd_helper(override_auth_context=override_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
 cmd_plauth.add_command(cmd_oauth)
 cmd_plauth.add_command(cmd_pllegacy)
 cmd_plauth.add_command(cmd_profile)
+cmd_plauth.add_command(cmd_jwt)
 
 cmd_plauth_embedded.add_command(cmd_oauth)
 cmd_plauth_embedded.add_command(cmd_pllegacy)
 cmd_plauth_embedded.add_command(cmd_profile)
+cmd_plauth_embedded.add_command(cmd_jwt)
 cmd_plauth_embedded.add_command(cmd_plauth_login)
 cmd_plauth_embedded.add_command(cmd_plauth_version)
 

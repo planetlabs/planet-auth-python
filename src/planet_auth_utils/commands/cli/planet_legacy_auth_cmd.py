@@ -22,7 +22,7 @@ from planet_auth import (
     PlanetLegacyAuthClientConfig,
 )
 
-from .options import opt_password, opt_sops, opt_username
+from .options import opt_password, opt_sops, opt_username, opt_yes_no
 from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
@@ -51,8 +51,9 @@ def cmd_pllegacy(ctx):
 @opt_password(hidden=False)
 @opt_username(hidden=False)
 @opt_sops
+@opt_yes_no
 @click.pass_context
-def cmd_pllegacy_login(ctx, username, password, sops):
+def cmd_pllegacy_login(ctx, username, password, sops, yes):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
     """
@@ -64,10 +65,7 @@ def cmd_pllegacy_login(ctx, username, password, sops):
         password=password,
     )
     print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(
-        override_auth_context=current_auth_context,
-        use_sops=sops,
-    )
+    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
 @cmd_pllegacy.command("print-api-key")
