@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import click
+import pathlib
 
 from planet_auth_utils.constants import EnvironmentVariables
 
@@ -261,6 +262,21 @@ def opt_show_qr_code(function):
     return function
 
 
+def opt_token(function):
+    """
+    Click option for specifying a token literal.
+    """
+    function = click.option(
+        "--token",
+        help="Token string.",
+        type=str,
+        # envvar=EnvironmentVariables.AUTH_TOKEN,
+        show_envvar=False,
+        show_default=False,
+    )(function)
+    return function
+
+
 def opt_token_file(function):
     """
     Click option for specifying a token file location for the
@@ -268,14 +284,35 @@ def opt_token_file(function):
     """
     function = click.option(
         "--token-file",
-        type=click.Path(),
+        type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
         envvar=EnvironmentVariables.AUTH_TOKEN_FILE,
-        help="Auth token file.  The default will be to use a location in the profile directory ~/.planet/<auth_profile>",
+        help="File containing a token.",
         default=None,
-        show_envvar=True,
+        show_envvar=False,
         show_default=True,
     )(function)
     return function
+
+
+def opt_issuer(required=False):
+    def decorator(function):
+        """
+        Click option for specifying an OAuth token issuer for the
+        planet_auth package's click commands.
+        """
+        function = click.option(
+            "--issuer",
+            type=str,
+            envvar=EnvironmentVariables.AUTH_ISSUER,
+            help="Token issuer.",
+            default=None,
+            show_envvar=False,
+            show_default=False,
+            required=required,
+        )(function)
+        return function
+
+    return decorator
 
 
 def opt_audience(required=False):
@@ -289,10 +326,9 @@ def opt_audience(required=False):
             multiple=True,
             type=str,
             envvar=EnvironmentVariables.AUTH_AUDIENCE,
-            help="Token audiences to request.  Specify multiple options to request"
+            help="Token audiences.  Specify multiple options to set"
             " multiple audiences.  When set via environment variable, audiences"
-            " should be white space delimited.  Default value is determined"
-            " by the selected auth profile.",
+            " should be white space delimited.",
             default=None,
             show_envvar=True,
             show_default=True,

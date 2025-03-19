@@ -13,10 +13,7 @@
 # limitations under the License.
 
 import click
-import json
 import sys
-import textwrap
-import time
 
 from planet_auth import (
     AuthException,
@@ -45,69 +42,7 @@ from .options import (
     opt_yes_no,
 )
 from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
-
-
-class _jwt_human_dumps:
-    """
-    Wrapper object for controlling the json.dumps behavior of JWTs so that
-    we can display a version different from what is stored in memory.
-
-    For pretty printing JWTs, we convert timestamps into
-    human-readable strings.
-    """
-
-    def __init__(self, data):
-        self._data = data
-
-    def __json_pretty_dumps__(self):
-        def _human_timestamp_iso(d):
-            for key, value in list(d.items()):
-                if key in ["iat", "exp", "nbf"] and isinstance(value, int):
-                    fmt_time = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(value))
-                    if (key == "exp") and (d[key] < time.time()):
-                        fmt_time += " (Expired)"
-                    d[key] = fmt_time
-                elif isinstance(value, dict):
-                    _human_timestamp_iso(value)
-            return d
-
-        json_dumps = self._data.copy()
-        _human_timestamp_iso(json_dumps)
-        return json_dumps
-
-
-def _json_dumps_for_jwt_dict(data: dict, human_readable: bool):
-    if human_readable:
-        return json.dumps(_jwt_human_dumps(data), indent=2, sort_keys=True, default=custom_json_class_dumper)
-    else:
-        return json.dumps(data, indent=2, sort_keys=True)
-
-
-def _print_jwt(token_str, human_readable):
-    print("Untrusted JWT Decoding\n")
-    print(f"RAW:\n    {token_str}\n")
-    if token_str:
-        (header, body, signature) = TokenValidator.unverified_decode(token_str)
-        pretty_hex_signature = ""
-        i = 0
-        for c in signature:
-            if i == 0:
-                pass
-            elif (i % 16) != 0:
-                pretty_hex_signature += ":"
-            else:
-                pretty_hex_signature += "\n"
-
-            pretty_hex_signature += "{:02x}".format(c)
-            i += 1
-
-        print(
-            f'HEADER:\n{textwrap.indent(_json_dumps_for_jwt_dict(data=header, human_readable=human_readable), prefix="    ")}\n'
-        )
-        print(
-            f'BODY:\n{textwrap.indent(_json_dumps_for_jwt_dict(body, human_readable=human_readable), prefix="    ")}\n'
-        )
-        print(f'SIGNATURE:\n{textwrap.indent(pretty_hex_signature, prefix="    ")}\n')
+from .jwt_cmd import json_dumps_for_jwt_dict, hazmat_print_jwt
 
 
 def _check_client_type(ctx):
@@ -248,7 +183,7 @@ def cmd_oauth_validate_access_token_remote(ctx, human_readable):
         print_obj("INVALID")
         sys.exit(1)
     # print_obj(validation_json)
-    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
+    print(json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-access-token-local")
@@ -281,7 +216,7 @@ def cmd_oauth_validate_access_token_local(ctx, audience, scope, human_readable):
         access_token=saved_token.access_token(), required_audience=audience, scopes_anyof=scope
     )
     # print_obj(validation_json)
-    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
+    print(json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-id-token")
@@ -302,7 +237,7 @@ def cmd_oauth_validate_id_token_remote(ctx, human_readable):
         print_obj("INVALID")
         sys.exit(1)
     # print_obj(validation_json)
-    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
+    print(json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-id-token-local")
@@ -322,7 +257,7 @@ def cmd_oauth_validate_id_token_local(ctx, human_readable):
     # Throws on error.
     validation_json = auth_client.validate_id_token_local(saved_token.id_token())
     # print_obj(validation_json)
-    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
+    print(json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("validate-refresh-token")
@@ -343,7 +278,7 @@ def cmd_oauth_validate_refresh_token_remote(ctx, human_readable):
         print_obj("INVALID")
         sys.exit(1)
     # print_obj(validation_json)
-    print(_json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
+    print(json_dumps_for_jwt_dict(data=validation_json, human_readable=human_readable))
 
 
 @cmd_oauth.command("revoke-access-token")
@@ -448,7 +383,7 @@ def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
     access tokens in other formats.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.access_token(), human_readable=human_readable)
+    hazmat_print_jwt(saved_token.access_token(), human_readable=human_readable)
 
 
 @cmd_oauth.command("decode-id-token")
@@ -462,7 +397,7 @@ def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
     debugging purposes.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.id_token(), human_readable=human_readable)
+    hazmat_print_jwt(saved_token.id_token(), human_readable=human_readable)
 
 
 @cmd_oauth.command("decode-refresh-token")
@@ -478,4 +413,4 @@ def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     refresh tokens in other formats.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
-    _print_jwt(saved_token.refresh_token(), human_readable=human_readable)
+    hazmat_print_jwt(saved_token.refresh_token(), human_readable=human_readable)
