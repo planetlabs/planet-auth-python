@@ -64,6 +64,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # for clients who will be presenting tokens to such a server.  We
         # are inspecting ourselves, not verifying for trust purposes.
         # We are not expected to be the audience.
+        # TODO: we should use `expires_in` from the response from the
+        #    OAuth server, which would work for non-JWT opaque OAuth
+        #    tokens.  Since that is a relative time, we would also need
+        #    to augment our FileBackedOidcCredential with an issued
+        #    at time.
         unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})  # nosemgrep
         iat = unverified_decoded_atoken.get("iat") or 0
         exp = unverified_decoded_atoken.get("exp") or 0
