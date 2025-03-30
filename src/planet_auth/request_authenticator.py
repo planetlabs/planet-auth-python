@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from abc import abstractmethod, ABC
+from typing import Dict
 
 import httpx
 import requests.auth
@@ -107,7 +108,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         # requests.
         self._token_body = None
 
-    def update_credential_data(self, new_credential_data: dict):
+    def update_credential_data(self, new_credential_data: Dict):
         """
         Provide raw data that should be used to update the Credential
         object used to authenticate requests.  This information will

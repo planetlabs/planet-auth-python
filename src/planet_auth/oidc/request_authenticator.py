@@ -14,6 +14,7 @@
 
 import jwt
 import time
+from typing import Dict
 
 import planet_auth.logging.auth_logger
 from planet_auth.credential import Credential
@@ -125,7 +126,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._refresh_at = 0
         # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
 
-    def update_credential_data(self, new_credential_data: dict):
+    def update_credential_data(self, new_credential_data: Dict):
         # This is more different than update_credential() than it may
         # appear. Inherent in being passed a Credential in update_credential()
         # is that it may not yet be loaded from disk, and so deferring
