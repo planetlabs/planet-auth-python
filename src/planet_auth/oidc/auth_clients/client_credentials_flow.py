@@ -13,10 +13,9 @@
 # limitations under the License.
 
 from abc import ABC
+from typing import List, Optional
 
-from requests.auth import AuthBase
-from typing import List, Optional, Tuple
-
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.oidc.api_clients.oidc_request_auth import (
     prepare_client_secret_auth_payload,
 )
@@ -81,7 +80,7 @@ class ClientCredentialsClientSecretAuthClient(
     # us to send it an an auth header.  We prefer this as the default since
     # an auth header should be less likely to land in a log than URL
     # parameters or request payloads.
-    def _client_auth_enricher_login(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher_login(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         auth_payload = prepare_client_secret_auth_payload(
             client_id=self._oidc_client_secret_client_config.client_id(),
             client_secret=self._oidc_client_secret_client_config.client_secret(),

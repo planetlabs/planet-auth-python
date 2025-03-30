@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from planet_auth.oidc.api_clients.api_client import OidcApiClient
+from typing import Dict, Optional
 
-# class DiscoveryApiException(OidcApiClientException):
-#
-#    def __init__(self, message=None, raw_response=None):
-#        super().__init__(message, raw_response)
+from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException
+
+
+class DiscoveryApiException(OidcApiClientException):
+    def __init__(self, message=None, raw_response=None):
+        super().__init__(message, raw_response)
 
 
 class DiscoveryApiClient(OidcApiClient):
@@ -28,28 +30,32 @@ class DiscoveryApiClient(OidcApiClient):
 
     # TODO: Revisit if this is where I should cache. I did work
     #       on the JWKS client after this, and I think it is more mature.
-    def __init__(self, discovery_uri=None, auth_server=None):
+    def __init__(self, discovery_uri: Optional[str] = None, auth_server: Optional[str] = None):
         """
         Create a new OIDC discovery API client.
         """
         if discovery_uri:
             d_uri = discovery_uri
         else:
-            if auth_server.endswith("/"):
-                d_uri = auth_server + ".well-known/openid-configuration"
+            if auth_server:
+                if auth_server.endswith("/"):
+                    d_uri = auth_server + ".well-known/openid-configuration"
+                else:
+                    d_uri = auth_server + "/.well-known/openid-configuration"
             else:
-                d_uri = auth_server + "/.well-known/openid-configuration"
-        super().__init__(d_uri)
-        self._oidc_discovery = None
+                raise DiscoveryApiException("One of discovery_uri or auth_server must be provided")
 
-    def do_discovery(self):
+        super().__init__(d_uri)
+        self._oidc_discovery: Dict = None  # type: ignore
+
+    def do_discovery(self) -> None:
         """
         Contact the discovery endpoint, download discovery information, and cache the
         results inside the client.
         """
         self._oidc_discovery = self._checked_get_json_response(None, None)
 
-    def do_discovery_jit(self):
+    def do_discovery_jit(self) -> None:
         """
         Contact the discovery endpoint and download and cache the results
         only if discovery had not previously been performed and cached.
@@ -57,7 +63,7 @@ class DiscoveryApiClient(OidcApiClient):
         if not self._oidc_discovery:
             self.do_discovery()
 
-    def discovery(self):
+    def discovery(self) -> Dict:
         """
         Return the discovery information.  If the information was previously fetched,
         the cached information will be returned, and no network connection will be made.
