@@ -13,10 +13,15 @@
 # limitations under the License.
 
 import time
-from typing import Any, List
+from typing import Dict, List, Optional
 
 import planet_auth.logging.auth_logger
-from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException
+from planet_auth.oidc.api_clients.api_client import (
+    OidcApiClient,
+    OidcApiClientException,
+    EnricherFuncType,
+    _RequestParamsType,
+)
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
@@ -36,14 +41,14 @@ class TokenApiClient(OidcApiClient):
     RFC 6749 - The OAuth 2.0 Authorization Framework for protocol details.
     """
 
-    def __init__(self, token_uri):
+    def __init__(self, token_uri: str):
         """
         Create a new Token API Client.
         """
         super().__init__(endpoint_uri=token_uri)
 
     @staticmethod
-    def _check_valid_token_response(json_response):
+    def _check_valid_token_response(json_response: Dict) -> None:
         if not json_response.get("expires_in"):
             # https://datatracker.ietf.org/doc/html/rfc6749#section-5.1
             # Note: while OAuth requires the access_token field, and OIDC
@@ -57,7 +62,9 @@ class TokenApiClient(OidcApiClient):
             raise TokenApiException(message="Invalid token received. Missing expires_in field.")
             # auth_logger.warning(msg='Token response was missing expires_in field.')
 
-    def _checked_call(self, token_params, auth_enricher=None):
+    def _checked_call(
+        self, token_params: _RequestParamsType, auth_enricher: Optional[EnricherFuncType] = None
+    ) -> Dict:
         request_auth = None
         if auth_enricher:
             token_params, request_auth = auth_enricher(token_params, self._endpoint_uri)
@@ -66,7 +73,13 @@ class TokenApiClient(OidcApiClient):
         self._check_valid_token_response(json_response)
         return json_response
 
-    def _polling_checked_call(self, token_params, timeout, poll_interval, auth_enricher=None):
+    def _polling_checked_call(
+        self,
+        token_params: _RequestParamsType,
+        timeout: float,
+        poll_interval: float,
+        auth_enricher: Optional[EnricherFuncType] = None,
+    ) -> Dict:
         start_time = time.time()
         while True:
             try:
@@ -92,9 +105,9 @@ class TokenApiClient(OidcApiClient):
         client_id: str,
         refresh_token: str,
         requested_scopes: List[str] = None,
-        auth_enricher: Any = None,
-        extra: dict = None,
-    ) -> dict:
+        auth_enricher: Optional[EnricherFuncType] = None,
+        extra: Dict = None,
+    ) -> Dict:
         """
         Obtain tokens using a refresh token.
 
@@ -141,9 +154,9 @@ class TokenApiClient(OidcApiClient):
         client_id: str,
         requested_scopes: List[str] = None,
         requested_audiences: List[str] = None,
-        auth_enricher: Any = None,
-        extra: dict = None,
-    ) -> dict:
+        auth_enricher: Optional[EnricherFuncType] = None,
+        extra: Dict = None,
+    ) -> Dict:
         """
         Obtain tokens using client credentials and the client credentials grant
         OAuth flow.
@@ -194,9 +207,9 @@ class TokenApiClient(OidcApiClient):
         client_id: str,
         code: str,
         code_verifier: str,
-        auth_enricher: Any = None,
+        auth_enricher: Optional[EnricherFuncType] = None,
         # extra=None, # This should be in the auth request, not the code redemption.
-    ) -> dict:
+    ) -> Dict:
         """
         Obtain tokens using an authorization code.
 
@@ -227,9 +240,9 @@ class TokenApiClient(OidcApiClient):
         device_code: str,
         timeout: int,
         poll_interval: int = 5,  # Default poll interval specified in RFC 8628
-        auth_enricher: Any = None,
+        auth_enricher: Optional[EnricherFuncType] = None,
         # extra=None,  # This should be in the auth request, not the code redemption.
-    ) -> dict:
+    ) -> Dict:
         """
         Poll for the completion of a device code login.
 
@@ -260,9 +273,9 @@ class TokenApiClient(OidcApiClient):
         password: str,
         requested_scopes: List[str] = None,
         requested_audiences: List[str] = None,
-        auth_enricher: Any = None,
-        extra: dict = None,
-    ) -> dict:
+        auth_enricher: Optional[EnricherFuncType] = None,
+        extra: Dict = None,
+    ) -> Dict:
         """
         Obtain tokens using a username and password and the resource owner
         grant OAuth flow.

@@ -19,7 +19,7 @@ import planet_auth.logging.auth_logger
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 
-def parse_content_type(content_type: str) -> Dict[str, Optional[str]]:
+def parse_content_type(content_type: Optional[str]) -> Dict[str, Optional[str]]:
     result: Dict[str, Optional[str]] = {
         "content-type": None,
     }

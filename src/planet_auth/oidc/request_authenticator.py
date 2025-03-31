@@ -14,6 +14,7 @@
 
 import jwt
 import time
+from typing import Dict
 
 import planet_auth.logging.auth_logger
 from planet_auth.credential import Credential
@@ -64,6 +65,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # for clients who will be presenting tokens to such a server.  We
         # are inspecting ourselves, not verifying for trust purposes.
         # We are not expected to be the audience.
+        # TODO: we should use `expires_in` from the response from the
+        #    OAuth server, which would work for non-JWT opaque OAuth
+        #    tokens.  Since that is a relative time, we would also need
+        #    to augment our FileBackedOidcCredential with an issued
+        #    at time.
         unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})  # nosemgrep
         iat = unverified_decoded_atoken.get("iat") or 0
         exp = unverified_decoded_atoken.get("exp") or 0
@@ -120,7 +126,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._refresh_at = 0
         # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
 
-    def update_credential_data(self, new_credential_data: dict):
+    def update_credential_data(self, new_credential_data: Dict):
         # This is more different than update_credential() than it may
         # appear. Inherent in being passed a Credential in update_credential()
         # is that it may not yet be loaded from disk, and so deferring

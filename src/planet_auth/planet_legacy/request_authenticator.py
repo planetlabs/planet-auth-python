@@ -40,7 +40,7 @@ class PlanetLegacyRequestAuthenticator(CredentialRequestAuthenticator):
         super().update_credential(new_credential)
         self._api_key_file = new_credential
 
-    # def update_credential_data(self, new_credential_data: dict):
+    # def update_credential_data(self, new_credential_data: Dict):
     #     super().update_credential_data(new_credential_data=new_credential_data)
     #     # The super class is not changing the instance, so we don't need to update our reference
     #     # self._api_key_file = self._credential

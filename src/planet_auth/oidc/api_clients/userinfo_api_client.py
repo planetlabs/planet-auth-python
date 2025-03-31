@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict
 from planet_auth.oidc.api_clients.api_client import OidcApiClient
 
 
@@ -26,16 +27,16 @@ class UserinfoApiClient(OidcApiClient):
     network endpoint.
     """
 
-    def __init__(self, userinfo_uri=None):
+    def __init__(self, userinfo_uri: str):
         """
         Create a new token Userinfo API client
         """
         super().__init__(endpoint_uri=userinfo_uri)
 
-    def _checked_userinfo_call(self, access_token):
+    def _checked_userinfo_call(self, access_token: str) -> Dict:
         return self._checked_get_json_response(params=None, request_auth=self.TokenBearerAuth(access_token))
 
-    def userinfo_from_access_token(self, access_token: str) -> dict:
+    def userinfo_from_access_token(self, access_token: str) -> Dict:
         """
         Obtain user information from the authorization server for the user who owns
         the presented access token.

@@ -19,7 +19,7 @@ import importlib.resources  # nosemgrep
 
 from http import HTTPStatus
 from urllib.parse import urlparse, parse_qs, urlencode
-from typing import List
+from typing import Dict, List, Optional
 from webbrowser import open_new
 
 import planet_auth.logging.auth_logger
@@ -125,7 +125,9 @@ class AuthorizationApiClient:
     interactive authentication can be performed.
     """
 
-    def __init__(self, authorization_uri=None, authorization_callback_acknowledgement_response_body=None):
+    def __init__(
+        self, authorization_uri: str, authorization_callback_acknowledgement_response_body: Optional[str] = None
+    ):
         """
         Create a new Authorization API Client.
         """
@@ -146,8 +148,8 @@ class AuthorizationApiClient:
         requested_scopes: List[str],
         requested_audiences: List[str],
         pkce_code_challenge: str,
-        extra: dict,
-    ) -> dict:
+        extra: Dict,
+    ) -> Dict:
         """
         Prepare the payload needed to make an authorization request to an
         OAuth authorization endpoint. This will usually be used to construct
@@ -218,7 +220,7 @@ class AuthorizationApiClient:
         requested_scopes: List[str],
         requested_audiences: List[str],
         pkce_code_challenge: str,
-        extra: dict,
+        extra: Dict,
     ) -> str:
         """
         Request an authorization code by launching a web browser directed to the
@@ -309,7 +311,7 @@ class AuthorizationApiClient:
         requested_scopes: List[str],
         requested_audiences: List[str],
         pkce_code_challenge: str,
-        extra: dict,
+        extra: Dict,
     ) -> str:
         """
         Request an authorization code by prompting the user to visit a
