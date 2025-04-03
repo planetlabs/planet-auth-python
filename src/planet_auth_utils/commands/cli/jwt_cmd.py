@@ -57,6 +57,8 @@ class _jwt_human_dumps:
                     if (key == "exp") and (d[key] < time.time()):
                         fmt_time += " (Expired)"
                     d[key] = fmt_time
+                elif key in ["api_key"]:
+                    d[key] = "REDACTED"
                 elif isinstance(value, dict):
                     _human_timestamp_iso(value)
             return d
