@@ -27,7 +27,10 @@ import jwt
 import time
 import uuid
 
+from typing import Dict
 from requests.auth import HTTPBasicAuth
+
+from planet_auth.oidc.api_clients.api_client import _RequestAuthType, _RequestParamsType
 
 
 def _prepare_oidc_client_jwt_payload(audience: str, client_id: str, ttl: int):
@@ -53,23 +56,25 @@ def prepare_oidc_client_private_key_jwt(audience: str, client_id: str, private_k
     return signed_jwt
 
 
-def prepare_client_noauth_auth_payload(client_id: str):
+def prepare_client_noauth_auth_payload(client_id: str) -> Dict:
     client_secret_auth_payload = {
         "client_id": client_id,
     }
     return client_secret_auth_payload
 
 
-def prepare_client_secret_request_auth(client_id: str, client_secret: str):
+def prepare_client_secret_request_auth(client_id: str, client_secret: str) -> _RequestAuthType:
     return HTTPBasicAuth(client_id, client_secret)
 
 
-def prepare_client_secret_auth_payload(client_id: str, client_secret: str):
+def prepare_client_secret_auth_payload(client_id: str, client_secret: str) -> _RequestParamsType:
     client_secret_auth_payload = {"client_id": client_id, "client_secret": client_secret}
     return client_secret_auth_payload
 
 
-def prepare_private_key_assertion_auth_payload(audience: str, client_id: str, private_key, ttl: int):
+def prepare_private_key_assertion_auth_payload(
+    audience: str, client_id: str, private_key, ttl: int
+) -> _RequestParamsType:
     signed_jwt = prepare_oidc_client_private_key_jwt(
         audience=audience, client_id=client_id, private_key=private_key, ttl=ttl
     )

@@ -14,15 +14,15 @@
 
 import pathlib
 import unittest
-from typing import Optional, Tuple, Union
+from typing import Union
 from unittest import mock
 from unittest.mock import MagicMock
 
 import pytest as pytest
-from requests.auth import AuthBase
 
 from planet_auth.auth_client import AuthClientConfigException, AuthClientException
 from planet_auth.credential import Credential
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.oidc.auth_client import (
     OidcAuthClient,
     OidcAuthClientConfig,
@@ -246,7 +246,7 @@ class OidcBaseTestHarnessAuthClient(OidcAuthClient):
         super().__init__(client_config)
         self._test_client_config = client_config
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         return raw_payload, None
 
     def _oidc_flow_login(

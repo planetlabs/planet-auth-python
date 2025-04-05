@@ -228,7 +228,7 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     )
 
 
-@cmd_jwt.command("validate-rs256")
+@cmd_jwt.command("validate-rs256", hidden=True)
 @click.pass_context
 @opt_human_readable
 @opt_token
@@ -275,7 +275,7 @@ def cmd_jwt_validate_rs256(ctx, token, token_file, key, key_file, human_readable
     raise NotImplementedError("Command not implemented")
 
 
-@cmd_jwt.command("validate-hs512")
+@cmd_jwt.command("validate-hs512", hidden=True)
 @click.pass_context
 @opt_human_readable
 @opt_token

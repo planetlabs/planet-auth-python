@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from abc import abstractmethod, ABC
-from requests.auth import AuthBase
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from planet_auth.auth_client import AuthClientConfig, AuthClient, AuthClientConfigException, AuthClientException
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.oidc.api_clients.authorization_api_client import AuthorizationApiClient
 from planet_auth.oidc.api_clients.device_authorization_api_client import DeviceAuthorizationApiClient
 from planet_auth.oidc.api_clients.discovery_api_client import DiscoveryApiClient
@@ -347,7 +347,7 @@ class OidcAuthClient(AuthClient, ABC):
     #       level concept of "OIDC client type" imposes itself on some of
     #       the low level protocol interactions.
     @abstractmethod
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         """
         Some OIDC endpoints require client auth, and how auth is done can
         vary depending on how the OIDC provider is configured to handle the
@@ -360,6 +360,9 @@ class OidcAuthClient(AuthClient, ABC):
 
         If no enrichment is needed or appropriate, implementations should
         return the raw payload unmodified, and None for the AuthBase.
+
+        The signature of this abstract method is expected to adhere to
+        the api_client.EnricherFuncType function signature.
 
         See
         https://developer.okta.com/docs/reference/api/oidc/#client-authentication-methods
@@ -389,7 +392,7 @@ class OidcAuthClient(AuthClient, ABC):
         allow_tty_prompt: Optional[bool] = False,
         requested_scopes: Optional[List[str]] = None,
         requested_audiences: Optional[List[str]] = None,
-        extra: Optional[dict] = None,
+        extra: Optional[Dict] = None,
         **kwargs,
     ):
         """
@@ -430,7 +433,7 @@ class OidcAuthClient(AuthClient, ABC):
         allow_tty_prompt: Optional[bool],
         requested_scopes: Optional[List[str]],
         requested_audiences: Optional[List[str]],
-        extra: Optional[dict],
+        extra: Optional[Dict],
         **kwargs,
     ) -> FileBackedOidcCredential:
         """
@@ -439,7 +442,7 @@ class OidcAuthClient(AuthClient, ABC):
         """
 
     def refresh(
-        self, refresh_token: str, requested_scopes: List[str] = None, extra: Optional[dict] = None
+        self, refresh_token: str, requested_scopes: List[str] = None, extra: Optional[Dict] = None
     ) -> FileBackedOidcCredential:
         """
         Refresh auth tokens using the provided refresh token
@@ -478,7 +481,7 @@ class OidcAuthClient(AuthClient, ABC):
             )
         )
 
-    def validate_access_token_remote(self, access_token: str) -> dict:
+    def validate_access_token_remote(self, access_token: str) -> Dict:
         """
         Validate the access token against the OIDC token introspection endpoint
         Parameters:
@@ -490,7 +493,7 @@ class OidcAuthClient(AuthClient, ABC):
 
     def validate_access_token_local(
         self, access_token: str, required_audience: str = None, scopes_anyof: list = None
-    ) -> dict:
+    ) -> Dict:
         # Note:
         #     Tokens may have multiple audiences. When someone requests a
         #     token with multiple audiences, the expectation during login is
@@ -530,7 +533,7 @@ class OidcAuthClient(AuthClient, ABC):
             scopes_anyof=scopes_anyof,
         )
 
-    def validate_id_token_remote(self, id_token: str) -> dict:
+    def validate_id_token_remote(self, id_token: str) -> Dict:
         """
         Validate the ID token against the OIDC token introspection endpoint
         Parameters:
@@ -540,7 +543,7 @@ class OidcAuthClient(AuthClient, ABC):
         """
         return self.introspection_client().validate_id_token(id_token, self._client_auth_enricher)
 
-    def validate_id_token_local(self, id_token: str) -> dict:
+    def validate_id_token_local(self, id_token: str) -> Dict:
         """
         Validate the ID token locally. A remote connection may still be made
         to obtain signing keys.
@@ -553,7 +556,7 @@ class OidcAuthClient(AuthClient, ABC):
             token_str=id_token, issuer=self._issuer(), client_id=self._oidc_client_config.client_id()
         )
 
-    def validate_refresh_token_remote(self, refresh_token: str) -> dict:
+    def validate_refresh_token_remote(self, refresh_token: str) -> Dict:
         """
         Validate the refresh token against the OIDC token introspection
         endpoint
@@ -580,7 +583,7 @@ class OidcAuthClient(AuthClient, ABC):
         """
         self.revocation_client().revoke_refresh_token(refresh_token, self._client_auth_enricher)
 
-    def userinfo_from_access_token(self, access_token: str) -> dict:
+    def userinfo_from_access_token(self, access_token: str) -> Dict:
         """
         Look up user information from the auth server using the access token.
         Parameters:
@@ -588,7 +591,7 @@ class OidcAuthClient(AuthClient, ABC):
         """
         return self.userinfo_client().userinfo_from_access_token(access_token=access_token)
 
-    def oidc_discovery(self) -> dict:
+    def oidc_discovery(self) -> Dict:
         """
         Query the authorization server's OIDC discovery endpoint for server information.
         Returns:
@@ -611,7 +614,7 @@ class OidcAuthClientWithNoneClientAuth(OidcAuthClient, ABC):
     Mix-in base class for "public" (non-confidential) OAuth/OIDC auth clients.
     """
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         auth_payload = prepare_client_noauth_auth_payload(client_id=self._oidc_client_config.client_id())
         enriched_payload = {**raw_payload, **auth_payload}
         return enriched_payload, None

@@ -53,7 +53,7 @@ test = [
     "freezegun",
     "mypy",
     "nox",
-    "pyflakes",
+    "pyflakes == 3.2.0",  # 3.3.0 causes some grief with a new warning.
     "pylint",
     # "pylint[spelling]",  ## TODO
     "pytest",

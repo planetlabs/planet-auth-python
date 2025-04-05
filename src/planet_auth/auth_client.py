@@ -122,7 +122,7 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
         return cls._typename_map
 
     @classmethod
-    def from_dict(cls, config_data: dict) -> AuthClientConfig:
+    def from_dict(cls, config_data: Dict) -> AuthClientConfig:
         """
         Create a AuthClientConfig from a configuration dictionary.
         Returns:
@@ -158,7 +158,7 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
 
     @classmethod
     @abstractmethod
-    def meta(cls) -> dict:
+    def meta(cls) -> Dict:
         """
         Return a dictionary of metadata.
         The meta dictionary provides a place to store information that is
@@ -269,7 +269,7 @@ class AuthClient(ABC):
                 implementations should raise an exception for all login errors.
         """
 
-    def device_login_initiate(self, **kwargs) -> dict:
+    def device_login_initiate(self, **kwargs) -> Dict:
         """
         Initiate the process to login a device with limited UI capabilities.
         The returned dictionary should contain information for the application
@@ -286,7 +286,7 @@ class AuthClient(ABC):
         """
         raise AuthClientException(message="Device login is not supported for the current authentication mechanism")
 
-    def device_login_complete(self, initiated_login_data: dict) -> Credential:
+    def device_login_complete(self, initiated_login_data: Dict) -> Credential:
         """
         Complete a login process that was initiated by a call to `device_login_initiate()`.
 
@@ -319,7 +319,7 @@ class AuthClient(ABC):
         """
         raise AuthClientException(message="Refresh not implemented for the current authentication mechanism")
 
-    def validate_access_token_remote(self, access_token: str) -> dict:
+    def validate_access_token_remote(self, access_token: str) -> Dict:
         """
         Validate an access token with the authorization server.
         Parameters:
@@ -337,7 +337,7 @@ class AuthClient(ABC):
 
     def validate_access_token_local(
         self, access_token: str, required_audience: str = None, scopes_anyof: list = None
-    ) -> dict:
+    ) -> Dict:
         """
         Validate an access token locally. While the validation is local,
         the authorization server may still may contacted to obtain signing
@@ -382,7 +382,7 @@ class AuthClient(ABC):
             message="Access token validation is not implemented for the current authentication mechanism"
         )
 
-    def validate_id_token_remote(self, id_token: str) -> dict:
+    def validate_id_token_remote(self, id_token: str) -> Dict:
         """
         Validate an ID token with the authorization server.
         Parameters:
@@ -394,7 +394,7 @@ class AuthClient(ABC):
             message="ID token validation is not implemented for the current authentication mechanism"
         )
 
-    def validate_id_token_local(self, id_token: str) -> dict:
+    def validate_id_token_local(self, id_token: str) -> Dict:
         """
         Validate an ID token locally. The authorization server may still be
         called to obtain signing keys for validation.  Signing keys will be
@@ -408,7 +408,7 @@ class AuthClient(ABC):
             message="ID token validation is not implemented for the current authentication mechanism"
         )
 
-    def validate_refresh_token_remote(self, refresh_token: str) -> dict:
+    def validate_refresh_token_remote(self, refresh_token: str) -> Dict:
         """
         Validate a refresh token with the authorization server.
         Parameters:
@@ -440,7 +440,7 @@ class AuthClient(ABC):
             message="Refresh token revocation is not implemented for the current authentication mechanism"
         )
 
-    def userinfo_from_access_token(self, access_token: str) -> dict:
+    def userinfo_from_access_token(self, access_token: str) -> Dict:
         """
         Look up user information from the auth server using the access token.
         Parameters:
@@ -450,7 +450,7 @@ class AuthClient(ABC):
             message="User information lookup is not implemented for the current authentication mechanism"
         )
 
-    def oidc_discovery(self) -> dict:
+    def oidc_discovery(self) -> Dict:
         """
         Query the authorization server's OIDC discovery endpoint for server information.
         Returns:
@@ -460,7 +460,7 @@ class AuthClient(ABC):
             message="OIDC discovery is not implemented for the current authentication mechanism."
         )
 
-    # def oauth_discovery(self) -> dict:
+    # def oauth_discovery(self) -> Dict:
     #     """
     #     Query the authorization server's OAuth2 discovery endpoint for server information.
     #     Returns:

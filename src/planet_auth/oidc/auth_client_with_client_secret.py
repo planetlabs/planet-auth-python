@@ -14,9 +14,7 @@
 
 from abc import ABC
 
-from requests.auth import AuthBase
-from typing import Optional, Tuple
-
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.auth_client import AuthClientConfigException
 from planet_auth.oidc.api_clients.oidc_request_auth import (
     prepare_client_secret_request_auth,
@@ -70,7 +68,7 @@ class OidcAuthClientWithClientSecret_HttpBasicAuthEnrichment(OidcAuthClient, ABC
         super().__init__(client_config)
         self._oidc_client_secret_client_config = client_config
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         return raw_payload, prepare_client_secret_request_auth(
             self._oidc_client_secret_client_config.client_id(), self._oidc_client_secret_client_config.client_secret()
         )
@@ -86,7 +84,7 @@ class OidcAuthClientWithClientSecret_PayloadAuthEnrichment(OidcAuthClient, ABC):
         super().__init__(client_config)
         self._oidc_client_secret_client_config = client_config
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         auth_payload = prepare_client_secret_auth_payload(
             client_id=self._oidc_client_secret_client_config.client_id(),
             client_secret=self._oidc_client_secret_client_config.client_secret(),

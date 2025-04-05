@@ -33,6 +33,12 @@ class EnvironmentVariables:
     Client Secret for an OAuth service account
     """
 
+    AUTH_EXTRA = "PL_AUTH_EXTRA"
+    """
+    List of extra options.  Values should be formatted as <key>=<value>.
+    Multiple options should be whitespace delimited.
+    """
+
     AUTH_PROFILE = "PL_AUTH_PROFILE"
     """
     Name of a profile to use for auth client configuration.
@@ -73,6 +79,7 @@ class EnvironmentVariables:
     AUTH_SCOPE = "PL_AUTH_SCOPE"
     """
     List of scopes to request when requesting OAuth tokens.
+    Multiple scopes should be whitespace delimited.
     """
 
     AUTH_USERNAME = "PL_AUTH_USERNAME"

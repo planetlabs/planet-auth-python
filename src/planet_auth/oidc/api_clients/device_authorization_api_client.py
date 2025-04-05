@@ -12,7 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException
+from typing import Dict, List, Optional
+
+from planet_auth.oidc.api_clients.api_client import (
+    OidcApiClient,
+    OidcApiClientException,
+    EnricherFuncType,
+    _RequestParamsType,
+    _RequestAuthType,
+)
 
 
 class DeviceAuthorizationApiException(OidcApiClientException):
@@ -28,11 +36,16 @@ class DeviceAuthorizationApiClient(OidcApiClient):
     All invalid responses or error responses will result in an exception.
     """
 
-    def __init__(self, device_authorization_uri=None):
+    def __init__(self, device_authorization_uri: str):
         super().__init__(endpoint_uri=device_authorization_uri)
 
     @staticmethod
-    def _prep_device_code_request_payload(client_id, requested_scopes, requested_audiences, extra):
+    def _prep_device_code_request_payload(
+        client_id,
+        requested_scopes: Optional[List[str]],
+        requested_audiences: Optional[List[str]],
+        extra: Optional[Dict],
+    ) -> Dict:
         if extra is None:
             extra = {}
         # "None" is pythonic, and does not mean anything to OAuth APIs.
@@ -50,7 +63,7 @@ class DeviceAuthorizationApiClient(OidcApiClient):
         return data
 
     @staticmethod
-    def _check_device_auth_response(json_response):
+    def _check_device_auth_response(json_response: Dict) -> Dict:
         # Protocol endpoint specific response checks
         if not json_response.get("device_code"):
             raise DeviceAuthorizationApiException(
@@ -71,11 +84,20 @@ class DeviceAuthorizationApiClient(OidcApiClient):
         # verification_uri_complete and interval are optional under the spec, so we don't force them to be present.
         return json_response
 
-    def _checked_request_device_code_call(self, request_params, request_auth):
+    def _checked_request_device_code_call(
+        self, request_params: _RequestParamsType, request_auth: Optional[_RequestAuthType]
+    ) -> Dict:
         json_response = self._checked_post_json_response(request_params, request_auth)
         return self._check_device_auth_response(json_response)
 
-    def request_device_code(self, client_id: str, requested_scopes, requested_audiences, auth_enricher, extra):
+    def request_device_code(
+        self,
+        client_id: str,
+        requested_scopes: Optional[List[str]],
+        requested_audiences: Optional[List[str]],
+        auth_enricher: Optional[EnricherFuncType],
+        extra,
+    ) -> Dict:
         request_params = self._prep_device_code_request_payload(
             client_id=client_id,
             requested_scopes=requested_scopes,
