@@ -53,10 +53,13 @@ class _jwt_human_dumps:
         def _human_readable_jwt_claim(d):
             for key, value in list(d.items()):
                 if key in ["iat", "exp", "nbf"] and isinstance(value, int):
-                    # UNIX Time stamps in ISO format, with annotations.
+                    # UNIX Timestamps in ISO format, with annotations.
                     fmt_time = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(value))
-                    if (key == "exp") and (d[key] < time.time()):
+                    now = time.time()
+                    if (key == "exp") and (d[key] < now):
                         fmt_time += " (Expired)"
+                    if (key == "nbf") and (d[key] > now):
+                        fmt_time += " (Future)"
                     d[key] = fmt_time
                 elif key in ["api_key"]:
                     # Redact sensitive values
