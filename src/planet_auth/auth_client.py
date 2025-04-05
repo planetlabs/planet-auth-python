@@ -260,9 +260,6 @@ class AuthClient(ABC):
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
                 input from the terminal.
-            kwargs: additional arguments for the flow specific login call.
-                Depending on the implementation, unsupported arguments may
-                be ignored, or may raise errors.
         Returns:
             Upon successful login, a Credential will be returned. The returned
                 value will be in memory only. It is the responsibility of the

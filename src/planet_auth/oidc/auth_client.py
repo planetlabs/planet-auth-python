@@ -414,8 +414,6 @@ class OidcAuthClient(AuthClient, ABC):
             requested_audiences: a list of strings specifying the audiences
                 to request.
             extra: a dict extra data to pass to the authorization server.
-            kwargs: additional arguments for the flow specific login call.
-                Unsupported arguments may be ignored, or may raise errors.
          Returns:
             A FileBackedOidcCredential object
         """
