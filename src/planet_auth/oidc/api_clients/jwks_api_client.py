@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Dict, List
 from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException
 
 
@@ -28,7 +29,7 @@ class JwksApiClient(OidcApiClient):
     for more information.
     """
 
-    def __init__(self, jwks_uri):
+    def __init__(self, jwks_uri: str):
         """
         Create a JWKS endpoint client
         """
@@ -37,7 +38,7 @@ class JwksApiClient(OidcApiClient):
     def _checked_fetch(self):
         return self._checked_get_json_response(None, None)
 
-    def jwks(self) -> dict:
+    def jwks(self) -> Dict:
         """
         Fetch metadata from the JWKS endpoint.
 
@@ -47,7 +48,7 @@ class JwksApiClient(OidcApiClient):
         """
         return self._checked_fetch()
 
-    def jwks_keys(self) -> list:
+    def jwks_keys(self) -> List:
         """
         Fetch keys from the JWKS endpoint.
 

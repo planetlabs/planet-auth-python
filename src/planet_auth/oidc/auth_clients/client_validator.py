@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import pathlib
-from typing import List, Optional, Tuple, Union
-from requests.auth import AuthBase
+from typing import List, Optional, Union
 
 from planet_auth import CredentialRequestAuthenticator
 from planet_auth.auth_client import AuthClientException
 from planet_auth.credential import Credential
 from planet_auth.oidc.auth_client import OidcAuthClientConfig, OidcAuthClient, FileBackedOidcCredential
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.request_authenticator import ForbiddenRequestAuthenticator
 
 
@@ -81,7 +81,7 @@ class OidcClientValidatorAuthClient(OidcAuthClient):
         # Not used at this time
         # self._client_validator_client_config = client_config
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         return raw_payload, None
 
     def _oidc_flow_login(

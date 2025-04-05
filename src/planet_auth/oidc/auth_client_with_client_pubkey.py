@@ -15,10 +15,9 @@
 from abc import ABC
 
 from cryptography.hazmat.primitives import serialization as crypto_serialization
-from requests.auth import AuthBase
-from typing import Optional, Tuple
 
 from planet_auth.auth_client import AuthClientConfigException
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.oidc.api_clients.oidc_request_auth import prepare_private_key_assertion_auth_payload
 from planet_auth.oidc.auth_client import OidcAuthClient, OidcAuthClientConfig
 
@@ -149,7 +148,7 @@ class OidcAuthClientWithClientPubkey(OidcAuthClient, ABC):
         super().__init__(client_config)
         self._oidc_pubkey_client_config = client_config
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         auth_assertion_payload = prepare_private_key_assertion_auth_payload(
             audience=audience,
             client_id=self._oidc_pubkey_client_config.client_id(),

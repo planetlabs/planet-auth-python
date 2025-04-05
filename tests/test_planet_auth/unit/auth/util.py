@@ -19,13 +19,11 @@ from abc import ABC, abstractmethod
 import jwt.utils
 import pathlib
 import secrets
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import jwt
 import time
 import uuid
-
-from requests.auth import AuthBase
 
 from planet_auth.storage_utils import (
     FileBackedJsonObjectException,
@@ -34,6 +32,7 @@ from planet_auth.storage_utils import (
 )
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator, ForbiddenRequestAuthenticator
+from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
 from planet_auth.oidc.api_clients.jwks_api_client import JwksApiClient
 from planet_auth.oidc.api_clients.token_api_client import TokenApiException
@@ -344,7 +343,7 @@ class StubOidcAuthClient(OidcAuthClient):
         credential = FileBackedOidcCredential(data=credential_data)
         return credential
 
-    def _client_auth_enricher(self, raw_payload: dict, audience: str) -> Tuple[dict, Optional[AuthBase]]:
+    def _client_auth_enricher(self, raw_payload: EnricherPayloadType, audience: str) -> EnricherReturnType:
         # return raw_payload, None
         # Abstract in the base class. Not under test here.
         assert 0
