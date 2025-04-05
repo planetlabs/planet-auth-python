@@ -183,7 +183,7 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     development and debugging utility.  The default behavior to inspect the token
     for issuer and audience information used to validate the token is wholly
     incorrect for a production use case.  The decision of which issuers to
-    trust with which audiences MUST be controlled by the service operator.
+    trust with what audiences MUST be controlled by the service operator.
     """
     token_to_validate = _get_token_or_fail(token_opt=token, token_file_opt=token_file)
     (hazmat_header, hazmat_body, hazmat_signature) = TokenValidator.hazmat_unverified_decode(token_to_validate)
