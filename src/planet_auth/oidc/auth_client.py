@@ -28,6 +28,10 @@ from planet_auth.oidc.api_clients.revocation_api_client import RevocationApiClie
 from planet_auth.oidc.api_clients.userinfo_api_client import UserinfoApiClient
 from planet_auth.oidc.api_clients.token_api_client import TokenApiClient
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
+import planet_auth.logging.auth_logger
+
+
+auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 
 class OidcAuthClientConfig(AuthClientConfig, ABC):
@@ -425,6 +429,44 @@ class OidcAuthClient(AuthClient, ABC):
             extra=final_extra,
             **kwargs,
         )
+
+    def _warn_password_kwarg(self, **kwargs):
+        """
+        Helper function for _oidc_flow_login implementations to offer guidance to users
+        and developers when options are unnecessary and will be ignored.
+        """
+        if "password" in kwargs:
+            if kwargs["password"]:
+                # Safety check. "password" is a legitimate kwarg for some OAuth flows
+                # like Resource Owner Flow.  But, it should never be provided to the client
+                # of other flows such as Auth Code or Device Code flows.
+                # We could simply ignore it in the kwargs, but it's a good opportunity
+                # to improve user or developer security practices.
+                warning_msg = (
+                    "Supplying your password is not a supported option for the current login process. "
+                    "Protect your password. Do not expose your password unnecessarily."
+                )
+                # If we decide we want to not just warn, but halt user interactive
+                # clients, uncomment this:
+                # if allow_open_browser or allow_tty_prompt:
+                #     raise AuthCodeAuthClientException(message=warning_msg)
+                auth_logger.warning(msg=warning_msg)
+
+    def _warn_ignored_kwargs(self, ignore_kws: list, **kwargs):
+        """
+        Helper function for _oidc_flow_login implementations to offer guidance to users
+        and developers when options are unnecessary and will be ignored.  This is mostly
+        to steer users away from habitually passing unnecessary arguments. OAuth flows
+        behave differently enough that extra data through the generic login() kwargs
+        is a problem we can anticipate.
+        """
+        for ignore_kw in ignore_kws:
+            if ignore_kw in kwargs:
+                if kwargs[ignore_kw]:
+                    auth_logger.debug(
+                        msg=f'Ignoring "{ignore_kw}" argument to login. '
+                        "It is not used for the current login process."
+                    )
 
     @abstractmethod
     def _oidc_flow_login(
