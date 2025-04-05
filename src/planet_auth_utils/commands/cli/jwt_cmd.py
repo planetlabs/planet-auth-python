@@ -50,21 +50,23 @@ class _jwt_human_dumps:
         self._data = data
 
     def __json_pretty_dumps__(self):
-        def _human_timestamp_iso(d):
+        def _human_readable_jwt_claim(d):
             for key, value in list(d.items()):
                 if key in ["iat", "exp", "nbf"] and isinstance(value, int):
+                    # UNIX Time stamps in ISO format
                     fmt_time = time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(value))
                     if (key == "exp") and (d[key] < time.time()):
                         fmt_time += " (Expired)"
                     d[key] = fmt_time
                 elif key in ["api_key"]:
+                    # Redact sensitive values
                     d[key] = "REDACTED"
                 elif isinstance(value, dict):
-                    _human_timestamp_iso(value)
+                    _human_readable_jwt_claim(value)
             return d
 
         json_dumps = self._data.copy()
-        _human_timestamp_iso(json_dumps)
+        _human_readable_jwt_claim(json_dumps)
         return json_dumps
 
 
