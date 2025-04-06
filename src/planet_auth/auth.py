@@ -21,7 +21,9 @@ from planet_auth.auth_client import AuthClient, AuthClientConfig
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 from planet_auth.storage_utils import ObjectStorageProvider
+from planet_auth.logging.auth_logger import getAuthLogger
 
+auth_logger = getAuthLogger()
 
 # class AuthClientContextException(AuthException):
 #     def __init__(self, **kwargs):
@@ -53,6 +55,8 @@ class Auth:
         Create a new auth container object with the specified auth components.
         Users should use one of the more friendly static initializer methods.
         """
+        auth_logger.debug(msg=f"Initializing Auth Context. Profile: {profile_name} ; Type: {type(auth_client).__name__} ; Token file: {token_file_path}")
+
         self._auth_client = auth_client
         self._request_authenticator = request_authenticator
         self._token_file_path = token_file_path
