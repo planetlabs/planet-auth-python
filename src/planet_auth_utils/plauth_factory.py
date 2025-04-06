@@ -258,7 +258,7 @@ class PlanetAuthFactory:
         parameters set by the user, environment variables, configuration files, or values
         hard-coded by the application developer, and the number of possibilities rises.
 
-        This helper function is provided to help build applications achieve a consistent
+        This helper function is provided to help build applications with a consistent
         user experience when sharing auth context with the CLI.  This function
         does not support using custom storage providers at this time.
 
