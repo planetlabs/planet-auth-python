@@ -55,7 +55,9 @@ class Auth:
         Create a new auth container object with the specified auth components.
         Users should use one of the more friendly static initializer methods.
         """
-        auth_logger.debug(msg=f"Initializing Auth Context. Profile: {profile_name} ; Type: {type(auth_client).__name__} ; Token file: {token_file_path}")
+        auth_logger.debug(
+            msg=f"Initializing Auth Context. Profile: {profile_name} ; Type: {type(auth_client).__name__} ; Token file: {token_file_path}"
+        )
 
         self._auth_client = auth_client
         self._request_authenticator = request_authenticator

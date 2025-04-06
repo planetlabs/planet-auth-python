@@ -37,9 +37,9 @@ def _check_client_type_pllegacy(ctx):
 
 
 def _check_client_type_pllegacy_or_apikey(ctx):
-    if not (isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient)
-            or
-            isinstance(ctx.obj["AUTH"].auth_client(), StaticApiKeyAuthClient)
+    if not (
+        isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient)
+        or isinstance(ctx.obj["AUTH"].auth_client(), StaticApiKeyAuthClient)
     ):
         raise click.ClickException(
             "This command can only be used with "
@@ -47,6 +47,7 @@ def _check_client_type_pllegacy_or_apikey(ctx):
             "type auth profiles. "
             f'The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
         )
+
 
 @click.group("legacy", invoke_without_command=True)
 @click.pass_context
