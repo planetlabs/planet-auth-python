@@ -15,6 +15,7 @@
 import click
 import pathlib
 
+from planet_auth import constants
 from planet_auth_utils.constants import EnvironmentVariables
 
 
@@ -76,7 +77,7 @@ def opt_profile(function):
         type=str,
         envvar=EnvironmentVariables.AUTH_PROFILE,
         help="Select the client profile to use.  User created profiles are "
-        " defined by creating a subdirectory ~/.planet/.  Additionally, a number of"
+        f" defined by creating a subdirectory ~/{constants.PROFILE_DIR}/.  Additionally, a number of"
         ' built-in profiles are understood.  See the "profile list" command'
         " for defined profiles.  The auth profile controls how the software"
         " interacts with authentication services, as well as how it"

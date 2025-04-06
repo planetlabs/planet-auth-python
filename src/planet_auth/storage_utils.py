@@ -63,6 +63,12 @@ class ObjectStorageProvider(ABC):
         Check whether a given object exists in storage.
         """
 
+    @abstractmethod
+    def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
+        """
+        Rename/Move an object from the source path to the destination path.
+        """
+
     @staticmethod
     def _default_storage_provider():
         # Always create JIT to better handle cases where runtime changes to
@@ -175,6 +181,12 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         obj_filepath = self._obj_filepath(key)
         return obj_filepath.exists()
 
+    def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
+        src_filepath = self._obj_filepath(src)
+        dst_filepath = self._obj_filepath(dst)
+        print(f"CXX - Renaming {src} to {dst}")
+        print(f"CXX - Renaming {src_filepath} to {dst_filepath}")
+        src_filepath.rename(dst_filepath)
 
 class FileBackedJsonObjectException(AuthException):
     """
