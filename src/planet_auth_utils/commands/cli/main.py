@@ -131,7 +131,6 @@ def cmd_plauth_reset():
     """
     save_tag = time.strftime("%Y-%m-%d-%H%M%S")
 
-    # TODO: the default storage provider should be nice when strings are passed
     # The CLI only supports the default storage provider right now.
     storage_provider = ObjectStorageProvider._default_storage_provider()
 
