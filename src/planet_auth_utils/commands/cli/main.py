@@ -22,7 +22,6 @@ from planet_auth import Auth, AuthException, setStructuredLogging, ObjectStorage
 from planet_auth.constants import USER_CONFIG_FILE
 
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
-from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 from planet_auth_utils.profile import Profile
 
 from .options import (
