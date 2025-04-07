@@ -38,7 +38,7 @@ build = [
 ]
 docs = [
     "mkdocs",
-    "mkdocstrings[python]",
+    "mkdocstrings[python] == 0.28.3",  # 0.29.0 is slow.  See  https://github.com/mkdocstrings/mkdocstrings/issues/756
     "mkdocs-click",
     "mkdocs-material",
     "mkdocs-macros-plugin"
