@@ -20,17 +20,32 @@ from planet_auth import (
     FileBackedPlanetLegacyApiKey,
     PlanetLegacyAuthClient,
     PlanetLegacyAuthClientConfig,
+    StaticApiKeyAuthClient,
+    StaticApiKeyAuthClientConfig,
 )
 
 from .options import opt_password, opt_sops, opt_username, opt_yes_no
 from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
-def _check_client_type(ctx):
+def _check_client_type_pllegacy(ctx):
     if not isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient):
         raise click.ClickException(
             f'"legacy" auth commands can only be used with "{PlanetLegacyAuthClientConfig.meta()["client_type"]}" type auth profiles.'
             f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+        )
+
+
+def _check_client_type_pllegacy_or_apikey(ctx):
+    if not (
+        isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient)
+        or isinstance(ctx.obj["AUTH"].auth_client(), StaticApiKeyAuthClient)
+    ):
+        raise click.ClickException(
+            "This command can only be used with "
+            f'"{PlanetLegacyAuthClientConfig.meta()["client_type"]}" or "{StaticApiKeyAuthClientConfig.meta()["client_type"]}" '
+            "type auth profiles. "
+            f'The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
         )
 
 
@@ -44,7 +59,7 @@ def cmd_pllegacy(ctx):
         click.echo(ctx.get_help())
         sys.exit(0)
 
-    _check_client_type(ctx)
+    _check_client_type_pllegacy(ctx)
 
 
 @cmd_pllegacy.command("login")
@@ -57,7 +72,7 @@ def cmd_pllegacy_login(ctx, username, password, sops, yes):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
     """
-    _check_client_type(ctx)
+    _check_client_type_pllegacy(ctx)
     current_auth_context = ctx.obj["AUTH"]
     current_auth_context.login(
         allow_tty_prompt=True,
@@ -75,10 +90,26 @@ def cmd_pllegacy_print_api_key(ctx):
     """
     Show the API Key used by the currently selected authentication profile.
     """
-    _check_client_type(ctx)
+    # We also support StaticApiKeyAuthClient in some cases where the user
+    # directly provides an API key.  Such clients can use the legacy API
+    # key, but lack the ability to obtain one.  This helps in our transition
+    # away from the legacy auth protocol.
+    _check_client_type_pllegacy_or_apikey(ctx)
+
+    # Since API keys are static, we support them in the client config
+    # and not just in the token file.
+    if isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient):
+        api_key = ctx.obj["AUTH"].auth_client().config().legacy_api_key()
+        if api_key:
+            print(api_key)
+            return
+    if isinstance(ctx.obj["AUTH"].auth_client(), StaticApiKeyAuthClient):
+        api_key = ctx.obj["AUTH"].auth_client().config().api_key()
+        if api_key:
+            print(api_key)
+            return
+
     saved_token = FileBackedPlanetLegacyApiKey(api_key_file=ctx.obj["AUTH"].token_file_path())
-    # Not using object print for API keys printing. We don't want object quoting and escaping.
-    # print_obj(saved_token.legacy_api_key())
     print(saved_token.legacy_api_key())
 
 
@@ -89,6 +120,6 @@ def cmd_pllegacy_print_access_token(ctx):
     """
     Show the legacy JWT currently held by the selected authentication profile.
     """
-    _check_client_type(ctx)
+    _check_client_type_pllegacy(ctx)
     saved_token = FileBackedPlanetLegacyApiKey(api_key_file=ctx.obj["AUTH"].token_file_path())
     print(saved_token.legacy_jwt())
