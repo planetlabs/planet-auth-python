@@ -16,10 +16,13 @@ import click
 import logging
 import importlib.metadata
 import sys
+import time
 
-from planet_auth import Auth, AuthException, setStructuredLogging
+from planet_auth import Auth, AuthException, setStructuredLogging, ObjectStorageProvider, ObjectStorageProvider_KeyType
+from planet_auth.constants import USER_CONFIG_FILE
 
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
+from planet_auth_utils.profile import Profile
 
 from .options import (
     opt_organization,
@@ -117,6 +120,29 @@ def cmd_plauth_version():
     print(f"planet-auth : {_pkg_display_version('planet-auth')}")
     print(f"planet-auth-config : {_pkg_display_version('planet-auth-config')}")
     print(f"planet : {_pkg_display_version('planet')}")
+
+
+@cmd_plauth.command("reset")
+def cmd_plauth_reset():
+    """
+    Reset saved auth state.
+
+    Old auth state is not deleted. It is moved aside and preserved.
+    """
+    save_tag = time.strftime("%Y-%m-%d-%H%M%S")
+
+    # The CLI only supports the default storage provider right now.
+    storage_provider = ObjectStorageProvider._default_storage_provider()
+
+    user_conf_objkey = ObjectStorageProvider_KeyType(USER_CONFIG_FILE)
+    if storage_provider.obj_exists(user_conf_objkey):
+        user_conf_objkey_offname = ObjectStorageProvider_KeyType(USER_CONFIG_FILE + f"-{save_tag}")
+        storage_provider.obj_rename(user_conf_objkey, user_conf_objkey_offname)
+
+    profile_dir_objkey = ObjectStorageProvider_KeyType(Profile.profile_root())
+    if storage_provider.obj_exists(profile_dir_objkey):
+        profile_dir_objkey_offname = ObjectStorageProvider_KeyType(Profile.profile_root().name + f"-{save_tag}")
+        storage_provider.obj_rename(profile_dir_objkey, profile_dir_objkey_offname)
 
 
 @cmd_plauth.command("login")
