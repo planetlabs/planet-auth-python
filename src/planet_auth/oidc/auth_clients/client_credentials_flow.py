@@ -97,6 +97,8 @@ class ClientCredentialsClientSecretAuthClient(
         extra: Optional[dict],
         **kwargs,
     ) -> FileBackedOidcCredential:
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password"], **kwargs)
         return FileBackedOidcCredential(
             self.token_client().get_token_from_client_credentials(
                 client_id=self._ccauth_client_config.client_id(),
@@ -144,6 +146,8 @@ class ClientCredentialsPubKeyAuthClient(ClientCredentialsAuthClientBase, OidcAut
         extra: Optional[dict],
         **kwargs,
     ):
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password"], **kwargs)
         return FileBackedOidcCredential(
             self.token_client().get_token_from_client_credentials(
                 client_id=self._pubkey_client_config.client_id(),

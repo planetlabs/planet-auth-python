@@ -161,6 +161,9 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
          Returns:
             A FileBackedOidcCredential object
         """
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password", "client_id", "client_secret"], **kwargs)
+
         if not allow_tty_prompt:
             # Without a TTY to confirm the authorization code with the user,
             # the client using this library really must use device_login_initiate and

@@ -132,6 +132,9 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
             A FileBackedOidcCredential object
         """
 
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password", "client_id", "client_secret"], **kwargs)
+
         pkce_code_verifier, pkce_code_challenge = create_pkce_challenge_verifier_pair()
         if allow_open_browser:
             redirect_uri = self._authcode_client_config.local_redirect_uri()
