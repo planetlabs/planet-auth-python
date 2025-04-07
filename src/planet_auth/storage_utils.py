@@ -184,8 +184,6 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
     def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
         src_filepath = self._obj_filepath(src)
         dst_filepath = self._obj_filepath(dst)
-        print(f"CXX - Renaming {src} to {dst}")
-        print(f"CXX - Renaming {src_filepath} to {dst_filepath}")
         src_filepath.rename(dst_filepath)
 
 
