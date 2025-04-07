@@ -188,6 +188,7 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         print(f"CXX - Renaming {src_filepath} to {dst_filepath}")
         src_filepath.rename(dst_filepath)
 
+
 class FileBackedJsonObjectException(AuthException):
     """
     Exception indicating a problem with a file backed json object.
