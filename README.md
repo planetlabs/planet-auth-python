@@ -1,4 +1,5 @@
 # Planet Auth Utility Library
+[![Build Status](https://github.com/planetlabs/planet-auth-python/actions/workflows/test.yml/badge.svg)](https://github.com/planetlabs/planet-auth-python/actions/workflows/test.yml)
 
 The Planet Auth Library provides generic authentication utilities for clients
 and for services.  For clients, it provides means to obtain access tokens that
