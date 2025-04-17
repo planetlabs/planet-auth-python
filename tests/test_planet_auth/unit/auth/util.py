@@ -455,6 +455,10 @@ class MockObjectStorageProvider(ObjectStorageProvider):
     def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
         return key in self._mock_storage
 
+    def mtime(self, key: ObjectStorageProvider_KeyType) -> float:
+        # Fake storage provider.  We don't know when objects were last modified.
+        return 0.0
+
     def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
         if self._mock_storage[src] is not None:
             self._mock_storage[dst] = self._mock_storage[src]
