@@ -64,6 +64,13 @@ class ObjectStorageProvider(ABC):
         """
 
     @abstractmethod
+    def mtime(self, key: ObjectStorageProvider_KeyType) -> float:
+        """
+        Return the last modified time in seconds since the epoc for the object.
+        If the object does not exist, an exception should be raised.
+        """
+
+    @abstractmethod
     def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
         """
         Rename/Move an object from the source path to the destination path.
@@ -180,6 +187,10 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
     def obj_exists(self, key: ObjectStorageProvider_KeyType) -> bool:
         obj_filepath = self._obj_filepath(key)
         return obj_filepath.exists()
+
+    def mtime(self, key: ObjectStorageProvider_KeyType) -> float:
+        obj_filepath = self._obj_filepath(key)
+        return obj_filepath.stat().st_mtime
 
     def obj_rename(self, src: ObjectStorageProvider_KeyType, dst: ObjectStorageProvider_KeyType) -> None:
         src_filepath = self._obj_filepath(src)
@@ -493,7 +504,7 @@ class FileBackedJsonObject:
             # Have data. No path. Continue with in memory value.
             return
 
-        if int(self._file_path.stat().st_mtime) > self._load_time:
+        if self._object_storage_provider.mtime(self._file_path) > self._load_time:
             self.load()
 
     def lazy_get(self, field):
