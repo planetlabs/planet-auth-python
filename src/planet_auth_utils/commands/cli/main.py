@@ -206,6 +206,7 @@ def cmd_plauth_login(
         # auth_password_opt=auth_password,
     )
 
+    print(f"Logging in with authentication profile {override_auth_context.profile_name()}...")
     _ = override_auth_context.login(
         requested_scopes=scope,
         requested_audiences=audience,
