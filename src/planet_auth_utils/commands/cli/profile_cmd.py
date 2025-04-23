@@ -61,7 +61,18 @@ def _dialogue_choose_auth_client_type():
 
 
 def _dialogue_choose_auth_profile():
-    all_profile_names = Builtins.builtin_profile_names() + Profile.list_on_disk_profiles()
+    filtered_builtin_profile_names = []
+    for profile_name in Builtins.builtin_profile_names():
+        config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
+        # The idea of a "hidden" profile currently only applies to built-in profiles.
+        # This is largely so we can have partial SKEL profiles.
+        if not config_dict.get("_hidden", False):
+            filtered_builtin_profile_names.append(profile_name)
+
+    filtered_builtin_profile_names.sort()
+    sorted_on_disk_profile_names = Profile.list_on_disk_profiles().copy()
+    sorted_on_disk_profile_names.sort()
+    all_profile_names = filtered_builtin_profile_names + sorted_on_disk_profile_names
     choices = []
     for profile_name in all_profile_names:
         choices.append((profile_name, f"{profile_name}"))
@@ -129,7 +140,10 @@ def cmd_profile_list(long):
         display_object = OrderedDict()
         for profile_name in profile_names:
             config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
-            display_object[profile_name] = config_dict
+            # The idea of a "hidden" profile currently only applies to built-in profiles.
+            # This is largely so we can have partial SKEL profiles.
+            if not config_dict.get("_hidden", False):
+                display_object[profile_name] = config_dict
         print_obj(display_object)
 
         click.echo("\nLocally defined profiles:")
@@ -137,13 +151,20 @@ def cmd_profile_list(long):
 
     else:
         click.echo("Built-in profiles:")
-        profile_names = Builtins.builtin_profile_names().copy()
-        profile_names.sort()
-        print_obj(profile_names)
+        display_profile_names = []
+        for profile_name in Builtins.builtin_profile_names():
+            config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
+            # The idea of a "hidden" profile currently only applies to built-in profiles.
+            # This is largely so we can have partial SKEL profiles.
+            if not config_dict.get("_hidden", False):
+                display_profile_names.append(profile_name)
+        display_profile_names.sort()
+        print_obj(display_profile_names)
+
         click.echo("\nLocally defined profiles:")
-        profile_names = Profile.list_on_disk_profiles()
-        profile_names.sort()
-        print_obj(profile_names)
+        display_profile_names = Profile.list_on_disk_profiles()
+        display_profile_names.sort()
+        print_obj(display_profile_names)
 
 
 @cmd_profile.command("create")
