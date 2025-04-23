@@ -114,6 +114,7 @@ def cmd_oauth_login(
         login_extra["organization"] = organization
 
     current_auth_context = ctx.obj["AUTH"]
+    print(f"Logging in with authentication profile {current_auth_context.profile_name()}...")
     current_auth_context.login(
         requested_scopes=scope,
         requested_audiences=audience,
