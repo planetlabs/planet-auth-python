@@ -1,4 +1,4 @@
-# Planet Auth Utility Library
+# Planet Auth Utility Library <br/> {{ config.extra.site_version }}
 
 ## Overview
 The Planet Auth Library provides generic authentication utilities for clients
