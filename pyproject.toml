@@ -43,7 +43,7 @@ docs = [
     #   https://github.com/mkdocstrings/mkdocstrings/discussions/743
     "mkdocstrings[python] == 0.28.3",
     "mkdocs-click",
-    "mkdocs-material",
+    "mkdocs-material == 9.6.12",  # Upgrades may interact with docs/custom_theme
     "mkdocs-macros-plugin"
 ]
 examples = [

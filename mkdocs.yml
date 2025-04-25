@@ -11,7 +11,7 @@ theme:
   name: 'material'
   logo: img/logo-white.svg
   favicon: img/logo-color.svg
-  # custom_dir: 'docs/custom_theme/'
+  custom_dir: 'docs/custom_theme/'
   features:
     - content.code.copy
     - navigation.tabs
@@ -37,6 +37,10 @@ theme:
       toggle:
         icon: octicons/sun-24
         name: Switch to light mode
+
+
+hooks:
+  - docs/hooks/mkdocs_hooks.py
 
 plugins:
   - search:
@@ -66,13 +70,13 @@ repo_url: https://github.com/planetlabs/planet-auth-python
 #edit_uri: ""
 
 nav:
-    - Introduction: 'index.md'
-    - CLI Reference:
-      - plauth: 'cli-plauth.md'
-    - Configuration: 'configuration.md'
-    - API Reference: 'api.md'
-    - Examples: 'examples.md'
-    - Changelog: 'changelog.md'
+  - Introduction: 'index.md'
+  - CLI Reference:
+    - plauth: 'cli-plauth.md'
+  - Configuration: 'configuration.md'
+  - API Reference: 'api.md'
+  - Examples: 'examples.md'
+  - Changelog: 'changelog.md'
 
 markdown_extensions:
   - pymdownx.highlight
