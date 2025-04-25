@@ -1,5 +1,6 @@
 # Planet Auth Utility Library
 
+## Overview
 The Planet Auth Library provides generic authentication utilities for clients
 and services.  For clients, it provides the means to obtain access tokens that
 can be used to access network services.  For services, it provides tools to
@@ -20,3 +21,10 @@ it is operating, leaving that for higher level applications to configure.
 The [Planet SDK for Python](https://developers.planet.com/docs/pythonclient/)
 leverages this library, and is pre-configured for the Planet Insights Platform used
 by customers.
+
+## Installation
+Install from PyPI using pip:
+
+```bash
+pip install planet-auth
+```
