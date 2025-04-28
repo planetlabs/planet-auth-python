@@ -7,7 +7,7 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 # version = "X.X.X"
 description = "Planet Auth Utility Code"
-readme = "docs/index.md"
+readme = "docs/readme.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
 license = "Apache-2.0"
 license-files = [
@@ -89,7 +89,7 @@ build-backend = "setuptools.build_meta"
 # version = {file = "version-with-buildnum.txt"}
 
 [tool.setuptools_scm]
-# No further customization currently needed.
+# version_file = "version-setuptools_scm.txt"
 
 ## ###########################################################################
 ## Testing
