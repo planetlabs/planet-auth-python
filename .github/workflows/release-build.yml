@@ -40,7 +40,9 @@ jobs:
           path: dist/planet_auth*.tar.gz
 
   # Not building this as a release artifact at this time.
-  # Docs are published to ReadTheDocs through other mechanisms.
+  # Docs are published to ReadTheDocs through a webhook
+  # which causes ReadTheDocs.io to pull, build, and publish
+  # according to its own configuration.
   #
   # build-docs:
   #   name: "Build Documentation Packages"
