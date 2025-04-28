@@ -62,7 +62,8 @@ runs:
       #    the version that appears before the pre-release suffix.
       #  - PEP 440 expects single letter variants "a", "b", "rc" over
       #    the textual "alpha", "beta", "rc" identifiers, and only
-      #    expects these defined pre-release variants.
+      #    expects these defined pre-release variants.  Other variants
+      #    do not seem to be well-supported by python tooling.
       #  - PEP 440 treats development releases as different from the variant,
       #    rather than being a pre-release variant of pre-alpha maturity.
       #    Fully handling this would be more complex.
