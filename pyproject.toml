@@ -7,12 +7,17 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 # version = "X.X.X"
 description = "Planet Auth Utility Code"
-readme = "docs/index.md"
+# README.md - front page for GitHub. Focus on contributor experience.
+# docs/readme.md - front page for PyPI.  Library user orientation.
+# docs/index.md - front page for ReadTheDocs doc page.  Complete developer user documentation.
+readme = "docs/readme.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
-license = {file = "LICENSE"}
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: Apache Software License",
 ]
 keywords = []
 dependencies = [
@@ -43,7 +48,7 @@ docs = [
     #   https://github.com/mkdocstrings/mkdocstrings/discussions/743
     "mkdocstrings[python] == 0.28.3",
     "mkdocs-click",
-    "mkdocs-material",
+    "mkdocs-material == 9.6.12",  # Upgrades may interact with docs/custom_theme
     "mkdocs-macros-plugin"
 ]
 examples = [
@@ -78,12 +83,16 @@ internal = [
 plauth = "planet_auth_utils.commands.cli.main:cmd_plauth"
 
 [build-system]
-requires = ["setuptools>=62.0.0", "wheel"]
+requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
+# Using setuptools_scm to manage versioning
 # version = {file = "version.txt"}
-version = {file = "version-with-buildnum.txt"}
+# version = {file = "version-with-buildnum.txt"}
+
+[tool.setuptools_scm]
+# version_file = "version-setuptools_scm.txt"
 
 ## ###########################################################################
 ## Testing
