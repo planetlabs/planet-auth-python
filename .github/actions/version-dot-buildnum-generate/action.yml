@@ -81,7 +81,16 @@ runs:
         version_buildnum=${build_timestamp_b10}
 
         # Putting it all together
-        printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
+
+        # Semver with build number in version and variant specifier suffix
+        # printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
+
+        # PEP 440 Semver with build numver and static variant tag
+        #  - PEP 440 likes the variant suffixes like "b#" over "-beta[.#]"
+        #    In practice, this makes it harder to use a build number as part of
+        #    the pre-suffix version.
+        printf "${version_invariant}${version_variant:+-}${version_variant}${version_buildnum:++}${version_buildnum}" > version-with-buildnum.txt
+
         echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"
         echo "version-with-buildnum=$(cat version-with-buildnum.txt)" | tee -a $GITHUB_OUTPUT
         echo "version=$(cat version.txt)" | tee -a $GITHUB_OUTPUT
