@@ -20,7 +20,12 @@ by the underlying auth libraries.
 
 """
 
-from .commands.cli.main import cmd_plauth_embedded, cmd_plauth_login
+from .commands.cli.main import (
+    cmd_plauth_embedded,
+    cmd_plauth_login,
+    cmd_plauth_reset,
+    cmd_plauth_version,
+)
 from .commands.cli.planet_legacy_auth_cmd import (
     cmd_pllegacy,
     cmd_pllegacy_login,
@@ -93,6 +98,8 @@ from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 __all__ = [
     "cmd_plauth_embedded",
     "cmd_plauth_login",
+    "cmd_plauth_reset",
+    "cmd_plauth_version",
     "cmd_jwt",
     "cmd_jwt_decode",
     "cmd_jwt_validate_oauth",

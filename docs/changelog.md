@@ -1,9 +1,9 @@
 # Changelog
 
-## 2.0.4.X - 2025
-- Initial Beta release series to shakedown public release pipelines and
-  initial integrations.
+## 2.1.0 - 2025 TBD
+- Initial public release targeting integration with the
+  [Planet Client for Python](https://github.com/planetlabs/planet-client-python).
 
-## [Unreleased: 2.0.0 - 2.0.3] - YYYY-MM-DD
-- 2.X is the initial public release of Planet auth libraries, targeting
-  integration with our public Python SDK [`planet-client-python`](https://github.com/planetlabs/planet-client-python)
+## [Unreleased: 2.0.*] - YYYY-MM-DD
+- All releases in the 2.0.X series are development releases, even if not
+  tagged as such. This work included some shakedowns of the release pipelines.

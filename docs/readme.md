@@ -1,4 +1,4 @@
-# Planet Auth Utility Library <br/> {{ config.extra.site_version }}
+# Planet Auth Utility Library
 
 ## Overview
 The Planet Auth Library provides generic authentication utilities for clients
@@ -28,3 +28,8 @@ Install from PyPI using pip:
 ```bash
 pip install planet-auth
 ```
+
+## Documentation
+
+See [Planet Auth Library](https://planet-auth.readthedocs.io/en/latest/) on
+_ReadTheDocs.io_ for complete documentation.

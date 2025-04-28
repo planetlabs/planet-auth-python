@@ -56,7 +56,7 @@ def _check_client_type(ctx):
 @click.pass_context
 def cmd_oauth(ctx):
     """
-    Auth commands specific to OAuth authentication mechanisms.
+    OAuth2 authentication commands.
     """
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
@@ -114,6 +114,7 @@ def cmd_oauth_login(
         login_extra["organization"] = organization
 
     current_auth_context = ctx.obj["AUTH"]
+    print(f"Logging in with authentication profile {current_auth_context.profile_name()}...")
     current_auth_context.login(
         requested_scopes=scope,
         requested_audiences=audience,

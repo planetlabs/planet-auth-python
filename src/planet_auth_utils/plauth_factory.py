@@ -110,6 +110,7 @@ class PlanetAuthFactory:
             profile_name=normalized_selected_profile, overide_path=token_file_opt, save_token_file=save_token_file  # type: ignore
         )
 
+        auth_logger.debug(msg=f"Initializing Auth from profile {normalized_selected_profile}")
         return Auth.initialize_from_config(
             client_config=auth_client_config,
             token_file=token_file_path,
@@ -143,6 +144,7 @@ class PlanetAuthFactory:
             profile_name=adhoc_profile_name, overide_path=token_file_opt, save_token_file=save_token_file
         )
 
+        auth_logger.debug(msg=f"Initializing Auth for service account {m2m_realm_name}:{client_id}")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=token_file_path,
@@ -169,6 +171,7 @@ class PlanetAuthFactory:
             profile_name=profile_name, overide_path=None, save_token_file=save_token_file
         )
 
+        auth_logger.debug(msg="Initializing Auth from provided configuration")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=client_config,
             initial_token_data=initial_token_data,
@@ -216,6 +219,7 @@ class PlanetAuthFactory:
             "bearer_token_prefix": PlanetLegacyRequestAuthenticator.TOKEN_PREFIX,
         }
         adhoc_profile_name = "_PL_API_KEY"
+        auth_logger.debug(msg="Initializing Auth from API key")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=None,
@@ -249,18 +253,19 @@ class PlanetAuthFactory:
         Between built-in profiles to interactively login users, customer or third party
         registered OAuth clients and corresponding custom profiles that may be saved on disk,
         OAuth service account profiles, and static API keys, there are a number of
-        ways to configure how an application build with this library should authenticate
-        requests made to the service.  Add to this, configration may come from explict
-        parameters set by the user, environment variables, or configuration files, and the
-        number of possibilities rises.
+        ways to configure how an application built with this library should authenticate
+        requests made to the service.  Add to this configration may come from explict
+        parameters set by the user, environment variables, configuration files, or values
+        hard-coded by the application developer, and the number of possibilities rises.
 
         This helper function is provided to help build applications with a consistent
         user experience when sharing auth context with the CLI.  This function
-        does not at this time support using custom storage providers.
+        does not support using custom storage providers at this time.
 
-        Arguments to this function are taken to be explicitly set by the user, and are
-        given the highest priority.  Internally, the priority used for the source of
-        any particular configuration values is, from highest to lowest priority, as follows:
+        Arguments to this function are taken to be explicitly set by the user or
+        application developer, and are given the highest priority.  Internally, the
+        priority used for the source of any particular configuration values is, from
+        highest to lowest priority, as follows:
             - Arguments to this function.
             - Environment variables.
             - Values from configuration file.
