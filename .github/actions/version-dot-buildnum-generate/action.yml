@@ -16,17 +16,14 @@ description: |
   build artifact file that contains the same.
   
   This action assumes it is working with a Semantic Versioning version
-  number. The form of the final, full version number is
-    <branch invariant version>.<build number>-<build variant>
-  
+  number.
+
   References:
     https://semver.org/
     https://packaging.python.org/en/latest/specifications/version-specifiers/
+    https://peps.python.org/pep-0440/
 
-# TODO: Detect branch for consideration of constructing a build_variant automatically?
-#       Unless we have a strict branching/release policy, this may never be possible.
 # TODO: add support for epochs (e.g. "<epoch>!" prefix)
-# TODO: add support for local variants (e.g. "+<local variant>" suffix)
 # TODO: Can/should we *also* encode the SHA?  While I dislike its lack of sequence
 #       or uniqueness, it *does* encode useful information.
 
@@ -58,35 +55,83 @@ runs:
   using: "composite"
   steps:
     - id: generate-version-with-buildnum
+      # This was initially developed to be a generic semver build number
+      # generator.  PEP 440 has some quirks in regard to the semver specification:
+      #  - PEP 440 specifies variant suffixes of the form "b#" over "-beta[.#]"
+      #    In practice, this makes it harder to promote the build number as part of
+      #    the version that appears before the pre-release suffix.
+      #  - PEP 440 expects single letter variants "a", "b", "rc" over
+      #    the textual "alpha", "beta", "rc" identifiers, and only
+      #    expects these defined pre-release variants.  Other variants
+      #    do not seem to be well-supported by python tooling.
+      #  - PEP 440 treats development releases as different from the variant,
+      #    rather than being a pre-release variant of pre-alpha maturity.
+      #    Fully handling this would be more complex.
       name: "Prepare build version file"
       shell: bash
       run: |
-        # Should be closely synonymous with SCM branch
-        version_invariant=$(head -1 version.txt  | tr -d '\n')
-
-        # "pre-release" in semver
-        if [ "${{ inputs.build-variant }}" = "release" ]
-        then
-            version_variant=""
-        else
-            version_variant=${{ inputs.build-variant }}
-        fi
-
         # Generated build number
         build_timestamp_b10=$(date +%s)                                # Time based build number - Base 10
         build_timestamp_b16=$(printf '%x' ${build_timestamp_b10})      # Time based build number - Base 16 - More compact, but might be interpreted as a non-digit
         build_timestamp_bx16=$(printf '0x%x' ${build_timestamp_b10})   # As above, with leading '0x' so it's never not seen as hex (but is less compact)
-        # Python packaging doesn't like the "x" in the build number build numbers (even though it makes it less ambigious)
-        # Reverting to base 10 for now.  *sigh*
-        version_buildnum=${build_timestamp_b10}
+        semver_buildnum=${build_timestamp_b10}
+
+        # The invariant portion of the version should be closely
+        # synonymous with SCM branch
+        version_invariant=$(head -1 version.txt  | tr -d '\n')
+
+        # Configure the pre-release variant for the semver
+        semver_variant=${{ inputs.build-variant }}
+        case "${{ inputs.build-variant }}" in
+            dev)
+                # PEP 440 treats "dev" as a different dimmension than the variant.
+                # Squashing to alpha to reduce dimmensions we use.
+                semver_variant_py="a"
+                semver_buildnum_py="${semver_buildnum}"
+                ;;
+            alpha)
+                semver_variant_py="a"
+                semver_buildnum_py="${semver_buildnum}"
+                ;;
+            beta)
+                semver_variant_py="b"
+                semver_buildnum_py="${semver_buildnum}"
+                ;;
+            rc)
+                semver_variant_py="rc"
+                semver_buildnum_py="${semver_buildnum}"
+                ;;
+            release)
+                semver_variant_py=""
+                # PEP 440 specifies "+<build>" for local variants,
+                # making it harder to use it for a public release build number.
+                semver_buildnum_py="" 
+                ;;
+            *)
+                echo "Unknown build variant: ${{ inputs.build-variant }}"
+                exit 1
+                ;;
+        esac
 
         # Putting it all together
-        printf "${version_invariant}.${version_buildnum}${version_variant:+-}${version_variant}" > version-with-buildnum.txt
+
+        # Semver variant 1:
+        #   <version>.<buildnum>-<variant>
+        # printf "${version_invariant}.${semver_buildnum}${semver_variant:+-}${semver_variant}" > version-with-buildnum.txt
+
+        # Semver variant 2:
+        #   <version>-<variant>+<buildnum>
+        # printf "${version_invariant}${semver_variant:+-}${semver_variant}${semver_buildnum:++}${semver_buildnum}" > version-with-buildnum.txt
+
+        # PEP 440 semver variant:
+        printf "${version_invariant}${semver_variant_py}${semver_buildnum_py}" > version-with-buildnum.txt
+
+        # Saving the result as an artifact
         echo "Created version-with-buildnum.txt : $(cat version-with-buildnum.txt)"
         echo "version-with-buildnum=$(cat version-with-buildnum.txt)" | tee -a $GITHUB_OUTPUT
         echo "version=$(cat version.txt)" | tee -a $GITHUB_OUTPUT
-        echo "buildnum=${version_buildnum}" | tee -a $GITHUB_OUTPUT
-        echo "variant-normal=${version_variant}" | tee -a $GITHUB_OUTPUT
+        echo "buildnum=${semver_buildnum}" | tee -a $GITHUB_OUTPUT
+        echo "variant-normal=${semver_variant}" | tee -a $GITHUB_OUTPUT
         echo "variant-raw=${{ inputs.build-variant }}" | tee -a $GITHUB_OUTPUT
     - name: Save Artifacts - version-with-buildnum.txt
       uses: actions/upload-artifact@v4

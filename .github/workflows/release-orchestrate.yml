@@ -63,9 +63,10 @@ jobs:
           then
             git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version}}"
             git push origin                                             "${{steps.gen-buildnum.outputs.version}}"
+          else
+            git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+            git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
           fi
-          git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
-          git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
@@ -81,21 +82,21 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Create Github Release (Version candidate release)"
-        # if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
+        if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
         uses: actions/create-release@v1
         with:
-          tag_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           draft: false
-          prerelease: ${{ inputs.version-prerelease }}
+          prerelease: true
       - name: "Create Github Release (Final version release)"
         if:  needs.generate-build-number.outputs.version-variant-raw == 'release'
         uses: actions/create-release@v1
         with:
-          tag_name: "${{ needs.generate-build-number.outputs.version }}"
+          tag_name: "release-${{ needs.generate-build-number.outputs.version }}"
           release_name: "${{ needs.generate-build-number.outputs.version }}"
           draft: false
-          prerelease: ${{ inputs.version-prerelease }}
+          prerelease: false
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
