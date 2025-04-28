@@ -82,13 +82,13 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: "Create Github Release (Version candidate release)"
-        # if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
+        if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
         uses: actions/create-release@v1
         with:
           tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           draft: false
-          prerelease: ${{ inputs.version-prerelease }}
+          prerelease: true
       - name: "Create Github Release (Final version release)"
         if:  needs.generate-build-number.outputs.version-variant-raw == 'release'
         uses: actions/create-release@v1
@@ -96,7 +96,7 @@ jobs:
           tag_name: "release-${{ needs.generate-build-number.outputs.version }}"
           release_name: "${{ needs.generate-build-number.outputs.version }}"
           draft: false
-          prerelease: ${{ inputs.version-prerelease }}
+          prerelease: false
   package:
     name: "Build Release Artifacts"
     uses: ./.github/workflows/release-build.yml
