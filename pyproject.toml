@@ -9,10 +9,12 @@ dynamic = ["version"]
 description = "Planet Auth Utility Code"
 readme = "docs/index.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
-license = {file = "LICENSE"}
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
-    "License :: OSI Approved :: Apache Software License",
 ]
 keywords = []
 dependencies = [
@@ -78,12 +80,16 @@ internal = [
 plauth = "planet_auth_utils.commands.cli.main:cmd_plauth"
 
 [build-system]
-requires = ["setuptools>=62.0.0", "wheel"]
+requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
+# Using setuptools_scm to manage versioning
 # version = {file = "version.txt"}
-version = {file = "version-with-buildnum.txt"}
+# version = {file = "version-with-buildnum.txt"}
+
+[tool.setuptools_scm]
+# No further customization currently needed.
 
 ## ###########################################################################
 ## Testing

@@ -22,10 +22,6 @@ jobs:
         uses: ./.github/actions/python-build-env-setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: "Pull Build Number"
-        uses: ./.github/actions/version-dot-buildnum-fetch
-        with:
-          version-file: version-with-buildnum.txt
       - name: 'Nox: Build Packages'
         run: |
           nox -s pkg_build_wheel
@@ -56,10 +52,6 @@ jobs:
   #       uses: ./.github/actions/python-build-env-setup
   #       with:
   #         python-version: ${{ env.PYTHON_VERSION }}
-  #     # - name: "Pull Build Number"
-  #     #   uses: ./.github/actions/version-dot-buildnum-fetch
-  #     #   with:
-  #     #     version-file: version-with-buildnum.txt
   #     - name: "Nox: MKDocs Build"
   #       run: |
   #         nox -s mkdocs_build
