@@ -7,6 +7,9 @@ requires-python = ">=3.9"
 dynamic = ["version"]
 # version = "X.X.X"
 description = "Planet Auth Utility Code"
+# README.md - front page for GitHub. Focus on contributor experience.
+# docs/readme.md - front page for PyPI.  Library user orientation.
+# docs/index.md - front page for ReadTheDocs doc page.  Library user detailed documentation.
 readme = "docs/readme.md"
 authors = [{ name = "Carl Adams", email = "carl.adams@planet.com" }]
 license = "Apache-2.0"
