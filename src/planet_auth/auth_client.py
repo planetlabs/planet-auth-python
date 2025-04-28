@@ -255,7 +255,7 @@ class AuthClient(ABC):
         Authentication parameters are specific to each implementation. Consult
         subclass documentation for details.
 
-        Args:
+        Parameters:
             allow_open_browser: specify whether login is permitted to open
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
@@ -289,7 +289,7 @@ class AuthClient(ABC):
         """
         Complete a login process that was initiated by a call to `device_login_initiate()`.
 
-        Args:
+        Parameters:
             initiated_login_data: The dictionary that was returned by `device_login_initiate()`
 
         Returns:

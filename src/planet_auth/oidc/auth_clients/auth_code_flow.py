@@ -118,7 +118,7 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
         flow with PKCE.  The Auth Code flow is inherently user interactive,
         and one of allow_tty_prompt or allow_open_browser must be true.
 
-        Args:
+        Parameters:
             allow_open_browser: specify whether login is permitted to open
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
