@@ -63,9 +63,10 @@ jobs:
           then
             git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version}}"
             git push origin                                             "${{steps.gen-buildnum.outputs.version}}"
+          else
+            git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
+            git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
           fi
-          git tag -a -m "Tagging from release orchestration pipeline" "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
-          git push origin                                             "${{steps.gen-buildnum.outputs.version-with-buildnum}}"
   test:
     name: "Prerelease Tests"
     uses: ./.github/workflows/test.yml
