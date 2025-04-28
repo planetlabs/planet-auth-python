@@ -85,7 +85,7 @@ jobs:
         # if:  needs.generate-build-number.outputs.version-variant-raw != 'release'
         uses: actions/create-release@v1
         with:
-          tag_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
+          tag_name: "release-${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           release_name: "${{ needs.generate-build-number.outputs.version-with-buildnum }}"
           draft: false
           prerelease: ${{ inputs.version-prerelease }}
@@ -93,7 +93,7 @@ jobs:
         if:  needs.generate-build-number.outputs.version-variant-raw == 'release'
         uses: actions/create-release@v1
         with:
-          tag_name: "${{ needs.generate-build-number.outputs.version }}"
+          tag_name: "release-${{ needs.generate-build-number.outputs.version }}"
           release_name: "${{ needs.generate-build-number.outputs.version }}"
           draft: false
           prerelease: ${{ inputs.version-prerelease }}
