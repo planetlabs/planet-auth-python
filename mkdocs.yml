@@ -48,7 +48,8 @@ plugins:
       scripts:
         - docs/scripts/gen_api_pages.py
   - literate-nav:
-      nav_file: 'API_NAV.md'
+      nav_file: 'GEN_NAV.md'
+  - section-index
   - macros:
       include_dir: 'docs/examples'
       on_error_fail: true
