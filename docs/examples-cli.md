@@ -1,8 +1,8 @@
 # CLI Examples
 
 ## Embedding the `plauth` Command in Another `click` Program
-It is possible to embed the [`plauth`](/cli-plauth) command into other programs to
-present a unified experience that leverages the [planet_auth](/api)
+It is possible to embed the [`plauth`](./cli-plauth.md) command into other programs to
+present a unified experience that leverages the _Planet Auth Library_
 package for client authentication plumbing.  This is done by using
 a special version of the command that is configured for embedding.
 

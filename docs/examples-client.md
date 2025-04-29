@@ -8,7 +8,7 @@ make authenticated requests to other network services.
 A custom auth client profile may be used to configure the AuthClient
 to use an arbitrary OAuth2 auth service to obtain access tokens for
 use with application APIs.
-See [Configuration and Profiles](/configuration) for more information 
+See [Configuration and Profiles](./configuration.md) for more information
 on client types and profiles.
 
 1. Create a `~/.planet/<profile_name>/auth_client.json` or `~/.planet/<profile_name>/auth_client.sops.json` file.
