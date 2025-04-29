@@ -1,7 +1,8 @@
 # Planet Auth Utility Library
 [![Build Status](https://github.com/planetlabs/planet-auth-python/actions/workflows/test.yml/badge.svg)](https://github.com/planetlabs/planet-auth-python/actions/workflows/test.yml)
 [![Read The Docs](https://app.readthedocs.org/projects/planet-auth/badge/)](https://planet-auth.readthedocs.io/)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/planet-auth)](https://pypistats.org/packages/planet-auth)
+[![PyPI Downloads (pypistats.org)](https://img.shields.io/pypi/dm/planet-auth)](https://pypistats.org/packages/planet-auth)
+[![PyPI Downloads (peppy.tech)](https://static.pepy.tech/badge/planet-auth)](https://pepy.tech/projects/planet-auth)
 
 The Planet Auth Library provides generic authentication utilities for clients
 and for services.  For clients, it provides means to obtain access tokens that
