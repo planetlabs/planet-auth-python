@@ -106,7 +106,7 @@ class TokenValidator:
             try:
                 new_keys_by_id[json_key["kid"]] = jwt.PyJWK(jwk_data=json_key)
             except jwt.PyJWKError as pyjwke:
-                auth_logger.warning(
+                auth_logger.debug(
                     msg="Error while loading key from JWKS endpoint. Any attempt to verify tokens signed with this key will fail. Error: {}".format(
                         str(pyjwke)
                     ),
