@@ -49,7 +49,9 @@ docs = [
     "mkdocstrings[python] == 0.28.3",
     "mkdocs-click",
     "mkdocs-material == 9.6.12",  # Upgrades may interact with docs/custom_theme
-    "mkdocs-macros-plugin"
+    "mkdocs-macros-plugin",
+    "mkdocs-linkcheck",
+    # "linkcheckmd",
 ]
 examples = [
     "flask",

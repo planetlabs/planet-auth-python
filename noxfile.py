@@ -177,6 +177,13 @@ def mkdocs_build(session):
 
 
 @nox.session(python=_DEFAULT_PYTHON)
+def mkdocs_checklinks(session):
+    """Check links in the documentation"""
+    session.install("-e", ".[docs]")
+    session.run("mkdocs-linkcheck", "-v", "-r", "docs")
+
+
+@nox.session(python=_DEFAULT_PYTHON)
 def mkdocs_serve(session):
     """Build the documentation and serve locally over HTTP. The server will watch for updates."""
     session.install("-e", ".[docs]")
