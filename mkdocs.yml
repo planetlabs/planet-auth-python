@@ -14,18 +14,18 @@ theme:
   custom_dir: 'docs/custom_theme/'
   features:
     - content.code.copy
-    - navigation.tabs
-    # - navigation.instant # Not compatible with i18n plugin
-    - navigation.tabs.sticky
     - navigation.expand
     - navigation.indexes
-    - navigation.top
+    - navigation.path
     - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
     - navigation.tracking
     - search.suggest
     - search.highlight
     - toc.follow
-    - toc.integrate
+    # - toc.integrate
   palette:
     - scheme: default
       primary: #007f99
