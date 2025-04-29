@@ -48,10 +48,11 @@ docs = [
     #   https://github.com/mkdocstrings/mkdocstrings/discussions/743
     "mkdocstrings[python] == 0.28.3",
     "mkdocs-click",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-linkcheck",
     "mkdocs-material == 9.6.12",  # Upgrades may interact with docs/custom_theme
     "mkdocs-macros-plugin",
-    "mkdocs-linkcheck",
-    # "linkcheckmd",
 ]
 examples = [
     "flask",

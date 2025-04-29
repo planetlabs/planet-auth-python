@@ -44,6 +44,11 @@ hooks:
 
 plugins:
   - search:
+  - gen-files:
+      scripts:
+        - docs/scripts/gen_api_pages.py
+  - literate-nav:
+      nav_file: 'API_NAV.md'
   - macros:
       include_dir: 'docs/examples'
       on_error_fail: true
@@ -77,9 +82,10 @@ nav:
     - Overview: 'library-overview.md'
     - Auth Client Configuration: 'configuration.md'
     - Built-in Injection: 'built-ins.md'
-  - API Reference:
-    - Planet Auth: 'api-planet-auth.md'
-    - Planet Auth Utils: 'api-planet-auth-utils.md'
+  # - API Reference:
+  #   - Planet Auth: 'api-planet-auth.md'
+  #   - Planet Auth Utils: 'api-planet-auth-utils.md'
+  - API Reference: gen_reference/
   - Examples:
     - Installation: 'examples-installation.md'
     - CLI: 'examples-cli.md'
