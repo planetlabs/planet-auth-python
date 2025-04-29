@@ -71,11 +71,18 @@ repo_url: https://github.com/planetlabs/planet-auth-python
 
 nav:
   - Introduction: 'index.md'
-  - CLI Reference:
+  - CLI:
     - plauth: 'cli-plauth.md'
-  - Configuration: 'configuration.md'
+  - Library Usage:
+    - Overview: 'library-overview.md'
+    - Auth Client Configuration: 'configuration.md'
+    - Built-in Injection: 'built-ins.md'
   - API Reference: 'api.md'
-  - Examples: 'examples.md'
+  - Examples:
+    - Installation: 'examples-installation.md'
+    - CLI: 'examples-cli.md'
+    - Client Usage: 'examples-client.md'
+    - Service Usage: 'examples-service.md'
   - Changelog: 'changelog.md'
 
 markdown_extensions:

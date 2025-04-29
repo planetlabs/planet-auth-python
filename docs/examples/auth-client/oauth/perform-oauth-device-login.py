@@ -1,45 +1,52 @@
 import logging
-import pyqrcode # type: ignore
-from planet_auth import Auth
+import pyqrcode  # type: ignore
+import planet_auth_utils
 
 
 def prompt_user(init_login_info):
     print("Please activate your device.")
     print(
         "Visit the activation site:\n"
-        "\n\t{}\n"
+        f"\n\t{init_login_info.get("verification_uri")}\n"
         "\nand enter the activation code:\n"
-        "\n\t{}\n".format(init_login_info.get("verification_uri"), init_login_info.get("user_code"))
+        f"\n\t{init_login_info.get("user_code")}\n"
     )
-    if init_login_info.get("verification_uri_complete"):  # "verification_url_complete" is optional under the RFC.
+
+    # "verification_url_complete" is optional under the RFC.
+    # This may not always be available to display.
+    if init_login_info.get("verification_uri_complete"):
         qr_code = pyqrcode.create(content=init_login_info.get("verification_uri_complete"), error="L")
-        print(
-            "Or, scan the QR code with your mobile device to visit {}:\n\n{}\n".format(
-                init_login_info.get("verification_uri_complete"), qr_code.terminal()
-            )
-        )
+    else:
+        qr_code = pyqrcode.create(content=init_login_info.get("verification_uri"), error="L")
+
+    print(f"You may scan this QR code to continue with your mobile device:\n\n{qr_code.terminal()}\n")
 
 
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    # In memory initialization.
-    # Profiles can also be used with "device code" client types.
-    auth_ctx = Auth.initialize_from_config_dict(
-        client_config={
-            "client_type": "oidc_device_code",
-            "auth_server": "__auth_server__",
-            "client_id": "__client_id__",
-            "scopes": ["planet", "offline_access", "openid", "profile"],
-        },
-        token_file="/secure_device_storage/device_token.json",
-    )
 
-    login_init_info = auth_ctx.device_login_initiate()
-    prompt_user(login_init_info)
-    # credential will also be saved the file configured above, and
-    # the request authenticator will be updated with the credential.
-    credential = auth_ctx.device_login_complete(login_init_info)
-    print(f"Credential saved to file {credential.path()}")
+    myapp_auth_client_config = {
+        "client_type": "oidc_device_code",
+        "auth_server": "https://login.example.com/",
+        "client_id": "__client_id__",
+        "scopes": ["planet", "offline_access", "openid", "profile"],
+    }
+    auth_ctx = planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context_from_custom_config(
+        client_config=myapp_auth_client_config,
+        profile_name="_my_profile_name_",
+        # This example directs the library to save the client configration to
+        # a new profile, so that the application may bootstrap the auth session
+        # from saved state.
+        save_token_file=True,
+        save_profile_config=True,
+    )
+    if not auth_ctx.request_authenticator_is_ready():
+        login_init_info = auth_ctx.device_login_initiate()
+        prompt_user(login_init_info)
+        # credential will also be saved the file configured above, and
+        # the request authenticator will be updated with the credential.
+        credential = auth_ctx.device_login_complete(login_init_info)
+        print(f"Credential saved to file {credential.path()}")
 
 
 if __name__ == "__main__":

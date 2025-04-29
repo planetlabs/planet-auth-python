@@ -435,7 +435,7 @@ class OidcAuthClient(AuthClient, ABC):
         Helper function for _oidc_flow_login implementations to offer guidance to users
         and developers when options are unnecessary and will be ignored.
         """
-        if "password" in kwParameters:
+        if "password" in kwargs:
             if kwargs["password"]:
                 # Safety check. "password" is a legitimate kwarg for some OAuth flows
                 # like Resource Owner Flow.  But, it should never be provided to the client
@@ -461,7 +461,7 @@ class OidcAuthClient(AuthClient, ABC):
         is a problem we can anticipate.
         """
         for ignore_kw in ignore_kws:
-            if ignore_kw in kwParameters:
+            if ignore_kw in kwargs:
                 if kwargs[ignore_kw]:
                     auth_logger.debug(
                         msg=f'Ignoring "{ignore_kw}" argument to login. '

@@ -13,10 +13,20 @@
 # limitations under the License.
 
 """
-Planet Authentication and Authorization CLI Utilities.
+# The Planet Authentication Utilities Package: `planet_auth_utils`
 
-These utilities are thin wrappers for functionality implemented
-by the underlying auth libraries.
+This utility package provides higher leven and convenience functions for
+using the [planet_auth] package.
+
+The core functionality provided by this package includes:
+
+- [planet_auth_utils.PlanetAuthFactory][] - Factory methods makitng it easier for applicaiton developers to initialize
+    a coherent working set of [planet_auth] objects.
+- `plauth` - The `plauth` command line utility is implemented in this package. It may be used
+    as a stand alone utility, or it may be embedded into other [click](https://click.palletsprojects.com/en/stable/) applications.
+- [planet_auth_utils.Builtins][] - Built-in profile interface. Applications built on top of the
+    may through dependency injection provide the _Planet Auth Library_ with build-in configurations
+    suitable for the operating environment of the application.
 
 """
 

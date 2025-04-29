@@ -125,7 +125,7 @@ testpaths = [
 ## ###########################################################################
 [tool.black]
 line-length = 119
-extend-exclude = "/docs/"
+# extend-exclude = "/docs/"
 
 [tool.mypy]
 # packages = "planet_auth"
