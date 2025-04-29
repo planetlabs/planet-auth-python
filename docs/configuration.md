@@ -16,25 +16,6 @@ factory methods in [planet_auth_utils.PlanetAuthFactory][]
 A number of auth client implementations are provided.  Clients should
 select the one most appropriate for their use case.
 
-### Planet Legacy Client
-Implemented by [planet_auth.PlanetLegacyAuthClient][] and [planet_auth.PlanetLegacyAuthClientConfig][]
-
-Configuration:
-```json linenums="1" title="~/.planet/_profile_name_/auth_client.json"
-{% include 'auth-client-config/planet-legacy.json' %}
-```
-
-Profile Usage:
-```python linenums="1"
-{% include 'snippets/auth-client-context-from-saved-profile.py' %}
-```
-
-
-Direct Usage:
-```python linenums="1"
-{% include 'snippets/auth-client-context-pl-legacy-direct.py' %}
-```
-
 ### OAuth Clients
 #### Auth Code with PKCE
 Implemented by [planet_auth.AuthCodeAuthClient][] and [planet_auth.AuthCodeClientConfig][]
@@ -153,6 +134,25 @@ does not prepare an Auth context that is suitable for making authenticated
 outbound calls, which is one of the primary aims of most auth client types.
 Instead, this client configuration can only be used to validate incoming
 tokens.
+
+### Planet Legacy Client
+Implemented by [planet_auth.PlanetLegacyAuthClient][] and [planet_auth.PlanetLegacyAuthClientConfig][]
+
+Configuration:
+```json linenums="1" title="~/.planet/_profile_name_/auth_client.json"
+{% include 'auth-client-config/planet-legacy.json' %}
+```
+
+Profile Usage:
+```python linenums="1"
+{% include 'snippets/auth-client-context-from-saved-profile.py' %}
+```
+
+
+Direct Usage:
+```python linenums="1"
+{% include 'snippets/auth-client-context-pl-legacy-direct.py' %}
+```
 
 ## Environment Variables
 See [planet_auth_utils.EnvironmentVariables][] for a list of environment variables.
