@@ -297,6 +297,21 @@ class PlanetAuthFactory:
                 )
                 # Click program may now use the auth context in all commands...
             ```
+
+        Parameters:
+            auth_profile_opt: The name of a built-in or custom profile to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_client_id_opt: The client ID of a registered OAuth client to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_client_secret_opt: The client secret of a registered OAuth client to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_api_key_opt: The API key to use for authentication. Deprecated.
+                This option should reflect the explict choice of the user or application developer.
+            token_file_opt: The path to a file to store the access token.
+                This options should not generally be used, and may be removed in the future.
+            save_token_file: Whether to save the access token to disk.  If `False`, in-memory
+                operation will be used, and login sessions will not be persisted locally.
+            save_profile_config: Whether to save the profile configuration to disk.
         """
         #
         # Initialize from explicit user selected options
@@ -416,6 +431,20 @@ class PlanetAuthFactory:
         with the plauth CLI utility.  If a custom storage provider
         is supplied, sessions will not be visible to the plauth
         CLI tools.
+
+        Parameters:
+            client_config: The client configuration dictionary to use for authentication.
+            profile_name: The name of the profile to use for the created auth context.
+            initial_token_data: Optional initial token data to use for authentication.
+                This may be used to pass in previously saved login state.
+            save_token_file: Whether to save the access token to disk using the storage provider.
+                If `False`, in-memory operation will be used, and login sessions will not be
+                persisted.
+            save_profile_config: Whether to save the profile configuration to disk using
+                the storage provider.
+            storage_provider: Optional custom storage provider for session persistence.
+                If not provided, a default storage provider will be used that utilizes
+                the user's home directory for storage.
         """
         return PlanetAuthFactory._init_context_from_client_config(
             client_config=client_config,
@@ -436,12 +465,17 @@ class PlanetAuthFactory:
         use by a resource server to validate access tokens in the
         specified deployment environment.
 
-        The passed `environment` must be one of `"production"`, `"staging"`,
-        or `"custom"`. `environment` is case-insensitive.
-
         If `"custom"` is selected, trusted_auth_server_configs` must also be specified.
         If custom is not selected, the aforementioned argument will be ignored.
         See `OidcMultiIssuerValidator.from_auth_server_configs` for more info.
+
+        Parameters:
+            environment: Specify a built-in environment to use for the validator.
+                Valid environments are defined by built-in profile provider implemented
+                by the application developer.
+            trusted_auth_server_configs: A list of trusted auth server configurations
+                to use if the environment is one designated as a custom environment
+                by the built-in profile provider implemented by the application developer.
         """
         if not environment:
             raise ValueError(f"Passed environment must be one of {Builtins.builtin_environment_names()}.")

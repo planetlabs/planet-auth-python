@@ -9,39 +9,12 @@ AuthClient Configuration dictionaries may either be provided directly, or loaded
 from disk when saved in a `Profile` (See below).
 
 While it is possible to work directly with the lower level implementation
-classes, it is generally simpler to use the higher level management code in
-[planet_auth.Auth][], or the factory methods in [planet_auth.AuthClient][] 
-and [planet_auth.AuthClientConfig][] to configure and instantiate instances.
-Directly using the lower level implementations should not be necessary in
-most cases.
+classes, it is generally simpler to organize the working set of objects
+with an [Auth Context][planet_auth.Auth] instance created from one of the
+factory methods in [planet_auth_utils.PlanetAuthFactory][]
 
 A number of auth client implementations are provided.  Clients should
 select the one most appropriate for their use case.
-
-### Planet Legacy Client
-Implemented by [planet_auth.PlanetLegacyAuthClient][] and [planet_auth.PlanetLegacyAuthClientConfig][]
-
-Configuration:
-```json linenums="1" title="~/.planet/_profile_name_/auth_client.json"
-{% include 'auth-client-config/planet-legacy.json' %}
-```
-
-Profile Usage:
-```python linenums="1"
-from planet_auth import Auth
-
-auth_ctx = Auth.initialize_from_profile(profile="_profile_name_")
-```
-
-
-Direct Usage:
-```python linenums="1"
-from planet_auth import Auth
-auth_ctx = Auth.initialize_from_config_dict(
-    client_config={ ... content of auth_client.json ... },
-    token_file="/my_token_file.json"
-)
-```
 
 ### OAuth Clients
 #### Auth Code with PKCE
@@ -54,6 +27,8 @@ Configuration:
 
 Profile Usage:
 ```python linenums="1"
+{% include 'snippets/auth-client-context-from-saved-profile.py' %}
+
 from planet_auth import Auth
 
 auth_ctx = Auth.initialize_from_profile(profile="_profile_name_")
@@ -61,11 +36,7 @@ auth_ctx = Auth.initialize_from_profile(profile="_profile_name_")
 
 Direct Usage:
 ```python linenums="1"
-from planet_auth import Auth
-auth_ctx = Auth.initialize_from_config_dict(
-    client_config={ ... content of auth_client.json ... },
-    token_file="/my_token_file.json"
-)
+{% include 'snippets/auth-client-context-oauth-direct.py' %}
 ```
 
 #### Auth Code with PKCE and Client Public Key
@@ -163,6 +134,25 @@ does not prepare an Auth context that is suitable for making authenticated
 outbound calls, which is one of the primary aims of most auth client types.
 Instead, this client configuration can only be used to validate incoming
 tokens.
+
+### Planet Legacy Client
+Implemented by [planet_auth.PlanetLegacyAuthClient][] and [planet_auth.PlanetLegacyAuthClientConfig][]
+
+Configuration:
+```json linenums="1" title="~/.planet/_profile_name_/auth_client.json"
+{% include 'auth-client-config/planet-legacy.json' %}
+```
+
+Profile Usage:
+```python linenums="1"
+{% include 'snippets/auth-client-context-from-saved-profile.py' %}
+```
+
+
+Direct Usage:
+```python linenums="1"
+{% include 'snippets/auth-client-context-pl-legacy-direct.py' %}
+```
 
 ## Environment Variables
 See [planet_auth_utils.EnvironmentVariables][] for a list of environment variables.

@@ -86,7 +86,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         to prompt the user.  After prompting the user, `device_login_complete()`
         should be called to complete the login process.
 
-        Args:
+        Parameters:
             requested_scopes: a list of strings specifying the scopes to
                 request.
             requested_audiences: a list of strings specifying the audiences
@@ -115,7 +115,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         Obtain tokens from the OIDC auth server using the Device Code OAuth
         flow. This method completes the process initiated by a call to `device_login_initiate()`.
 
-        Args:
+        Parameters:
             initiated_login_data: The dictionary returned from a successful call to
                 `device_login_initiate()`
          Returns:
@@ -147,7 +147,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         Obtain tokens from the OIDC auth server using the Device Code OAuth
         flow.
 
-        Args:
+        Parameters:
             requested_scopes: a list of strings specifying the scopes to
                 request.
             requested_audiences: a list of strings specifying the audiences

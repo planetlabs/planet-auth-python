@@ -172,8 +172,8 @@ class OidcMultiIssuerValidator:
             auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
                 trusted_auth_server_configs=[
                     {
-                        "auth_server": "https://account-next.planet.com/oauth2/auth_server_id",
-                        "audiences": ["https://api.staging.planet-labs.com/"],
+                        "auth_server": "https://oauth_server.example.com/oauth2/auth_server_id",
+                        "audiences": ["https://api.example.com/"],
                     },
                 ],
             )
