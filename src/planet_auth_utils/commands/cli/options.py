@@ -23,8 +23,8 @@ from planet_auth_utils.constants import EnvironmentVariables
 _click_option_decorator_type = Callable[..., Any]
 
 
-# TODO: make default, hidden, required params for everyone.  Fix monkey patching, if needed
-def opt_api_key(default=None) -> _click_option_decorator_type:
+# TODO: Should we make "required" param universal for all options?
+def opt_api_key(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an API key
     """
@@ -38,13 +38,14 @@ def opt_api_key(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_audience(default=None, required=False) -> _click_option_decorator_type:
+def opt_audience(default=None, hidden=False, required=False) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token audience for the
     planet_auth package's click commands.
@@ -63,13 +64,14 @@ def opt_audience(default=None, required=False) -> _click_option_decorator_type:
             show_envvar=True,
             show_default=True,
             required=required,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_client_id(default=None) -> _click_option_decorator_type:
+def opt_client_id(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client ID.
     """
@@ -83,13 +85,14 @@ def opt_client_id(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_client_secret(default=None) -> _click_option_decorator_type:
+def opt_client_secret(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client secret.
     """
@@ -103,13 +106,14 @@ def opt_client_secret(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_extra(default=None) -> _click_option_decorator_type:
+def opt_extra(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying extra options.
     """
@@ -128,13 +132,14 @@ def opt_extra(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_human_readable(default=False) -> _click_option_decorator_type:
+def opt_human_readable(default=False, hidden=False) -> _click_option_decorator_type:
     """
     Click option to toggle raw / human-readable formatting.
     """
@@ -146,13 +151,14 @@ def opt_human_readable(default=False) -> _click_option_decorator_type:
             help="Reformat fields to be human readable.",
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_issuer(default=None, required=False) -> _click_option_decorator_type:
+def opt_issuer(default=None, hidden=False, required=False) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token issuer for the
     planet_auth package's click commands.
@@ -168,13 +174,14 @@ def opt_issuer(default=None, required=False) -> _click_option_decorator_type:
             show_envvar=False,
             show_default=False,
             required=required,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_loglevel(default="INFO") -> _click_option_decorator_type:
+def opt_loglevel(default="INFO", hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying a log level.
     """
@@ -189,13 +196,14 @@ def opt_loglevel(default="INFO") -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_long(default=False) -> _click_option_decorator_type:
+def opt_long(default=False, hidden=False) -> _click_option_decorator_type:
     """
     Click option specifying that long or more detailed output should be produced.
     """
@@ -208,13 +216,14 @@ def opt_long(default=False) -> _click_option_decorator_type:
             is_flag=True,
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_open_browser(default=True) -> _click_option_decorator_type:
+def opt_open_browser(default=True, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying whether or not opening a browser is permitted
     for the planet_auth package's click commands.
@@ -226,13 +235,14 @@ def opt_open_browser(default=True) -> _click_option_decorator_type:
             help="Allow/Suppress the automatic opening of a browser window.",
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_organization(default=None) -> _click_option_decorator_type:
+def opt_organization(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an Organization.
     """
@@ -248,6 +258,7 @@ def opt_organization(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
@@ -281,7 +292,7 @@ def opt_password(default=None, hidden=True) -> _click_option_decorator_type:
     return decorator
 
 
-def opt_profile(default=None) -> _click_option_decorator_type:
+def opt_profile(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an auth profile for the
     planet_auth package's click commands.
@@ -304,13 +315,14 @@ def opt_profile(default=None) -> _click_option_decorator_type:
             show_envvar=True,
             show_default=True,
             is_eager=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_project(default=None) -> _click_option_decorator_type:
+def opt_project(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying a project ID.
     """
@@ -326,13 +338,14 @@ def opt_project(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_qr_code(default=False) -> _click_option_decorator_type:
+def opt_qr_code(default=False, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying whether a QR code should be displayed.
     """
@@ -343,13 +356,14 @@ def opt_qr_code(default=False) -> _click_option_decorator_type:
             help="Control whether a QR code is displayed for the user.",
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_refresh(default=True) -> _click_option_decorator_type:
+def opt_refresh(default=True, hidden=False) -> _click_option_decorator_type:
     """
     Click option specifying a refresh should be attempted if applicable.
     """
@@ -360,13 +374,14 @@ def opt_refresh(default=True) -> _click_option_decorator_type:
             help="Automatically perform a credential refresh if required.",
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_token(default=None) -> _click_option_decorator_type:
+def opt_token(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying a token literal.
     """
@@ -380,13 +395,14 @@ def opt_token(default=None) -> _click_option_decorator_type:
             # envvar=EnvironmentVariables.AUTH_TOKEN,
             show_envvar=False,
             show_default=False,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_scope(default=None) -> _click_option_decorator_type:
+def opt_scope(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token scope for the
     planet_auth package's click commands.
@@ -405,13 +421,14 @@ def opt_scope(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=True,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_sops(default=False) -> _click_option_decorator_type:
+def opt_sops(default=False, hidden=False) -> _click_option_decorator_type:
     """
     Click option specifying that SOPS should be used.
     """
@@ -423,13 +440,14 @@ def opt_sops(default=False) -> _click_option_decorator_type:
             " The environment must be configured for SOPS to work by default.",
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_token_file(default=None) -> _click_option_decorator_type:
+def opt_token_file(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option for specifying a token file location for the
     planet_auth package's click commands.
@@ -444,6 +462,7 @@ def opt_token_file(default=None) -> _click_option_decorator_type:
             default=default,
             show_envvar=False,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
@@ -473,7 +492,7 @@ def opt_username(default=None, hidden=True) -> _click_option_decorator_type:
     return decorator
 
 
-def opt_yes_no(default=None) -> _click_option_decorator_type:
+def opt_yes_no(default=None, hidden=False) -> _click_option_decorator_type:
     """
     Click option to bypass prompts with a yes or no selection.
     """
@@ -485,6 +504,7 @@ def opt_yes_no(default=None) -> _click_option_decorator_type:
             help='Skip user prompts with a "yes" or "no" selection',
             default=default,
             show_default=True,
+            hidden=hidden,
         )(function)
         return function
 
