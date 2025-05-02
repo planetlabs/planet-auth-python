@@ -35,7 +35,7 @@ from .options import (
     opt_password,
     opt_loglevel,
     opt_open_browser,
-    opt_show_qr_code,
+    opt_qr_code,
     opt_sops,
     opt_audience,
     opt_scope,
@@ -147,7 +147,7 @@ def cmd_plauth_reset():
 
 @cmd_plauth.command("login")
 @opt_open_browser()
-@opt_show_qr_code()
+@opt_qr_code()
 @opt_scope()
 @opt_audience()
 @opt_organization()

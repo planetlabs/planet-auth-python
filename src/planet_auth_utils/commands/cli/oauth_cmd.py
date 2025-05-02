@@ -35,7 +35,7 @@ from .options import (
     opt_project,
     opt_refresh,
     opt_scope,
-    opt_show_qr_code,
+    opt_qr_code,
     opt_sops,
     opt_username,
     opt_yes_no,
@@ -67,7 +67,7 @@ def cmd_oauth(ctx):
 
 @cmd_oauth.command("login")
 @opt_open_browser()
-@opt_show_qr_code()
+@opt_qr_code()
 @opt_scope()
 @opt_audience()
 @opt_organization()
