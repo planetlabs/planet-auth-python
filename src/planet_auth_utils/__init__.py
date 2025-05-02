@@ -99,7 +99,7 @@ from .commands.cli.options import (
 from .commands.cli.util import recast_exceptions_to_click
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
-from planet_auth_utils.builtins import Builtins
+from planet_auth_utils.builtins import Builtins, BuiltinConfigurationProviderInterface
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 
@@ -161,6 +161,7 @@ __all__ = [
     "recast_exceptions_to_click",
     #
     "Builtins",
+    "BuiltinConfigurationProviderInterface",
     "EnvironmentVariables",
     "PlanetAuthFactory",
     "Profile",
