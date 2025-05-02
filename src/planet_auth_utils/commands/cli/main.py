@@ -49,8 +49,8 @@ from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
-@opt_loglevel
-@opt_profile
+@opt_loglevel()
+@opt_profile()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth(ctx, loglevel, auth_profile):
@@ -146,20 +146,20 @@ def cmd_plauth_reset():
 
 
 @cmd_plauth.command("login")
-@opt_open_browser
-@opt_show_qr_code
-@opt_scope
+@opt_open_browser()
+@opt_show_qr_code()
+@opt_scope()
 @opt_audience()
-@opt_organization
-@opt_project
-@opt_profile
-@opt_client_id
-@opt_client_secret
-@opt_api_key
+@opt_organization()
+@opt_project()
+@opt_profile()
+@opt_client_id()
+@opt_client_secret()
+@opt_api_key()
 @opt_username()
 @opt_password()
-@opt_sops
-@opt_yes_no
+@opt_sops()
+@opt_yes_no()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth_login(
