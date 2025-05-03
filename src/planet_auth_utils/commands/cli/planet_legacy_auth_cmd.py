@@ -65,9 +65,10 @@ def cmd_pllegacy(ctx):
 @cmd_pllegacy.command("login")
 @opt_password(hidden=False)
 @opt_username(hidden=False)
-@opt_sops
-@opt_yes_no
+@opt_sops()
+@opt_yes_no()
 @click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_pllegacy_login(ctx, username, password, sops, yes):
     """
     Perform an initial login using Planet's legacy authentication interfaces.

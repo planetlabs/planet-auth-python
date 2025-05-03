@@ -35,7 +35,7 @@ from .options import (
     opt_project,
     opt_refresh,
     opt_scope,
-    opt_show_qr_code,
+    opt_qr_code,
     opt_sops,
     opt_username,
     opt_yes_no,
@@ -66,19 +66,19 @@ def cmd_oauth(ctx):
 
 
 @cmd_oauth.command("login")
-@opt_open_browser
-@opt_show_qr_code
-@opt_scope
+@opt_open_browser()
+@opt_qr_code()
+@opt_scope()
 @opt_audience()
-@opt_organization
-@opt_project
+@opt_organization()
+@opt_project()
 @opt_username()
 @opt_password()
-@opt_client_id
-@opt_client_secret
-@opt_sops
-@opt_yes_no
-@opt_extra
+@opt_client_id()
+@opt_client_secret()
+@opt_sops()
+@opt_yes_no()
+@opt_extra()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, ValueError)
 def cmd_oauth_login(
@@ -132,7 +132,7 @@ def cmd_oauth_login(
 
 
 @cmd_oauth.command("refresh")
-@opt_scope
+@opt_scope()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_refresh(ctx, scope):
@@ -185,7 +185,7 @@ def cmd_oauth_discovery(ctx):
 
 @cmd_oauth.command("validate-access-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_access_token_remote(ctx, human_readable):
     """
@@ -207,8 +207,8 @@ def cmd_oauth_validate_access_token_remote(ctx, human_readable):
 @cmd_oauth.command("validate-access-token-local")
 @click.pass_context
 @opt_audience()
-@opt_scope
-@opt_human_readable
+@opt_scope()
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_access_token_local(ctx, audience, scope, human_readable):
     """
@@ -239,7 +239,7 @@ def cmd_oauth_validate_access_token_local(ctx, audience, scope, human_readable):
 
 @cmd_oauth.command("validate-id-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_id_token_remote(ctx, human_readable):
     """
@@ -260,7 +260,7 @@ def cmd_oauth_validate_id_token_remote(ctx, human_readable):
 
 @cmd_oauth.command("validate-id-token-local")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_id_token_local(ctx, human_readable):
     """
@@ -280,7 +280,7 @@ def cmd_oauth_validate_id_token_local(ctx, human_readable):
 
 @cmd_oauth.command("validate-refresh-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_validate_refresh_token_remote(ctx, human_readable):
     """
@@ -357,7 +357,7 @@ def cmd_oauth_userinfo(ctx):
 
 @cmd_oauth.command("print-access-token")
 @click.pass_context
-@opt_refresh
+@opt_refresh()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_print_access_token(ctx, refresh):
     """
@@ -390,7 +390,7 @@ def cmd_oauth_print_access_token(ctx, refresh):
 
 @cmd_oauth.command("decode-access-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
     """
@@ -406,7 +406,7 @@ def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
 
 @cmd_oauth.command("decode-id-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
     """
@@ -420,7 +420,7 @@ def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
 
 @cmd_oauth.command("decode-refresh-token")
 @click.pass_context
-@opt_human_readable
+@opt_human_readable()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     """

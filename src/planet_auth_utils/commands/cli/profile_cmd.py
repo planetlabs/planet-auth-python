@@ -127,7 +127,7 @@ def _load_all_on_disk_profiles() -> dict:
 
 
 @cmd_profile.command("list")
-@opt_long
+@opt_long()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_list(long):
     """
@@ -168,7 +168,7 @@ def cmd_profile_list(long):
 
 
 @cmd_profile.command("create")
-@opt_sops
+@opt_sops()
 @click.argument("new_profile_name", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_create(sops, new_profile_name):
@@ -228,7 +228,7 @@ def cmd_profile_edit():
 @cmd_profile.command("copy")
 @click.argument("src")
 @click.argument("dst")
-@opt_sops
+@opt_sops()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_copy(sops, src, dst):
     """

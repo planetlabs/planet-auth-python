@@ -87,9 +87,9 @@ from .commands.cli.options import (
     opt_password,
     opt_profile,
     opt_project,
+    opt_qr_code,
     opt_refresh,
     opt_scope,
-    opt_show_qr_code,
     opt_sops,
     opt_token,
     opt_token_file,
@@ -99,7 +99,7 @@ from .commands.cli.options import (
 from .commands.cli.util import recast_exceptions_to_click
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
-from planet_auth_utils.builtins import Builtins
+from planet_auth_utils.builtins import Builtins, BuiltinConfigurationProviderInterface
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 
@@ -150,9 +150,9 @@ __all__ = [
     "opt_password",
     "opt_profile",
     "opt_project",
+    "opt_qr_code",
     "opt_refresh",
     "opt_scope",
-    "opt_show_qr_code",
     "opt_sops",
     "opt_token",
     "opt_token_file",
@@ -161,6 +161,7 @@ __all__ = [
     "recast_exceptions_to_click",
     #
     "Builtins",
+    "BuiltinConfigurationProviderInterface",
     "EnvironmentVariables",
     "PlanetAuthFactory",
     "Profile",

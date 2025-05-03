@@ -70,6 +70,12 @@ class EnvironmentVariables:
     Only used for some authentication mechanisms.
     """
 
+    AUTH_PROJECT = "PL_AUTH_PROJECT"
+    """
+    Project ID to use when performing authentication.
+    Not all implementations understand this option.
+    """
+
     AUTH_PASSWORD = "PL_AUTH_PASSWORD"
     """
     Password to use when performing client authentication.

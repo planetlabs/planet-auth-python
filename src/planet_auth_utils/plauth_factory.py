@@ -286,9 +286,9 @@ class PlanetAuthFactory:
         Example:
             ```python
             @click.group(help="my cli main help message")
-            @opt_auth_profile
-            @opt_auth_client_id
-            @opt_auth_client_secret
+            @opt_auth_profile()
+            @opt_auth_client_id()
+            @opt_auth_client_secret()
             @click.pass_context
             def my_cli_main(ctx, auth_profile, auth_client_id, auth_client_secret):
                 ctx.ensure_object(dict)
