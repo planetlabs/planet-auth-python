@@ -24,7 +24,9 @@ _click_option_decorator_type = Callable[..., Any]
 
 # TODO: Should we make "required" param universal for all options?
 #     Maybe rather than being so prescriptive, we pass **kwargs to click options?
-def opt_api_key(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_API_KEY) -> _click_option_decorator_type:
+def opt_api_key(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_API_KEY
+) -> _click_option_decorator_type:
     """
     Click option for specifying an API key
     """
@@ -45,7 +47,9 @@ def opt_api_key(default=None, hidden: bool = False, envvar: str = EnvironmentVar
     return decorator
 
 
-def opt_audience(default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_AUDIENCE) -> _click_option_decorator_type:
+def opt_audience(
+    default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_AUDIENCE
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token audience for the
     planet_auth package's click commands.
@@ -71,7 +75,9 @@ def opt_audience(default=None, hidden: bool = False, required=False, envvar: str
     return decorator
 
 
-def opt_client_id(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_ID) -> _click_option_decorator_type:
+def opt_client_id(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_ID
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client ID.
     """
@@ -92,7 +98,9 @@ def opt_client_id(default=None, hidden: bool = False, envvar: str = EnvironmentV
     return decorator
 
 
-def opt_client_secret(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_SECRET) -> _click_option_decorator_type:
+def opt_client_secret(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_SECRET
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client secret.
     """
@@ -113,7 +121,9 @@ def opt_client_secret(default=None, hidden: bool = False, envvar: str = Environm
     return decorator
 
 
-def opt_extra(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_EXTRA) -> _click_option_decorator_type:
+def opt_extra(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_EXTRA
+) -> _click_option_decorator_type:
     """
     Click option for specifying extra options.
     """
@@ -158,7 +168,9 @@ def opt_human_readable(default=False, hidden: bool = False) -> _click_option_dec
     return decorator
 
 
-def opt_issuer(default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_ISSUER) -> _click_option_decorator_type:
+def opt_issuer(
+    default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_ISSUER
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token issuer for the
     planet_auth package's click commands.
@@ -181,7 +193,9 @@ def opt_issuer(default=None, hidden: bool = False, required=False, envvar: str =
     return decorator
 
 
-def opt_loglevel(default="INFO", hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_LOGLEVEL) -> _click_option_decorator_type:
+def opt_loglevel(
+    default="INFO", hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_LOGLEVEL
+) -> _click_option_decorator_type:
     """
     Click option for specifying a log level.
     """
@@ -242,7 +256,9 @@ def opt_open_browser(default=True, hidden: bool = False) -> _click_option_decora
     return decorator
 
 
-def opt_organization(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_ORGANIZATION) -> _click_option_decorator_type:
+def opt_organization(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_ORGANIZATION
+) -> _click_option_decorator_type:
     """
     Click option for specifying an Organization.
     """
@@ -270,7 +286,9 @@ def opt_organization(default=None, hidden: bool = False, envvar: str = Environme
 #         I generally think user IO belongs with the app, and not the the library, but since the
 #         lib also handles things like browser interaction this is not entirely easy to abstract
 #         away.
-def opt_password(default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_PASSWORD) -> _click_option_decorator_type:
+def opt_password(
+    default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_PASSWORD
+) -> _click_option_decorator_type:
     """
     Click option for specifying a password for the
     planet_auth package's click commands.
@@ -292,7 +310,9 @@ def opt_password(default=None, hidden: bool = True, envvar: str = EnvironmentVar
     return decorator
 
 
-def opt_profile(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROFILE) -> _click_option_decorator_type:
+def opt_profile(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROFILE
+) -> _click_option_decorator_type:
     """
     Click option for specifying an auth profile for the
     planet_auth package's click commands.
@@ -315,7 +335,9 @@ def opt_profile(default=None, hidden: bool = False, envvar: str = EnvironmentVar
     return decorator
 
 
-def opt_project(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROJECT) -> _click_option_decorator_type:
+def opt_project(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROJECT
+) -> _click_option_decorator_type:
     """
     Click option for specifying a project ID.
     """
@@ -374,7 +396,9 @@ def opt_refresh(default=True, hidden: bool = False) -> _click_option_decorator_t
     return decorator
 
 
-def opt_token(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN) -> _click_option_decorator_type:
+def opt_token(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN
+) -> _click_option_decorator_type:
     """
     Click option for specifying a token literal.
     """
@@ -396,7 +420,9 @@ def opt_token(default=None, hidden: bool = False, envvar: str = EnvironmentVaria
     return decorator
 
 
-def opt_scope(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_SCOPE) -> _click_option_decorator_type:
+def opt_scope(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_SCOPE
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token scope for the
     planet_auth package's click commands.
@@ -441,7 +467,9 @@ def opt_sops(default=False, hidden: bool = False) -> _click_option_decorator_typ
     return decorator
 
 
-def opt_token_file(default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN_FILE) -> _click_option_decorator_type:
+def opt_token_file(
+    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN_FILE
+) -> _click_option_decorator_type:
     """
     Click option for specifying a token file location for the
     planet_auth package's click commands.
@@ -463,7 +491,9 @@ def opt_token_file(default=None, hidden: bool = False, envvar: str = Environment
     return decorator
 
 
-def opt_username(default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_USERNAME) -> _click_option_decorator_type:
+def opt_username(
+    default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_USERNAME
+) -> _click_option_decorator_type:
     """
     Click option for specifying a username for the
     planet_auth package's click commands.
