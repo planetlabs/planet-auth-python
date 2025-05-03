@@ -186,8 +186,5 @@ class BuiltinConfigurationProviderMockTestImpl(BuiltinConfigurationProviderInter
     def builtin_default_profile(self) -> str:
         return self.DEFAULT_PROFILE
 
-    def builtin_trust_environment_names(self) -> List[str]:
-        return list(BuiltinConfigurationProviderMockTestImpl._builtin_trust_realms.keys())
-
     def builtin_trust_environments(self) -> Dict[str, Optional[List[dict]]]:
         return BuiltinConfigurationProviderMockTestImpl._builtin_trust_realms
