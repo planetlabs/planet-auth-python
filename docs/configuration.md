@@ -28,10 +28,6 @@ Configuration:
 Profile Usage:
 ```python linenums="1"
 {% include 'snippets/auth-client-context-from-saved-profile.py' %}
-
-from planet_auth import Auth
-
-auth_ctx = Auth.initialize_from_profile(profile="_profile_name_")
 ```
 
 Direct Usage:
