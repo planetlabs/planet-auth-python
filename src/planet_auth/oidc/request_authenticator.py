@@ -14,7 +14,7 @@
 
 import jwt
 import time
-from typing import Dict
+from typing import Dict, Optional
 
 import planet_auth.logging.auth_logger
 from planet_auth.credential import Credential
@@ -79,21 +79,27 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
 
     def _refresh(self):
         if self._auth_client:
+            # TODO: cleanup?  We did this before we wrote "update_credential_data()"
+            #    We maybe should just be using that now.  Taking that clean-up slow
+            #    since it may have interactions with derived code.
+            #    It seems to me we should be able to collapse the credential.save()
+            #    calls in this file with the superclass.
             new_credentials = self._auth_client.refresh(self._credential.refresh_token())
             new_credentials.set_path(self._credential.path())
             new_credentials.set_storage_provider(self._credential.storage_provider())
             new_credentials.save()
 
+            # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
             self._load()
 
-    def pre_request_hook(self):
+    def _refresh_if_needed(self):
         # Reload the file before refreshing. Another process might
         # have done it for us, and save us the network call.
         #
         # Also, if refresh tokens are configured to be one time use,
-        # we want a fresh refresh token. Stale refresh tokens are
-        # invalid in this case.
+        # we want a fresh refresh token. Stale refresh tokens may be
+        # invalid depending on server configuration.
         #
         # Also, it's possible that we have a valid refresh token,
         # but not an access token.  When that's true, we should
@@ -101,23 +107,27 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         #
         # If everything fails, continue with what we have. Let the API
         # we are calling decide if it's good enough.
-        if int(time.time()) > self._refresh_at:
+        now = int(time.time())
+        if now > self._refresh_at:
             try:
                 self._load()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
                     msg="Error loading auth token. Continuing with old auth token. Load error: " + str(e)
                 )
-        if int(time.time()) > self._refresh_at:
+        if now > self._refresh_at:
             try:
                 self._refresh()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
                     msg="Error refreshing auth token. Continuing with old auth token. Refresh error: " + str(e)
                 )
+
+    def pre_request_hook(self):
+        self._refresh_if_needed()
         super().pre_request_hook()
 
-    def update_credential(self, new_credential: Credential):
+    def update_credential(self, new_credential: Credential) -> None:
         if not isinstance(new_credential, FileBackedOidcCredential):
             raise TypeError(
                 f"{type(self).__name__} does not support {type(new_credential)} credentials.  Use FileBackedOidcCredential."
@@ -126,7 +136,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._refresh_at = 0
         # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
 
-    def update_credential_data(self, new_credential_data: Dict):
+    def update_credential_data(self, new_credential_data: Dict) -> None:
         # This is more different than update_credential() than it may
         # appear. Inherent in being passed a Credential in update_credential()
         # is that it may not yet be loaded from disk, and so deferring
@@ -136,6 +146,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # should behave as  if we are finishing a _refresh() call.
         super().update_credential_data(new_credential_data=new_credential_data)
         self._load()
+
+    def credential(self, refresh_if_needed: bool = False) -> Optional[Credential]:
+        if refresh_if_needed:
+            self._refresh_if_needed()
+        return super().credential()
 
 
 class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAuthenticator):
@@ -171,5 +186,6 @@ class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAu
             new_credentials.set_storage_provider(self._credential.storage_provider())
             new_credentials.save()
 
+            # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
             self._load()
