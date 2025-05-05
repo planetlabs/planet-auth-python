@@ -98,9 +98,3 @@ class EnvironmentVariables:
     """
     Specify the log level.
     """
-
-    AUTH_BUILTIN_PROVIDER = "PL_AUTH_BUILTIN_CONFIG_PROVIDER"
-    """
-    Specify a python module and class that implement the BuiltinConfigurationProviderInterface abstract
-    interface to provide the library and utility commands with some built-in configurations.
-    """

@@ -16,8 +16,8 @@ import os
 import pytest
 import unittest
 
+from planet_auth_utils.builtins_provider import AUTH_BUILTIN_PROVIDER
 from planet_auth_utils.builtins import Builtins, BuiltinsException
-from planet_auth_utils.constants import EnvironmentVariables
 
 from tests.test_planet_auth_utils.util import TestWithHomeDirProfiles
 from tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl import BuiltinConfigurationProviderMockTestImpl
@@ -56,7 +56,7 @@ class TestBuiltInProfiles:
 
 class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCase):
     def setUp(self):
-        os.environ[EnvironmentVariables.AUTH_BUILTIN_PROVIDER] = (
+        os.environ[AUTH_BUILTIN_PROVIDER] = (
             "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
         )
         Builtins._builtin = None  # Reset built-in state.
