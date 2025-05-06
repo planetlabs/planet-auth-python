@@ -34,17 +34,11 @@ _NOOP_AUTH_CLIENT_CONFIG = {
 
 class BuiltinConfigurationProviderInterface(ABC):
     """
-    Interface to define what profiles are built-in.
-
-    What auth configuration profiles are built-in is
-    completely pluggable for users of the planet_auth and
-    planet_auth_utils packages.  This is to support reuse
-    in different deployments, or even support reuse by a
-    different software stack all together.
-
-    To inject built-in that override the coded in defaults,
-    set the environment variable PL_AUTH_BUILTIN_CONFIG_PROVIDER
-    to the module.classname of a class that implements this interface.
+    Interface to define built-in application configuration.
+    This includes providing built-in auth client configuration
+    profiles, pre-defined trust environments for server use,
+    and namespacing for environment and global configuration
+    variables.
 
     Built-in profile names are expected to be all lowercase.
 
