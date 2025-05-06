@@ -17,9 +17,12 @@ from typing import List, Optional
 
 from planet_auth import AuthClientConfig
 from planet_auth_utils.profile import ProfileException
-from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth.logging.auth_logger import getAuthLogger
-from .builtins_provider import BuiltinConfigurationProviderInterface, EmptyBuiltinProfileConstants
+from planet_auth_config_injection import (
+    BuiltinConfigurationProviderInterface,
+    EmptyBuiltinProfileConstants,
+    AUTH_BUILTIN_PROVIDER,
+)
 
 auth_logger = getAuthLogger()
 
@@ -33,6 +36,7 @@ def _load_builtins_worker(builtin_provider_fq_class_name, log_warning=False):
         return
 
     module_name, _, class_name = builtin_provider_fq_class_name.rpartition(".")
+    auth_logger.debug(msg=f'Loading built-in provider:"{builtin_provider_fq_class_name}".')
     if module_name and class_name:
         try:
             builtin_provider_module = importlib.import_module(module_name)  # nosemgrep - WARNING - See below
@@ -61,7 +65,7 @@ def _load_builtins() -> BuiltinConfigurationProviderInterface:
     #     Undermining it can undermine client or service security.
     #     It is a convenience for seamless developer experience, but maybe
     #     we should not be so eager to please.
-    builtin_provider = _load_builtins_worker(os.getenv(EnvironmentVariables.AUTH_BUILTIN_PROVIDER))
+    builtin_provider = _load_builtins_worker(os.getenv(AUTH_BUILTIN_PROVIDER))
     if builtin_provider:
         return builtin_provider
 
@@ -86,6 +90,12 @@ class Builtins:
     def _load_builtin_jit():
         if not Builtins._builtin:
             Builtins._builtin = _load_builtins()
+            auth_logger.debug(msg=f"Successfully loaded built-in provider: {Builtins._builtin.__class__.__name__}")
+
+    @staticmethod
+    def namespace() -> str:
+        Builtins._load_builtin_jit()
+        return Builtins._builtin.namespace()
 
     @staticmethod
     def is_builtin_profile(profile: str) -> bool:

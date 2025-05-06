@@ -16,6 +16,16 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 
+# Unlike other environment variables, AUTH_BUILTIN_PROVIDER is not name-spaced.
+# It is intended for libraries and applications to inject configuration by
+# being set within the program.  It's not expected to be set by end-users.
+AUTH_BUILTIN_PROVIDER = "PL_AUTH_BUILTIN_CONFIG_PROVIDER"
+"""
+Environment variable to specify a python module and class that implement the
+BuiltinConfigurationProviderInterface abstract interface to provide the library
+and utility commands with some built-in configurations.
+"""
+
 _NOOP_AUTH_CLIENT_CONFIG = {
     "client_type": "none",
 }
@@ -23,22 +33,27 @@ _NOOP_AUTH_CLIENT_CONFIG = {
 
 class BuiltinConfigurationProviderInterface(ABC):
     """
-    Interface to define what profiles are built-in.
-
-    What auth configuration profiles are built-in is
-    completely pluggable for users of the planet_auth and
-    planet_auth_utils packages.  This is to support reuse
-    in different deployments, or even support reuse by a
-    different software stack all together.
-
-    To inject built-in that override the coded in defaults,
-    set the environment variable PL_AUTH_BUILTIN_CONFIG_PROVIDER
-    to the module.classname of a class that implements this interface.
+    Interface to define built-in application configuration.
+    This includes providing built-in auth client configuration
+    profiles, pre-defined trust environments for server use,
+    and namespacing for environment and global configuration
+    variables.
 
     Built-in profile names are expected to be all lowercase.
 
     Built-in trust environments are expected to be all uppercase.
     """
+
+    def namespace(self) -> str:
+        """
+        Application namespace. This will be used as a prefix in various
+        contexts so that multiple applications may use the Planet auth
+        libraries in the same environment without collisions.  Presently,
+        this namespace is used as a prefix for environment variables, and
+        as a prefix for config settings store to the user's `~/.planet.json`
+        file.
+        """
+        return ""
 
     @abstractmethod
     def builtin_client_authclient_config_dicts(self) -> Dict[str, dict]:
