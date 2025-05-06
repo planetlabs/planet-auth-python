@@ -28,8 +28,9 @@ and the various planet_auth_utils provided `click` commands.
 
 These concerns belong more to the final end-user application than to a
 library that sits between the Planet Auth library and the end-user
-application, that itself may be used by a variety of applications in
-a variety of deployment environments
+application.  Such libraries themselves may be used by a variety of
+applications in any number of deployment environments, making the
+decision of what configuration to inject a difficult one.
 
 Library writers may provide configuration injection to their developers,
 but should be conscious of the fact that multiple libraries within an

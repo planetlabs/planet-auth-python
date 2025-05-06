@@ -18,8 +18,7 @@ from typing import Dict, List, Optional
 
 # Unlike other environment variables, AUTH_BUILTIN_PROVIDER is not name-spaced.
 # It is intended for libraries and applications to inject configuration by
-# being set within the program.  It's not generally expected to be set by
-# users.
+# being set within the program.  It's not expected to be set by end-users.
 AUTH_BUILTIN_PROVIDER = "PL_AUTH_BUILTIN_CONFIG_PROVIDER"
 """
 Environment variable to specify a python module and class that implement the
@@ -47,11 +46,12 @@ class BuiltinConfigurationProviderInterface(ABC):
 
     def namespace(self) -> str:
         """
-        Application namespace. This will be used as a prefix in various contexts
-        so that multiple applications may use the Planet auth libraries in the same
-        environment without collisions.  Presently, this includes being
-        used as a prefix for environment variables, and as a prefix for config
-        settings store to the user's `~/.planet.json` file.
+        Application namespace. This will be used as a prefix in various
+        contexts so that multiple applications may use the Planet auth
+        libraries in the same environment without collisions.  Presently,
+        this namespace is used as a prefix for environment variables, and
+        as a prefix for config settings store to the user's `~/.planet.json`
+        file.
         """
         return ""
 
