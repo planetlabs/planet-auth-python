@@ -16,7 +16,7 @@ import os
 import pytest
 import unittest
 
-from planet_auth_utils.builtins_provider import AUTH_BUILTIN_PROVIDER
+from planet_auth_config_injection import AUTH_BUILTIN_PROVIDER
 from planet_auth_utils.builtins import Builtins, BuiltinsException
 
 from tests.test_planet_auth_utils.util import TestWithHomeDirProfiles

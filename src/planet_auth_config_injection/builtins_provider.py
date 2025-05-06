@@ -22,8 +22,9 @@ from typing import Dict, List, Optional
 # users.
 AUTH_BUILTIN_PROVIDER = "PL_AUTH_BUILTIN_CONFIG_PROVIDER"
 """
-Specify a python module and class that implement the BuiltinConfigurationProviderInterface abstract
-interface to provide the library and utility commands with some built-in configurations.
+Environment variable to specify a python module and class that implement the
+BuiltinConfigurationProviderInterface abstract interface to provide the library
+and utility commands with some built-in configurations.
 """
 
 _NOOP_AUTH_CLIENT_CONFIG = {

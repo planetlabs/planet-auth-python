@@ -20,7 +20,7 @@ import planet_auth
 import planet_auth.storage_utils
 from planet_auth.constants import AUTH_CONFIG_FILE_PLAIN
 
-from planet_auth_utils.builtins_provider import AUTH_BUILTIN_PROVIDER
+from planet_auth_config_injection import AUTH_BUILTIN_PROVIDER
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory, MissingArgumentException

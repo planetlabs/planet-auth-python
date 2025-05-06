@@ -80,6 +80,7 @@ nav:
   - API Reference:
     - Planet Auth: 'api-planet-auth.md'
     - Planet Auth Utils: 'api-planet-auth-utils.md'
+    - Planet Auth Config Injection: 'api-planet-auth-config-injection.md'
   - Examples:
     - Installation: 'examples-installation.md'
     - CLI: 'examples-cli.md'

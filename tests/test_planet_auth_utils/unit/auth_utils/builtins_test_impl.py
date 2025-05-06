@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from typing import Dict, List, Optional
-from planet_auth_utils.builtins_provider import BuiltinConfigurationProviderInterface
+from planet_auth_config_injection import BuiltinConfigurationProviderInterface
 
 
 class MockStagingEnv:
