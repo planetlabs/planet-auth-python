@@ -17,6 +17,7 @@ import time
 from typing import Dict, Optional
 
 import planet_auth.logging.auth_logger
+from planet_auth import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 from planet_auth.oidc.auth_client import OidcAuthClient
@@ -122,6 +123,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                 auth_logger.warning(
                     msg="Error refreshing auth token. Continuing with old auth token. Refresh error: " + str(e)
                 )
+
+        if not (self._credential and self._credential.is_loaded()):
+            # "refresh" may also be called to initialize in some cases, as in client credentials flow.
+            # Continuing with what we have is not an option when we have nothing.
+            raise AuthException("Failed to load or obtain a valid access token.")
 
     def pre_request_hook(self):
         self._refresh_if_needed()
