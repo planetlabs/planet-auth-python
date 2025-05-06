@@ -51,6 +51,16 @@ class BuiltinConfigurationProviderInterface(ABC):
     Built-in trust environments are expected to be all uppercase.
     """
 
+    def namespace(self) -> str:
+        """
+        Application namespace. This will be used as a prefix in various contexts
+        so that multiple applications may use the Planet auth libraries in the same
+        environment without collisions.  Presently, this includes being
+        used as a prefix for environment variables, and as a prefix for config
+        settings store to the user's `~/.planet.json` file.
+        """
+        return ""
+
     @abstractmethod
     def builtin_client_authclient_config_dicts(self) -> Dict[str, dict]:
         """

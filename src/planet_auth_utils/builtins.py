@@ -93,6 +93,11 @@ class Builtins:
             auth_logger.debug(msg=f"Successfully loaded built-in provider: {Builtins._builtin.__class__.__name__}")
 
     @staticmethod
+    def namespace() -> str:
+        Builtins._load_builtin_jit()
+        return Builtins._builtin.namespace()
+
+    @staticmethod
     def is_builtin_profile(profile: str) -> bool:
         Builtins._load_builtin_jit()
         if profile:
