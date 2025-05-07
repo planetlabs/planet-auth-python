@@ -124,6 +124,9 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                     msg="Error refreshing auth token. Continuing with old auth token. Refresh error: " + str(e)
                 )
 
+        # FIXME?
+        # Why is this breaking the SDK CICD? Why only for the pipeline and not a local nox?
+        # The pipeline should be using a legacy API key, so why is this even being called?
         if not (self._credential and self._credential.is_loaded()):
             # "refresh" may also be called to initialize in some cases, as in client credentials flow.
             # Continuing with what we have is not an option when we have nothing.
