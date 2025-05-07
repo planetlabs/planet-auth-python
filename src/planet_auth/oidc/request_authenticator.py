@@ -124,10 +124,10 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                     msg="Error refreshing auth token. Continuing with old auth token. Refresh error: " + str(e)
                 )
 
-        if not (self._credential and self._credential.is_loaded()):
-            # "refresh" may also be called to initialize in some cases, as in client credentials flow.
-            # Continuing with what we have is not an option when we have nothing.
-            raise AuthException("Failed to load or obtain a valid access token.")
+        # if not (self._credential and self._credential.is_loaded()):
+        #     # "refresh" may also be called to initialize in some cases, as in client credentials flow.
+        #     # Continuing with what we have is not an option when we have nothing.
+        #     raise AuthException("Failed to load or obtain a valid access token.")
 
     def pre_request_hook(self):
         self._refresh_if_needed()
