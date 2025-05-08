@@ -17,7 +17,6 @@ import time
 from typing import Dict, Optional
 
 import planet_auth.logging.auth_logger
-from planet_auth import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 from planet_auth.oidc.auth_client import OidcAuthClient
@@ -114,20 +113,28 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                 self._load()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
-                    msg="Error loading auth token. Continuing with old auth token. Load error: " + str(e)
+                    msg=f"Error loading auth token. Continuing with old configuration and token data. Load error: {str(e)}"
                 )
         if now > self._refresh_at:
             try:
                 self._refresh()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
-                    msg="Error refreshing auth token. Continuing with old auth token. Refresh error: " + str(e)
+                    msg=f"Error obtaining new or refreshed auth token. Continuing with old configuration and token data. Refresh error: {str(e)}"
                 )
 
-        if not (self._credential and self._credential.is_loaded()):
-            # "refresh" may also be called to initialize in some cases, as in client credentials flow.
-            # Continuing with what we have is not an option when we have nothing.
-            raise AuthException("Failed to load or obtain a valid access token.")
+        # This tries to give a client a better error when there is no old
+        # token to fall back to.  But, it is known to cause problems when
+        # auth truly isn't needed, either because the service does not need
+        # it or because it has been mocked out (as in unit test cases).
+        # So, we rely on the warnings to keep the user informed. This might
+        # also result in the user seeing errors from the server - the quality
+        # of which we have no control over.
+        #
+        # if not (self._credential and self._credential.is_loaded()):
+        #     # "refresh" may also be called to initialize in some cases, as in client credentials flow.
+        #     # Continuing with what we have is not an option when we have nothing.
+        #     raise AuthException("Failed to load or obtain a valid access token.")
 
     def pre_request_hook(self):
         self._refresh_if_needed()
