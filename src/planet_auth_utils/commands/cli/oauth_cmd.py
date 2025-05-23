@@ -16,12 +16,14 @@ import click
 import sys
 
 from planet_auth import (
+    Auth,
     AuthException,
     FileBackedOidcCredential,
     OidcAuthClient,
     ExpiredTokenException,
     ClientCredentialsAuthClientBase,
 )
+from planet_auth_utils.plauth_factory import PlanetAuthFactory
 
 from .options import (
     opt_audience,
@@ -32,6 +34,7 @@ from .options import (
     opt_open_browser,
     opt_organization,
     opt_password,
+    opt_profile,
     opt_project,
     opt_refresh,
     opt_scope,
@@ -44,12 +47,16 @@ from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
 from .jwt_cmd import json_dumps_for_jwt_dict, hazmat_print_jwt
 
 
-def _check_client_type(ctx):
-    if not isinstance(ctx.obj["AUTH"].auth_client(), OidcAuthClient):
+def _check_auth_client_type(plauth_context: Auth):
+    if not isinstance(plauth_context.auth_client(), OidcAuthClient):
         raise click.ClickException(
             f'"oauth" auth commands can only be used with OAuth type auth profiles.'
-            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+            f' The current profile "{plauth_context.profile_name()}" is of type "{plauth_context.auth_client()._auth_client_config.meta()["client_type"]}".'
         )
+
+
+def _check_auth_client_type_for_click_ctx(click_ctx):
+    _check_auth_client_type(click_ctx.obj["AUTH"])
 
 
 @click.group("oauth", invoke_without_command=True)
@@ -62,27 +69,27 @@ def cmd_oauth(ctx):
         click.echo(ctx.get_help())
         sys.exit(0)
 
-    _check_client_type(ctx)
-
 
 @cmd_oauth.command("login")
 @opt_open_browser()
 @opt_qr_code()
-@opt_scope()
-@opt_audience()
-@opt_organization()
-@opt_project()
-@opt_username()
-@opt_password()
-@opt_client_id()
-@opt_client_secret()
+@opt_profile(envvar=None)
+@opt_scope(envvar=None)
+@opt_audience(envvar=None)
+@opt_organization(envvar=None)
+@opt_project(envvar=None)
+@opt_username(envvar=None)
+@opt_password(envvar=None)
+@opt_client_id(envvar=None)
+@opt_client_secret(envvar=None)
 @opt_sops()
 @opt_yes_no()
-@opt_extra()
+@opt_extra(envvar=None)
 @click.pass_context
-@recast_exceptions_to_click(AuthException, ValueError)
+@recast_exceptions_to_click(AuthException, ValueError, FileNotFoundError)
 def cmd_oauth_login(
     ctx,
+    auth_profile,
     scope,
     audience,
     open_browser,
@@ -113,9 +120,24 @@ def cmd_oauth_login(
         # a particular organization at login when the user belongs to more than one.
         login_extra["organization"] = organization
 
-    current_auth_context = ctx.obj["AUTH"]
-    print(f"Logging in with authentication profile {current_auth_context.profile_name()}...")
-    current_auth_context.login(
+    # Like the root login command, the expected behavior of the oauth "login" command is
+    #   to do what it is told, not fall back to defaults and user prefs in unexpected ways.
+    #   We ignore env vars and the config file.
+    # root_cmd_auth_context = ctx.obj["AUTH"]
+    override_auth_context = PlanetAuthFactory.initialize_auth_client_context(
+        auth_profile_opt=auth_profile,
+        auth_client_id_opt=auth_client_id,
+        auth_client_secret_opt=auth_client_secret,
+        # auth_username_opt=auth_username,
+        # auth_password_opt=auth_password,
+        use_env=False,
+        use_configfile=False,
+        # TODO: Save extras/project/organization/scopes in context / created auth client config.
+    )
+    _check_auth_client_type(override_auth_context)
+
+    print(f"Logging in with authentication profile {override_auth_context.profile_name()}...")
+    override_auth_context.login(
         requested_scopes=scope,
         requested_audiences=audience,
         allow_open_browser=open_browser,
@@ -128,7 +150,7 @@ def cmd_oauth_login(
         extra=login_extra,
     )
     print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
+    post_login_cmd_helper(override_auth_context=override_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
 @cmd_oauth.command("refresh")
@@ -143,6 +165,7 @@ def cmd_oauth_refresh(ctx, scope):
     from what is currently possessed, but you will never be granted
     more scopes than what the user has authorized.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -162,6 +185,7 @@ def cmd_oauth_list_scopes(ctx):
 
     This command will query the auth server for available scopes that may be requested.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     auth_client = ctx.obj["AUTH"].auth_client()
     available_scopes = auth_client.get_scopes()
     available_scopes.sort()
@@ -178,6 +202,7 @@ def cmd_oauth_discovery(ctx):
     """
     Look up OAuth server discovery information.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     auth_client = ctx.obj["AUTH"].auth_client()
     discovery_json = auth_client.oidc_discovery()
     print_obj(discovery_json)
@@ -192,6 +217,7 @@ def cmd_oauth_validate_access_token_remote(ctx, human_readable):
     Validate the access token. Validation is performed by calling
     out to the auth provider's token introspection network service.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -226,6 +252,7 @@ def cmd_oauth_validate_access_token_local(ctx, audience, scope, human_readable):
         Access tokens are intended for consumption by resource servers,
         and may be opaque to the client.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -246,6 +273,7 @@ def cmd_oauth_validate_id_token_remote(ctx, human_readable):
     Validate the ID token. Validation is performed by calling
     out to the auth provider's token introspection network service.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -269,6 +297,7 @@ def cmd_oauth_validate_id_token_local(ctx, human_readable):
     While validation is performed locally, network access is still
     required to obtain the signing keys from the auth provider.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -287,6 +316,7 @@ def cmd_oauth_validate_refresh_token_remote(ctx, human_readable):
     Validate the refresh token. Validation is performed by calling
     out to the auth provider's token introspection network service.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -315,6 +345,7 @@ def cmd_oauth_revoke_access_token(ctx):
     access tokens are accepted as bearer tokens, or double verified against
     the auth services.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -333,6 +364,7 @@ def cmd_oauth_revoke_refresh_token(ctx):
     revoke the current access token, which may remain potent until its
     natural expiration time if not also revoked.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -346,6 +378,7 @@ def cmd_oauth_userinfo(ctx):
     """
     Look up user information from the auth server using the access token.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
     saved_token.load()
@@ -363,6 +396,7 @@ def cmd_oauth_print_access_token(ctx, refresh):
     """
     Show the current OAuth access token.  Stale tokens will be automatically refreshed.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     saved_token.load()
 
@@ -400,6 +434,7 @@ def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
     This function will not work for authorization servers that issue
     access tokens in other formats.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     hazmat_print_jwt(saved_token.access_token(), human_readable=human_readable)
 
@@ -414,6 +449,7 @@ def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
     VALIDATION IS PERFORMED.  This function is intended for local
     debugging purposes.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     hazmat_print_jwt(saved_token.id_token(), human_readable=human_readable)
 
@@ -430,5 +466,6 @@ def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     This function will not work for authorization servers that issue
     refresh tokens in other formats.
     """
+    _check_auth_client_type_for_click_ctx(ctx)
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     hazmat_print_jwt(saved_token.refresh_token(), human_readable=human_readable)

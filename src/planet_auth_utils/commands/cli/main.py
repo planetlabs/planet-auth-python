@@ -71,6 +71,8 @@ def cmd_plauth(ctx, loglevel, auth_profile):
     ctx.obj["AUTH"] = PlanetAuthFactory.initialize_auth_client_context(
         auth_profile_opt=auth_profile,
         # token_file_opt=token_file,
+        use_env=True,
+        use_configfile=True,
     )
 
 
@@ -151,16 +153,16 @@ def cmd_plauth_reset():
 @cmd_plauth.command("login")
 @opt_open_browser()
 @opt_qr_code()
-@opt_scope()
-@opt_audience()
-@opt_organization()
-@opt_project()
-@opt_profile()
-@opt_client_id()
-@opt_client_secret()
-@opt_api_key()
-@opt_username()
-@opt_password()
+@opt_scope(envvar=None)
+@opt_audience(envvar=None)
+@opt_organization(envvar=None)
+@opt_project(envvar=None)
+@opt_profile(envvar=None)
+@opt_client_id(envvar=None)
+@opt_client_secret(envvar=None)
+@opt_api_key(envvar=None)
+@opt_username(envvar=None)
+@opt_password(envvar=None)
 @opt_sops()
 @opt_yes_no()
 @click.pass_context
@@ -207,6 +209,10 @@ def cmd_plauth_login(
         auth_api_key_opt=auth_api_key,
         # auth_username_opt=auth_username,
         # auth_password_opt=auth_password,
+        use_env=False,
+        use_configfile=False,
+        # TODO: save extras / project / org / scope
+        #  (or, should we leave such advanced cases for the oauth specific login command?)
     )
 
     print(f"Logging in with authentication profile {override_auth_context.profile_name()}...")
