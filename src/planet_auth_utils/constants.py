@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 from planet_auth_utils.builtins import Builtins
 
 
@@ -29,7 +31,7 @@ class EnvironmentVariables:
     """
 
     @staticmethod
-    def _namespace_variable(undecorated_variable: str):
+    def _namespace_variable(undecorated_variable: Optional[str]):
         """
         Decorate the variable name with a namespace.
         This is done so that multiple applications may use
@@ -37,7 +39,7 @@ class EnvironmentVariables:
         """
 
         namespace = Builtins.namespace()
-        if namespace:
+        if namespace and undecorated_variable:
             return f"{namespace.upper()}_{undecorated_variable}"
         return undecorated_variable
 
