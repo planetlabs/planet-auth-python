@@ -225,7 +225,13 @@ def cmd_profile_edit():
     raise AuthException("Function not implemented")
 
 
-@cmd_profile.command("copy")
+# Separte help since the docstring here is developer oriented, not user oriented.
+@cmd_profile.command(
+    "copy",
+    help="Copy an existing profile to create a new profile.  Only the persistent"
+    " profile configuration will be copied.  User access tokens initialized"
+    " via a call to `login` will not be copied.",
+)
 @click.argument("src")
 @click.argument("dst")
 @opt_sops()
@@ -234,18 +240,20 @@ def cmd_profile_copy(sops, src, dst):
     """
     Copy an existing profile to create a new profile.  Only the persistent
     profile configuration will be copied.  User access tokens initialized
-    via a call to `login` will not be copied.  Note: Depending on the
-    type of [planet_auth.AuthClient] configured in the source profile,
-    the new profile may have long term credentials (e.g. OAuth
-    client credential secrets, API keys. etc.).  External support files,
-    such as public/private keypair files, are not copied.
+    via a call to `login` will not be copied.
+
+    Note: Depending on the type of [planet_auth.AuthClient] configured in
+    the source profile, the new profile may have long term credentials
+    (e.g. OAuth client credential secrets, API keys. etc.).
+
+    Note: External support files, such as public/private keypair files,
+    are not copied.
 
     This command will work with built-in as well as custom profiles,
     so it is possible to bootstrap profiles to manage multiple user
     identities with an otherwise default client profile:
     ```
-    profile copy default <my_new_profile>
-    profile copy legacy  <my_new_profile>
+    profile copy my_app_builtin_default <my_new_profile>
     ```
 
     """
