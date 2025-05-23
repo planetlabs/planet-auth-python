@@ -44,7 +44,7 @@ def prompt_and_change_user_default_profile_if_different(
         do_change_default = change_default_selection
     else:
         do_change_default = False
-        if saved_profile_name != candidate_profile_name:
+        if str.lower(saved_profile_name) != str.lower(candidate_profile_name):
             # do_change_default = yes_no_dialog(
             #     title=f'Change user default {EnvironmentVariables.AUTH_PROFILE} saved in {config_file.path()}?',
             #     text=f'Current value and user default differ.\nDo you want to change the user default {EnvironmentVariables.AUTH_PROFILE} from "{saved_profile_name}" to "{candidate_profile_name}"?',
