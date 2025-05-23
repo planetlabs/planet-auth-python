@@ -142,6 +142,8 @@ def cmd_oauth_refresh(ctx, scope):
     It is possible to request a refresh token with scopes that are different
     from what is currently possessed, but you will never be granted
     more scopes than what the user has authorized.
+
+    This command only applies to auth profiles that use OAuth access tokens.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
@@ -344,7 +346,8 @@ def cmd_oauth_revoke_refresh_token(ctx):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_userinfo(ctx):
     """
-    Look up user information from the auth server using the access token.
+    Look up user information for the current user.  Look up is performed by
+    querying the authorization server using the current access token.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     auth_client = ctx.obj["AUTH"].auth_client()
@@ -362,6 +365,7 @@ def cmd_oauth_userinfo(ctx):
 def cmd_oauth_print_access_token(ctx, refresh):
     """
     Show the current OAuth access token.  Stale tokens will be automatically refreshed.
+    This command only applies to auth profiles that use OAuth access tokens.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     saved_token.load()
@@ -394,8 +398,8 @@ def cmd_oauth_print_access_token(ctx, refresh):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
     """
-    Decode a JWT access token locally and display its contents.  NO
-    VALIDATION IS PERFORMED.  This function is intended for local
+    Decode a JWT access token locally.
+    NO VALIDATION IS PERFORMED.  This function is intended for local
     debugging purposes.  Note: Access tokens need not be JWTs.
     This function will not work for authorization servers that issue
     access tokens in other formats.
@@ -410,8 +414,8 @@ def cmd_oauth_decode_jwt_access_token(ctx, human_readable):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
     """
-    Decode a JWT ID token locally and display its contents.  NO
-    VALIDATION IS PERFORMED.  This function is intended for local
+    Decode a JWT ID token locally.
+    NO VALIDATION IS PERFORMED.  This function is intended for local
     debugging purposes.
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
@@ -424,8 +428,8 @@ def cmd_oauth_decode_jwt_id_token(ctx, human_readable):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     """
-    Decode a JWT refresh token locally and display its contents.  NO
-    VALIDATION IS PERFORMED.  This function is intended for local
+    Decode a JWT refresh token locally.
+    NO VALIDATION IS PERFORMED.  This function is intended for local
     debugging purposes.  Note: Refresh tokens need not be JWTs.
     This function will not work for authorization servers that issue
     refresh tokens in other formats.

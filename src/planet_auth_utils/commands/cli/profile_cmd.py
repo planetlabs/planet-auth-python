@@ -271,7 +271,9 @@ def cmd_profile_copy(sops, src, dst):
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_set(selected_profile):
     """
-    Configure the default authentication profile to use when one is not otherwise specified.
+    Configure the default authentication profile. Preference will be saved to disk
+    and will be used when one is not otherwise specified.  Command line options
+    and environment variables override on-disk preferences.
     """
     if not selected_profile:
         selected_profile = _dialogue_choose_auth_profile()
