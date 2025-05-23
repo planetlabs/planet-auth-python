@@ -14,7 +14,7 @@
 
 import click
 import pathlib
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from planet_auth_utils.constants import EnvironmentVariables
 
@@ -25,7 +25,7 @@ _click_option_decorator_type = Callable[..., Any]
 # TODO: Should we make "required" param universal for all options?
 #     Maybe rather than being so prescriptive, we pass **kwargs to click options?
 def opt_api_key(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_API_KEY
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_API_KEY
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an API key
@@ -48,7 +48,7 @@ def opt_api_key(
 
 
 def opt_audience(
-    default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_AUDIENCE
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_AUDIENCE
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token audience for the
@@ -76,7 +76,7 @@ def opt_audience(
 
 
 def opt_client_id(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_ID
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_ID
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client ID.
@@ -99,7 +99,7 @@ def opt_client_id(
 
 
 def opt_client_secret(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_CLIENT_SECRET
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_SECRET
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client secret.
@@ -122,7 +122,7 @@ def opt_client_secret(
 
 
 def opt_extra(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_EXTRA
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_EXTRA
 ) -> _click_option_decorator_type:
     """
     Click option for specifying extra options.
@@ -169,7 +169,7 @@ def opt_human_readable(default=False, hidden: bool = False) -> _click_option_dec
 
 
 def opt_issuer(
-    default=None, hidden: bool = False, required=False, envvar: str = EnvironmentVariables.AUTH_ISSUER
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_ISSUER
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token issuer for the
@@ -194,7 +194,7 @@ def opt_issuer(
 
 
 def opt_loglevel(
-    default="INFO", hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_LOGLEVEL
+    default="INFO", hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_LOGLEVEL
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a log level.
@@ -257,7 +257,7 @@ def opt_open_browser(default=True, hidden: bool = False) -> _click_option_decora
 
 
 def opt_organization(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_ORGANIZATION
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_ORGANIZATION
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an Organization.
@@ -287,7 +287,7 @@ def opt_organization(
 #         lib also handles things like browser interaction this is not entirely easy to abstract
 #         away.
 def opt_password(
-    default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_PASSWORD
+    default=None, hidden: bool = True, envvar: Optional[str] = EnvironmentVariables.AUTH_PASSWORD
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a password for the
@@ -311,7 +311,7 @@ def opt_password(
 
 
 def opt_profile(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROFILE
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_PROFILE
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an auth profile for the
@@ -336,7 +336,7 @@ def opt_profile(
 
 
 def opt_project(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_PROJECT
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_PROJECT
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a project ID.
@@ -397,7 +397,7 @@ def opt_refresh(default=True, hidden: bool = False) -> _click_option_decorator_t
 
 
 def opt_token(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_TOKEN
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a token literal.
@@ -421,7 +421,7 @@ def opt_token(
 
 
 def opt_scope(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_SCOPE
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_SCOPE
 ) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token scope for the
@@ -468,7 +468,7 @@ def opt_sops(default=False, hidden: bool = False) -> _click_option_decorator_typ
 
 
 def opt_token_file(
-    default=None, hidden: bool = False, envvar: str = EnvironmentVariables.AUTH_TOKEN_FILE
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_TOKEN_FILE
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a token file location for the
@@ -492,7 +492,7 @@ def opt_token_file(
 
 
 def opt_username(
-    default=None, hidden: bool = True, envvar: str = EnvironmentVariables.AUTH_USERNAME
+    default=None, hidden: bool = True, envvar: Optional[str] = EnvironmentVariables.AUTH_USERNAME
 ) -> _click_option_decorator_type:
     """
     Click option for specifying a username for the
