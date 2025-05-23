@@ -243,6 +243,8 @@ class PlanetAuthFactory:
         # TODO?: initial_token_data: dict = None,
         save_token_file: bool = True,
         save_profile_config: bool = False,
+        use_env: bool = True,
+        use_configfile: bool = True,
         # Not supporting custom storage providers at this time.
         # The preferred behavior of Profiles with custom storage providers is TBD.
         # storage_provider: Optional[ObjectStorageProvider] = None,
@@ -312,6 +314,8 @@ class PlanetAuthFactory:
             save_token_file: Whether to save the access token to disk.  If `False`, in-memory
                 operation will be used, and login sessions will not be persisted locally.
             save_profile_config: Whether to save the profile configuration to disk.
+            use_env: Whether to use environment variables to determine configuration values.
+            use_configfile: Whether to use configuration files to determine configuration values.
         """
         #
         # Initialize from explicit user selected options
@@ -346,6 +350,8 @@ class PlanetAuthFactory:
         effective_user_selected_profile = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_PROFILE,
             override_value=auth_profile_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_profile:
             try:
@@ -365,10 +371,14 @@ class PlanetAuthFactory:
         effective_user_selected_client_id = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_CLIENT_ID,
             override_value=auth_client_id_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         effective_user_selected_client_secret = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_CLIENT_SECRET,
             override_value=auth_client_secret_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_client_id and effective_user_selected_client_secret:
             return PlanetAuthFactory._init_context_from_oauth_svc_account(
@@ -383,6 +393,8 @@ class PlanetAuthFactory:
         effective_user_selected_api_key = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_API_KEY,
             override_value=auth_api_key_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_api_key:
             return PlanetAuthFactory._init_context_from_api_key(
@@ -390,9 +402,10 @@ class PlanetAuthFactory:
             )
 
         effective_user_selected_api_key = user_config_file.effective_conf_value(
-            config_key="key",  # For backwards compatibility
+            config_key="key",  # For backwards compatibility, we know the old SDK used this in json files.
             override_value=auth_api_key_opt,
             use_env=False,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_api_key:
             return PlanetAuthFactory._init_context_from_api_key(
