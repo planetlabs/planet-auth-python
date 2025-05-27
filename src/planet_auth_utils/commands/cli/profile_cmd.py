@@ -70,7 +70,9 @@ def _dialogue_choose_auth_profile():
             filtered_builtin_profile_names.append(profile_name)
 
     filtered_builtin_profile_names.sort()
-    sorted_on_disk_profile_names = Profile.list_on_disk_profiles().copy()
+
+    # Loading filters out invalid profile configurations that may be on disk
+    sorted_on_disk_profile_names = list(_load_all_on_disk_profiles().keys())
     sorted_on_disk_profile_names.sort()
     all_profile_names = filtered_builtin_profile_names + sorted_on_disk_profile_names
     choices = []
@@ -269,6 +271,10 @@ def cmd_profile_set(selected_profile):
     """
     if not selected_profile:
         selected_profile = _dialogue_choose_auth_profile()
+    else:
+        # Validate user input.  Dialogue selected profiles should be pre-vetted.
+        normalized_profile_name, _ = PlanetAuthFactory.load_auth_client_config_from_profile(selected_profile)
+        selected_profile = normalized_profile_name
 
     try:
         user_profile_config_file = PlanetAuthUserConfig()
