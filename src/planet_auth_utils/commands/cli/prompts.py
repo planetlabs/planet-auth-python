@@ -27,7 +27,7 @@ from planet_auth_utils.constants import EnvironmentVariables
 
 
 def _warn_env_overrides_selection(selected_profile_name: str):
-    # If we detect a current environment that ex expect to override
+    # If we detect a current environment that we expect will override
     # what is being saved to the config file, warn the user.
     # See https://github.com/pylint-dev/pylint/issues/5091 regarding the pylint disabled warning.
     env_profile = os.getenv(EnvironmentVariables.AUTH_PROFILE, None)  # pylint: disable=E1507
