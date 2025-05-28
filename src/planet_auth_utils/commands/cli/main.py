@@ -185,9 +185,12 @@ def cmd_plauth_login(
     yes,
 ):
     """
-    Perform an initial login, obtain user authorization, and save access
-    tokens for the selected authentication profile.  The specific process
-    used depends on the selected options and authentication profile.
+    Perform an initial login.
+
+    This command performs an initial login, obtains user authorization,
+    and saves access tokens for the selected authentication profile.
+    The specific process used depends on the selected options and
+    authentication profile.
     """
     extra = {}
     if project:
