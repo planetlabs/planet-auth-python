@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from planet_auth.credential import Credential
 from planet_auth.planet_legacy.legacy_api_key import FileBackedPlanetLegacyApiKey
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 
@@ -32,7 +33,7 @@ class PlanetLegacyRequestAuthenticator(CredentialRequestAuthenticator):
     def pre_request_hook(self):
         self._token_body = self._api_key_file.legacy_api_key()
 
-    def update_credential(self, new_credential):
+    def update_credential(self, new_credential: Credential) -> None:
         if not isinstance(new_credential, FileBackedPlanetLegacyApiKey):
             raise TypeError(
                 f"{type(self).__name__} does not support {type(new_credential)} credentials.  Use FileBackedPlanetLegacyApiKey."

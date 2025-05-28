@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 @click.group(help="my cli main help message")
 @planet_auth_utils.opt_profile
-@planet_auth_utils.opt_client_id
-@planet_auth_utils.opt_client_secret
+@planet_auth_utils.opt_client_id()
+@planet_auth_utils.opt_client_secret()
 @click.pass_context
 def my_cli_main(ctx, auth_profile, auth_client_id, auth_client_secret):
     ctx.ensure_object(dict)

@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,9 +65,10 @@ def cmd_pllegacy(ctx):
 @cmd_pllegacy.command("login")
 @opt_password(hidden=False)
 @opt_username(hidden=False)
-@opt_sops
-@opt_yes_no
+@opt_sops()
+@opt_yes_no()
 @click.pass_context
+@recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_pllegacy_login(ctx, username, password, sops, yes):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
@@ -88,7 +89,8 @@ def cmd_pllegacy_login(ctx, username, password, sops, yes):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_pllegacy_print_api_key(ctx):
     """
-    Show the API Key used by the currently selected authentication profile.
+    Show the current API Key.  This command only applies to auth profiles
+    that use simple API keys.
     """
     # We also support StaticApiKeyAuthClient in some cases where the user
     # directly provides an API key.  Such clients can use the legacy API
@@ -118,7 +120,7 @@ def cmd_pllegacy_print_api_key(ctx):
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_pllegacy_print_access_token(ctx):
     """
-    Show the legacy JWT currently held by the selected authentication profile.
+    Show the current legacy JWT access token.
     """
     _check_client_type_pllegacy(ctx)
     saved_token = FileBackedPlanetLegacyApiKey(api_key_file=ctx.obj["AUTH"].token_file_path())

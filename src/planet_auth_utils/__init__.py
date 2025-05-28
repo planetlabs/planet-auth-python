@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -87,16 +87,16 @@ from .commands.cli.options import (
     opt_password,
     opt_profile,
     opt_project,
+    opt_qr_code,
     opt_refresh,
     opt_scope,
-    opt_show_qr_code,
     opt_sops,
     opt_token,
     opt_token_file,
     opt_username,
     opt_yes_no,
 )
-from .commands.cli.util import recast_exceptions_to_click
+from .commands.cli.util import recast_exceptions_to_click, monkeypatch_hide_click_cmd_options
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.builtins import Builtins
@@ -150,15 +150,17 @@ __all__ = [
     "opt_password",
     "opt_profile",
     "opt_project",
+    "opt_qr_code",
     "opt_refresh",
     "opt_scope",
-    "opt_show_qr_code",
     "opt_sops",
     "opt_token",
     "opt_token_file",
     "opt_username",
     "opt_yes_no",
+    #
     "recast_exceptions_to_click",
+    "monkeypatch_hide_click_cmd_options",
     #
     "Builtins",
     "EnvironmentVariables",

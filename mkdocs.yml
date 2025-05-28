@@ -83,10 +83,10 @@ nav:
     - Overview: 'library-overview.md'
     - Auth Client Configuration: 'configuration.md'
     - Built-in Injection: 'built-ins.md'
-  # - API Reference:
-  #   - Planet Auth: 'api-planet-auth.md'
-  #   - Planet Auth Utils: 'api-planet-auth-utils.md'
-  - API Reference: gen_reference/
+  - API Reference:
+    - Planet Auth: 'api-planet-auth.md'
+    - Planet Auth Utils: 'api-planet-auth-utils.md'
+    - Planet Auth Config Injection: 'api-planet-auth-config-injection.md'
   - Examples:
     - Installation: 'examples-installation.md'
     - CLI: 'examples-cli.md'

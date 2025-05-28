@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 import click
 import functools
 import json
-from typing import Optional
+from typing import List, Optional
 
 import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
@@ -26,7 +26,25 @@ from planet_auth_utils.profile import Profile
 from .prompts import prompt_and_change_user_default_profile_if_different
 
 
+def monkeypatch_hide_click_cmd_options(cmd, hide_options: List[str]):
+    """
+    Monkey patch a click command to hide the specified command options.
+    Useful when reusing click commands in contexts where you do not
+    wish to expose all the options.
+    """
+    for hide_option in hide_options:
+        for param in cmd.params:
+            if param.name == hide_option:
+                param.hidden = True
+                break
+
+
 def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
+    """
+    Decorator to catch exceptions and raise them as ClickExceptions.
+    Useful to apply to `click` commands to supress stack traces that
+    might be otherwise exposed to the end-user.
+    """
     if not exceptions:
         exceptions = (Exception,)
     # params.get('some_arg', 'default')
