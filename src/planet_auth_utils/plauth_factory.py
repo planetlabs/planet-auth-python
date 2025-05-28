@@ -38,6 +38,7 @@ from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth.logging.auth_logger import getAuthLogger
 
 auth_logger = getAuthLogger()
+_PL_API_KEY_ADHOC_PROFILE_NAME = "_PL_API_KEY"
 
 
 class PlanetAuthFactory:
@@ -218,7 +219,7 @@ class PlanetAuthFactory:
             "api_key": api_key,
             "bearer_token_prefix": PlanetLegacyRequestAuthenticator.TOKEN_PREFIX,
         }
-        adhoc_profile_name = "_PL_API_KEY"
+        adhoc_profile_name = _PL_API_KEY_ADHOC_PROFILE_NAME
         auth_logger.debug(msg="Initializing Auth from API key")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
