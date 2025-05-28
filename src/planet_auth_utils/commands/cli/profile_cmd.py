@@ -70,7 +70,9 @@ def _dialogue_choose_auth_profile():
             filtered_builtin_profile_names.append(profile_name)
 
     filtered_builtin_profile_names.sort()
-    sorted_on_disk_profile_names = Profile.list_on_disk_profiles().copy()
+
+    # Loading filters out invalid profile configurations that may be on disk
+    sorted_on_disk_profile_names = list(_load_all_on_disk_profiles().keys())
     sorted_on_disk_profile_names.sort()
     all_profile_names = filtered_builtin_profile_names + sorted_on_disk_profile_names
     choices = []
@@ -133,38 +135,30 @@ def cmd_profile_list(long):
     """
     List auth profiles.
     """
+    click.echo("Built-in profiles:")
+    profile_names = Builtins.builtin_profile_names().copy()
+    profile_names.sort()
+    display_dicts = OrderedDict()
+    display_names = []
+    for profile_name in profile_names:
+        config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
+        # The idea of a "hidden" profile currently only applies to built-in profiles.
+        # This is largely so we can have partial SKEL profiles.
+        if not config_dict.get("_hidden", False):
+            display_dicts[profile_name] = config_dict
+            display_names.append(profile_name)
     if long:
-        click.echo("Built-in profiles:")
-        profile_names = Builtins.builtin_profile_names().copy()
-        profile_names.sort()
-        display_object = OrderedDict()
-        for profile_name in profile_names:
-            config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
-            # The idea of a "hidden" profile currently only applies to built-in profiles.
-            # This is largely so we can have partial SKEL profiles.
-            if not config_dict.get("_hidden", False):
-                display_object[profile_name] = config_dict
-        print_obj(display_object)
-
-        click.echo("\nLocally defined profiles:")
-        print_obj(_load_all_on_disk_profiles())
-
+        print_obj(display_dicts)
     else:
-        click.echo("Built-in profiles:")
-        display_profile_names = []
-        for profile_name in Builtins.builtin_profile_names():
-            config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
-            # The idea of a "hidden" profile currently only applies to built-in profiles.
-            # This is largely so we can have partial SKEL profiles.
-            if not config_dict.get("_hidden", False):
-                display_profile_names.append(profile_name)
-        display_profile_names.sort()
-        print_obj(display_profile_names)
+        print_obj(display_names)
 
-        click.echo("\nLocally defined profiles:")
-        display_profile_names = Profile.list_on_disk_profiles()
-        display_profile_names.sort()
-        print_obj(display_profile_names)
+    click.echo("\nLocally defined profiles:")
+    profile_dicts = _load_all_on_disk_profiles()
+    profile_names = list(profile_dicts.keys())
+    if long:
+        print_obj(profile_dicts)
+    else:
+        print_obj(profile_names)
 
 
 @cmd_profile.command("create")
@@ -277,6 +271,10 @@ def cmd_profile_set(selected_profile):
     """
     if not selected_profile:
         selected_profile = _dialogue_choose_auth_profile()
+    else:
+        # Validate user input.  Dialogue selected profiles should be pre-vetted.
+        normalized_profile_name, _ = PlanetAuthFactory.load_auth_client_config_from_profile(selected_profile)
+        selected_profile = normalized_profile_name
 
     try:
         user_profile_config_file = PlanetAuthUserConfig()
