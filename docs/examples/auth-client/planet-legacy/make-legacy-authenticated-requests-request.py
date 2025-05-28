@@ -1,6 +1,6 @@
 import requests
 
-from planet_auth import Auth
+import planet_auth
 import planet_auth_config  # type: ignore
 
 
@@ -10,7 +10,9 @@ def main():
         "client_type": "planet_legacy",
     }
 
-    auth_ctx = Auth.initialize_from_config_dict(client_config=_legacy_client_config, token_file="/saved_token.json")
+    auth_ctx = planet_auth.Auth.initialize_from_config_dict(
+        client_config=_legacy_client_config, token_file="/saved_token.json"
+    )
     # The presumption in this example is that the login has already been performed and the token saved.
     # See the login example for that process.
 

@@ -47,6 +47,10 @@ logging.basicConfig(format="%(message)s", level=logging.DEBUG)
 # example, we are registered as a confidential client (one with a client
 # secret) that is permitted client credentials OAuth flow and grant type.
 # This is not the only possibility.
+
+# TODO: we should have an example of how to use a built-in provider to provide
+#     named application server trust environments through use of the
+#     planet_auth_utils.PlanetAuthFactory.initialize_resource_server_validator
 validator_auth_client_config = {
     "client_type": "oidc_client_credentials_secret",
     "auth_server": "_trusted_auth_server_issuer_",

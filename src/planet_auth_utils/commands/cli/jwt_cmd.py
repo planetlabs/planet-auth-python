@@ -149,9 +149,9 @@ def _get_token_or_fail(token_opt: typing.Optional[str], token_file_opt: typing.O
 
 @cmd_jwt.command("decode")
 @click.pass_context
-@opt_human_readable
-@opt_token
-@opt_token_file
+@opt_human_readable()
+@opt_token()
+@opt_token_file()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
 def cmd_jwt_decode(ctx, token: str, token_file: pathlib.Path, human_readable):
     """
@@ -163,9 +163,9 @@ def cmd_jwt_decode(ctx, token: str, token_file: pathlib.Path, human_readable):
 
 @cmd_jwt.command("validate-oauth")
 @click.pass_context
-@opt_human_readable
-@opt_token
-@opt_token_file
+@opt_human_readable()
+@opt_token()
+@opt_token_file()
 @opt_audience()
 @opt_issuer()
 @recast_exceptions_to_click(AuthException, FileNotFoundError)
@@ -230,11 +230,11 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
 
 @cmd_jwt.command("validate-rs256", hidden=True)
 @click.pass_context
-@opt_human_readable
-@opt_token
-@opt_token_file
-@opt_key
-@opt_key_file
+@opt_human_readable()
+@opt_token()
+@opt_token_file()
+@opt_key()
+@opt_key_file()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, NotImplementedError)
 def cmd_jwt_validate_rs256(ctx, token, token_file, key, key_file, human_readable):
     """
@@ -277,9 +277,9 @@ def cmd_jwt_validate_rs256(ctx, token, token_file, key, key_file, human_readable
 
 @cmd_jwt.command("validate-hs512", hidden=True)
 @click.pass_context
-@opt_human_readable
-@opt_token
-@opt_token_file
+@opt_human_readable()
+@opt_token()
+@opt_token_file()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, NotImplementedError)
 def cmd_jwt_validate_hs512(ctx, token, token_file, human_readable):
     """

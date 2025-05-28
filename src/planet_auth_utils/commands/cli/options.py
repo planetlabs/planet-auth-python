@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,118 +14,315 @@
 
 import click
 import pathlib
+from typing import Any, Callable, Optional
 
-from planet_auth import constants
 from planet_auth_utils.constants import EnvironmentVariables
 
 
-def opt_api_key(function):
+_click_option_decorator_type = Callable[..., Any]
+
+
+# TODO: Should we make "required" param universal for all options?
+#     Maybe rather than being so prescriptive, we pass **kwargs to click options?
+def opt_api_key(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_API_KEY
+) -> _click_option_decorator_type:
     """
     Click option for specifying an API key
     """
-    function = click.option(
-        "--auth-api-key",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_API_KEY,
-        help="Specify an API key.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--auth-api-key",
+            type=str,
+            envvar=envvar,
+            help="Specify an API key.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_client_id(function):
+def opt_audience(
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_AUDIENCE
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying an OAuth token audience for the
+    planet_auth package's click commands.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--audience",
+            multiple=True,
+            type=str,
+            envvar=envvar,
+            help="Token audiences.  Specify multiple options to set"
+            " multiple audiences.  When set via environment variable, audiences"
+            " should be white space delimited.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            required=required,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_client_id(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_ID
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client ID.
     """
-    function = click.option(
-        "--auth-client-id",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_CLIENT_ID,
-        help="Specify the OAuth client ID.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--auth-client-id",
+            type=str,
+            envvar=envvar,
+            help="Specify the OAuth client ID.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_client_secret(function):
+def opt_client_secret(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_SECRET
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth client secret.
     """
-    function = click.option(
-        "--auth-client-secret",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_CLIENT_SECRET,
-        help="Specify the OAuth client Secret.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--auth-client-secret",
+            type=str,
+            envvar=envvar,
+            help="Specify the OAuth client Secret.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_profile(function):
+def opt_extra(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_EXTRA
+) -> _click_option_decorator_type:
     """
-    Click option for specifying an auth profile for the
+    Click option for specifying extra options.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--extra",
+            "-O",
+            multiple=True,
+            type=str,
+            envvar=envvar,
+            help="Specify an extra option.  Specify multiple options to specify"
+            " multiple extra options.  The format of an option is <key>=<value>."
+            " When set via environment variable, values should be delimited by"
+            " whitespace.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_human_readable(default=False, hidden: bool = False) -> _click_option_decorator_type:
+    """
+    Click option to toggle raw / human-readable formatting.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--human-readable/--no-human-readable",
+            "-H",
+            help="Reformat fields to be human readable.",
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_issuer(
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_ISSUER
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying an OAuth token issuer for the
     planet_auth package's click commands.
     """
-    function = click.option(
-        "--auth-profile",
-        type=str,
-        envvar=EnvironmentVariables.AUTH_PROFILE,
-        help="Select the client profile to use.  User created profiles are "
-        f" defined by creating a subdirectory ~/{constants.PROFILE_DIR}/.  Additionally, a number of"
-        ' built-in profiles are understood.  See the "profile list" command'
-        " for defined profiles.  The auth profile controls how the software"
-        " interacts with authentication services, as well as how it"
-        " authenticates to other APIs.  If this option is not set,"
-        " a profile will be selected according to environment variables or"
-        ' a preference registered with the "profile set" command.',
-        default=None,
-        show_envvar=True,
-        show_default=True,
-        is_eager=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--issuer",
+            type=str,
+            envvar=envvar,
+            help="Token issuer.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=False,
+            required=required,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_organization(function):
+def opt_key(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_KEY
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a key literal.
+    """
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--key",
+            help="Key string.",
+            type=str,
+            envvar=envvar,
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=False,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_key_file(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_KEY_FILE
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a key file location for the
+    planet_auth package's click commands.
+    """
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--key-file",
+            type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
+            envvar=envvar,
+            help="File containing a key.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+def opt_loglevel(
+    default="INFO", hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_LOGLEVEL
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a log level.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "-l",
+            "--loglevel",
+            envvar=envvar,
+            help="Set the log level.",
+            type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], case_sensitive=False),
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_long(default=False, hidden: bool = False) -> _click_option_decorator_type:
+    """
+    Click option specifying that long or more detailed output should be produced.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "-l",
+            "--long",
+            help="Longer, more detailed output.",
+            is_flag=True,
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_open_browser(default=True, hidden: bool = False) -> _click_option_decorator_type:
+    """
+    Click option for specifying whether opening a browser is permitted
+    for the planet_auth package's click commands.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--open-browser/--no-open-browser",
+            help="Allow/Suppress the automatic opening of a browser window.",
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_organization(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_ORGANIZATION
+) -> _click_option_decorator_type:
     """
     Click option for specifying an Organization.
     """
-    function = click.option(
-        "--organization",
-        multiple=False,
-        type=str,
-        envvar=EnvironmentVariables.AUTH_ORGANIZATION,
-        help="Organization to use when performing authentication.  When present, this option will be"
-        " appended to authorization requests.  Not all implementations understand this option.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
 
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--organization",
+            multiple=False,
+            type=str,
+            envvar=envvar,
+            help="Organization to use when performing authentication.  When present, this option will be"
+            " appended to authorization requests.  Not all implementations understand this option.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
 
-def opt_project(function):
-    """
-    Click option for specifying a project ID.
-    """
-    function = click.option(
-        "--project",
-        multiple=False,
-        type=str,
-        # envvar=EnvironmentVariables.AUTH_PROJECT,
-        help="Project ID to use when performing authentication.  When present, this option will be"
-        " appended to authorization requests.  Not all implementations understand this option.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+    return decorator
 
 
 # TODO -  Consider switching to click prompts where we current rely on the lower level planet_auth
@@ -133,19 +330,22 @@ def opt_project(function):
 #         I generally think user IO belongs with the app, and not the the library, but since the
 #         lib also handles things like browser interaction this is not entirely easy to abstract
 #         away.
-def opt_password(hidden=True):
-    def decorator(function):
-        """
-        Click option for specifying a password for the
-        planet_auth package's click commands.
-        """
+def opt_password(
+    default=None, hidden: bool = True, envvar: Optional[str] = EnvironmentVariables.AUTH_PASSWORD
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a password for the
+    planet_auth package's click commands.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
         function = click.option(
             "--password",
             type=str,
-            envvar=EnvironmentVariables.AUTH_PASSWORD,
+            envvar=envvar,
             help="Password used for authentication.  May not be used by all authentication mechanisms.",
-            default=None,
-            show_envvar=True,
+            default=default,
+            show_envvar=bool(envvar),
             show_default=True,
             hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
         )(function)
@@ -154,288 +354,226 @@ def opt_password(hidden=True):
     return decorator
 
 
-def opt_username(hidden=True):
-    def decorator(function):
-        """
-        Click option for specifying a username for the
-        planet_auth package's click commands.
-        """
-        function = click.option(
-            "--username",
-            "--email",
-            type=str,
-            envvar=EnvironmentVariables.AUTH_USERNAME,
-            help="Username used for authentication.  May not be used by all authentication mechanisms.",
-            default=None,
-            show_envvar=True,
-            show_default=True,
-            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
-        )(function)
-        return function
-
-    return decorator
-
-
-def opt_loglevel(function):
+def opt_profile(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_PROFILE
+) -> _click_option_decorator_type:
     """
-    Click option for specifying a log level.
-    """
-    function = click.option(
-        "-l",
-        "--loglevel",
-        envvar=EnvironmentVariables.AUTH_LOGLEVEL,
-        help="Set the log level.",
-        type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"], case_sensitive=False),
-        default="INFO",
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_yes_no(function):
-    """
-    Click option to bypass prompts with a yes or no selection.
-    """
-    function = click.option(
-        "--yes/--no",
-        "-y/-n",
-        help='Skip user prompts with a "yes" or "no" selection',
-        default=None,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_human_readable(function):
-    """
-    Click option to toggle raw / human-readable formatting.
-    """
-    function = click.option(
-        "--human-readable/--no-human-readable",
-        "-H",
-        help="Reformat fields to be human readable.",
-        default=False,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_long(function):
-    """
-    Click option specifying that long or more detailed output should be produced.
-    """
-    function = click.option(
-        "-l",
-        "--long",
-        help="Longer, more detailed output",
-        is_flag=True,
-        default=False,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_open_browser(function):
-    """
-    Click option for specifying whether or not opening a browser is permitted
-    for the planet_auth package's click commands.
-    """
-    function = click.option(
-        "--open-browser/--no-open-browser",
-        help="Allow/Suppress the automatic opening of a browser window.",
-        default=True,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_show_qr_code(function):
-    """
-    Click option for specifying whether or not a QR code should be displayed.
-    """
-    function = click.option(
-        "--show-qr-code/--no-show-qr-code",
-        help="Control whether a QR code is displayed for the user.",
-        default=False,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_token(function):
-    """
-    Click option for specifying a token literal.
-    """
-    function = click.option(
-        "--token",
-        help="Token string.",
-        type=str,
-        # envvar=EnvironmentVariables.AUTH_TOKEN,
-        show_envvar=False,
-        show_default=False,
-    )(function)
-    return function
-
-
-def opt_token_file(function):
-    """
-    Click option for specifying a token file location for the
+    Click option for specifying an auth profile for the
     planet_auth package's click commands.
     """
-    function = click.option(
-        "--token-file",
-        type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
-        envvar=EnvironmentVariables.AUTH_TOKEN_FILE,
-        help="File containing a token.",
-        default=None,
-        show_envvar=False,
-        show_default=True,
-    )(function)
-    return function
 
-
-def opt_key(function):
-    """
-    Click option for specifying a key literal.
-    """
-    function = click.option(
-        "--key",
-        help="Key string.",
-        type=str,
-        # envvar=EnvironmentVariables.AUTH_KEY,
-        show_envvar=False,
-        show_default=False,
-    )(function)
-    return function
-
-
-def opt_key_file(function):
-    """
-    Click option for specifying a key file location for the
-    planet_auth package's click commands.
-    """
-    function = click.option(
-        "--key-file",
-        type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
-        # envvar=EnvironmentVariables.AUTH_KEY_FILE,
-        help="File containing a key.",
-        default=None,
-        show_envvar=False,
-        show_default=True,
-    )(function)
-    return function
-
-
-def opt_issuer(required=False):
-    def decorator(function):
-        """
-        Click option for specifying an OAuth token issuer for the
-        planet_auth package's click commands.
-        """
+    def decorator(function) -> _click_option_decorator_type:
         function = click.option(
-            "--issuer",
+            "--auth-profile",
             type=str,
-            envvar=EnvironmentVariables.AUTH_ISSUER,
-            help="Token issuer.",
-            default=None,
-            show_envvar=False,
-            show_default=False,
-            required=required,
-        )(function)
-        return function
-
-    return decorator
-
-
-def opt_audience(required=False):
-    def decorator(function):
-        """
-        Click option for specifying an OAuth token audience for the
-        planet_auth package's click commands.
-        """
-        function = click.option(
-            "--audience",
-            multiple=True,
-            type=str,
-            envvar=EnvironmentVariables.AUTH_AUDIENCE,
-            help="Token audiences.  Specify multiple options to set"
-            " multiple audiences.  When set via environment variable, audiences"
-            " should be white space delimited.",
-            default=None,
-            show_envvar=True,
+            envvar=envvar,
+            help="Select the client authentication profile to use.",
+            default=default,
+            show_envvar=bool(envvar),
             show_default=True,
-            required=required,
+            is_eager=True,
+            hidden=hidden,
         )(function)
         return function
 
     return decorator
 
 
-def opt_refresh(function):
+def opt_project(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_PROJECT
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a project ID.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--project",
+            multiple=False,
+            type=str,
+            envvar=envvar,
+            help="Project ID to use when performing authentication.  When present, this option will be"
+            " appended to authorization requests.  Not all implementations understand this option.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_qr_code(default=False, hidden: bool = False) -> _click_option_decorator_type:
+    """
+    Click option for specifying whether a QR code should be displayed.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--show-qr-code/--no-show-qr-code",
+            help="Control whether a QR code is displayed for the user.",
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_refresh(default=True, hidden: bool = False) -> _click_option_decorator_type:
     """
     Click option specifying a refresh should be attempted if applicable.
     """
-    function = click.option(
-        "--refresh/--no-refresh",
-        help="Automatically perform a credential refresh if required.",
-        default=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--refresh/--no-refresh",
+            help="Automatically perform a credential refresh if required.",
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_scope(function):
+def opt_token(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_TOKEN
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a token literal.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--token",
+            help="Token string.",
+            default=default,
+            type=str,
+            # envvar=envvar,
+            # show_envvar=bool(envvar)
+            show_envvar=False,
+            show_default=False,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_scope(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_SCOPE
+) -> _click_option_decorator_type:
     """
     Click option for specifying an OAuth token scope for the
     planet_auth package's click commands.
     """
-    function = click.option(
-        "--scope",
-        multiple=True,
-        type=str,
-        envvar=EnvironmentVariables.AUTH_SCOPE,
-        help="Token scope.  Specify multiple options to specify"
-        " multiple scopes.  When set via environment variable, scopes"
-        " should be white space delimited.  Default value is determined"
-        " by the selected auth profile.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--scope",
+            multiple=True,
+            type=str,
+            envvar=envvar,
+            help="Token scope.  Specify multiple options to specify"
+            " multiple scopes.  When set via environment variable, scopes"
+            " should be white space delimited.  Default value is determined"
+            " by the selected auth profile.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_sops(function):
+def opt_sops(default=False, hidden: bool = False) -> _click_option_decorator_type:
     """
     Click option specifying that SOPS should be used.
     """
-    function = click.option(
-        "--sops/--no-sops",
-        help="Use sops when creating new files where applicable."
-        " The environment must be configured for SOPS to work by default.",
-        default=False,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--sops/--no-sops",
+            help="Use sops when creating new files where applicable."
+            " The environment must be configured for SOPS to work by default.",
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
 
 
-def opt_extra(function):
+def opt_token_file(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_TOKEN_FILE
+) -> _click_option_decorator_type:
     """
-    Click option for specifying extra options.
+    Click option for specifying a token file location for the
+    planet_auth package's click commands.
     """
-    function = click.option(
-        "--extra",
-        "-O",
-        multiple=True,
-        type=str,
-        envvar=EnvironmentVariables.AUTH_EXTRA,
-        help="Specify an extra option.  Specify multiple options to specify"
-        " multiple extra options.  The format of an option is <key>=<value>."
-        " When set via environment variable, values should be delimited by"
-        " whitespace.",
-        default=None,
-        show_envvar=True,
-        show_default=True,
-    )(function)
-    return function
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--token-file",
+            type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
+            envvar=envvar,
+            help="File containing a token.",
+            default=default,
+            show_envvar=False,  # Thinking about deprecated, so not encouraging.
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_username(
+    default=None, hidden: bool = True, envvar: Optional[str] = EnvironmentVariables.AUTH_USERNAME
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a username for the
+    planet_auth package's click commands.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--username",
+            "--email",
+            type=str,
+            envvar=envvar,
+            help="Username used for authentication.  May not be used by all authentication mechanisms.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,  # Primarily used by legacy auth.  OAuth2 is preferred, wherein we do not handle username/password.
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_yes_no(default=None, hidden: bool = False) -> _click_option_decorator_type:
+    """
+    Click option to bypass prompts with a yes or no selection.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--yes/--no",
+            "-y/-n",
+            help='Skip user prompts with a "yes" or "no" selection.',
+            default=default,
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator

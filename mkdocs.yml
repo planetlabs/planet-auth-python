@@ -14,18 +14,18 @@ theme:
   custom_dir: 'docs/custom_theme/'
   features:
     - content.code.copy
-    - navigation.tabs
-    # - navigation.instant # Not compatible with i18n plugin
-    - navigation.tabs.sticky
     - navigation.expand
     - navigation.indexes
-    - navigation.top
+    - navigation.path
     - navigation.sections
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
     - navigation.tracking
     - search.suggest
     - search.highlight
     - toc.follow
-    - toc.integrate
+    # - toc.integrate
   palette:
     - scheme: default
       primary: #007f99
@@ -71,11 +71,21 @@ repo_url: https://github.com/planetlabs/planet-auth-python
 
 nav:
   - Introduction: 'index.md'
-  - CLI Reference:
+  - CLI:
     - plauth: 'cli-plauth.md'
-  - Configuration: 'configuration.md'
-  - API Reference: 'api.md'
-  - Examples: 'examples.md'
+  - Library Usage:
+    - Overview: 'library-overview.md'
+    - Auth Client Configuration: 'configuration.md'
+    - Built-in Injection: 'built-ins.md'
+  - API Reference:
+    - Planet Auth: 'api-planet-auth.md'
+    - Planet Auth Utils: 'api-planet-auth-utils.md'
+    - Planet Auth Config Injection: 'api-planet-auth-config-injection.md'
+  - Examples:
+    - Installation: 'examples-installation.md'
+    - CLI: 'examples-cli.md'
+    - Client Usage: 'examples-client.md'
+    - Service Usage: 'examples-service.md'
   - Changelog: 'changelog.md'
 
 markdown_extensions:

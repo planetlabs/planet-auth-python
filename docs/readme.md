@@ -31,5 +31,5 @@ pip install planet-auth
 
 ## Documentation
 
-See [Planet Auth Library](https://planet-auth.readthedocs.io/en/latest/) on
+See [Planet Auth Library](https://planet-auth.readthedocs.io/) on
 _ReadTheDocs.io_ for complete documentation.
