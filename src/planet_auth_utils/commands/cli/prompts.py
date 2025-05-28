@@ -29,21 +29,22 @@ from planet_auth_utils.constants import EnvironmentVariables
 def _warn_env_overrides_selection(selected_profile_name: str):
     # If we detect a current environment that ex expect to override
     # what is being saved to the config file, warn the user.
-    env_profile = os.getenv(EnvironmentVariables.AUTH_PROFILE, None)
+    # See https://github.com/pylint-dev/pylint/issues/5091 regarding the pylint disabled warning.
+    env_profile = os.getenv(EnvironmentVariables.AUTH_PROFILE, None)  # pylint: disable=E1507
     if env_profile and str.lower(env_profile) != str.lower(selected_profile_name):
         print(
             f'Warning: Environment variable "{EnvironmentVariables.AUTH_PROFILE}" is set to "{env_profile}". This will override saved settings.'
         )
 
-    env_client_id = os.getenv(EnvironmentVariables.AUTH_CLIENT_ID, None)
-    env_client_secret = os.getenv(EnvironmentVariables.AUTH_CLIENT_SECRET, None)
+    env_client_id = os.getenv(EnvironmentVariables.AUTH_CLIENT_ID, None)  # pylint: disable=E1507
+    env_client_secret = os.getenv(EnvironmentVariables.AUTH_CLIENT_SECRET, None)  # pylint: disable=E1507
     if env_client_id and env_client_secret:
         print(
             f'Warning: Environment variables "{EnvironmentVariables.AUTH_CLIENT_ID}" and "{EnvironmentVariables.AUTH_CLIENT_SECRET}" are set.'
             " These will always take priority over the saved settings."
         )
 
-    env_api_key = os.getenv(EnvironmentVariables.AUTH_API_KEY, None)
+    env_api_key = os.getenv(EnvironmentVariables.AUTH_API_KEY, None)  # pylint: disable=E1507
     if env_api_key:  # and str.lower(_PL_API_KEY_ADHOC_PROFILE_NAME) != str.lower(selected_profile_name):
         print(
             f'Warning: Environment variable "{EnvironmentVariables.AUTH_API_KEY}" is set. This will always take priority over the saved settings.'
