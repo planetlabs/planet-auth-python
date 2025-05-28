@@ -16,14 +16,38 @@
 #       We use prompt_toolkit for major prompts
 #       and click or simple code for others.
 
+import os
 import click
 from typing import Optional
 
 # from prompt_toolkit.shortcuts import input_dialog, radiolist_dialog, yes_no_dialog
 
-# from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfigEnhanced
 from planet_auth_utils.constants import EnvironmentVariables
+
+
+def _warn_env_overrides_selection(selected_profile_name: str):
+    # If we detect a current environment that ex expect to override
+    # what is being saved to the config file, warn the user.
+    env_profile = os.getenv(EnvironmentVariables.AUTH_PROFILE, None)
+    if env_profile and str.lower(env_profile) != str.lower(selected_profile_name):
+        print(
+            f'Warning: Environment variable "{EnvironmentVariables.AUTH_PROFILE}" is set to "{env_profile}". This will override saved settings.'
+        )
+
+    env_client_id = os.getenv(EnvironmentVariables.AUTH_CLIENT_ID, None)
+    env_client_secret = os.getenv(EnvironmentVariables.AUTH_CLIENT_SECRET, None)
+    if env_client_id and env_client_secret:
+        print(
+            f'Warning: Environment variables "{EnvironmentVariables.AUTH_CLIENT_ID}" and "{EnvironmentVariables.AUTH_CLIENT_SECRET}" are set.'
+            " These will always take priority over the saved settings."
+        )
+
+    env_api_key = os.getenv(EnvironmentVariables.AUTH_API_KEY, None)
+    if env_api_key:  # and str.lower(_PL_API_KEY_ADHOC_PROFILE_NAME) != str.lower(selected_profile_name):
+        print(
+            f'Warning: Environment variable "{EnvironmentVariables.AUTH_API_KEY}" is set. This will always take priority over the saved settings.'
+        )
 
 
 def prompt_and_change_user_default_profile_if_different(
@@ -34,6 +58,7 @@ def prompt_and_change_user_default_profile_if_different(
         saved_profile_name = config_file.lazy_get(EnvironmentVariables.AUTH_PROFILE)
     except FileNotFoundError:
         saved_profile_name = None  # config_file.effective_conf_value(EnvironmentVariables.AUTH_PROFILE, fallback_value=Builtins.builtin_default_profile_name())
+    selected_profile_name = saved_profile_name
 
     if not saved_profile_name:
         # Always write a preference if none is saved.
@@ -56,7 +81,9 @@ def prompt_and_change_user_default_profile_if_different(
             )
 
     if do_change_default:
+        selected_profile_name = candidate_profile_name
         config_file.update_data({EnvironmentVariables.AUTH_PROFILE: candidate_profile_name})
         config_file.save()
 
+    _warn_env_overrides_selection(selected_profile_name)
     return do_change_default
