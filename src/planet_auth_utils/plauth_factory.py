@@ -269,22 +269,24 @@ class PlanetAuthFactory:
         application developer, and are given the highest priority.  Internally, the
         priority used for the source of any particular configuration values is, from
         highest to lowest priority, as follows:
-            - Arguments to this function.
-            - Environment variables.
-            - Values from configuration file.
-            - Built-in defaults.
+
+        - Arguments to this function.
+        - Environment variables.
+        - Values from configuration file.
+        - Built-in defaults.
 
         In constructing the returned Auth context, the following priority is applied, from
         highest to lowest:
-            - A user selected auth profile, as specified by `auth_profile_opt`. This may either
-              specify a built-in profile name, or a fully custom profile defined by files in
-              a `~/.planet/<profile name>` directory.
-            - A user selected OAuth service account, as specified by `auth_client_id_opt` and `auth_client_secret_opt`.
-            - A user specified API key, as specified by `auth_api_key_opt`
-            - A user selected auth profile, as determined from either environment variables or config files.
-            - A user selected OAuth service account, as determined from either environment variables or config files.
-            - A user selected API key, as determined from either environment variables or config files.
-            - A built-in default auth profile, which may require interactive user authentication.
+
+        - A user selected auth profile, as specified by `auth_profile_opt`. This may either
+          specify a built-in profile name, or a fully custom profile defined by files in
+          a `~/.planet/<profile name>` directory.
+        - A user selected OAuth service account, as specified by `auth_client_id_opt` and `auth_client_secret_opt`.
+        - A user specified API key, as specified by `auth_api_key_opt`
+        - A user selected auth profile, as determined from either environment variables or config files.
+        - A user selected OAuth service account, as determined from either environment variables or config files.
+        - A user selected API key, as determined from either environment variables or config files.
+        - A built-in default auth profile, which may require interactive user authentication.
 
         Example:
             ```python
