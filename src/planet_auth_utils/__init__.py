@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,20 @@
 # limitations under the License.
 
 """
-Planet Authentication and Authorization CLI Utilities.
+# The Planet Authentication Utilities Package: `planet_auth_utils`
 
-These utilities are thin wrappers for functionality implemented
-by the underlying auth libraries.
+This utility package provides higher leven and convenience functions for
+using the [planet_auth][] package.
+
+The core functionality provided by this package includes:
+
+- [planet_auth_utils.PlanetAuthFactory][] - Factory methods making it easier for application developers to initialize
+    a coherent working set of [planet_auth] objects.
+- `plauth` - The `plauth` command line utility is implemented in this package. It may be used
+    as a stand-alone utility, or it may be embedded into other [click](https://click.palletsprojects.com/en/stable/) applications.
+- [planet_auth_utils.Builtins][] - Built-in profile interface. Applications built on top of the
+    _Planet Auth Library_ may use configuration injection provide built-in configurations
+    suitable for the operating environment of the application.
 
 """
 
@@ -77,16 +87,16 @@ from .commands.cli.options import (
     opt_password,
     opt_profile,
     opt_project,
+    opt_qr_code,
     opt_refresh,
     opt_scope,
-    opt_show_qr_code,
     opt_sops,
     opt_token,
     opt_token_file,
     opt_username,
     opt_yes_no,
 )
-from .commands.cli.util import recast_exceptions_to_click
+from .commands.cli.util import recast_exceptions_to_click, monkeypatch_hide_click_cmd_options
 from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.builtins import Builtins
@@ -140,15 +150,17 @@ __all__ = [
     "opt_password",
     "opt_profile",
     "opt_project",
+    "opt_qr_code",
     "opt_refresh",
     "opt_scope",
-    "opt_show_qr_code",
     "opt_sops",
     "opt_token",
     "opt_token_file",
     "opt_username",
     "opt_yes_no",
+    #
     "recast_exceptions_to_click",
+    "monkeypatch_hide_click_cmd_options",
     #
     "Builtins",
     "EnvironmentVariables",

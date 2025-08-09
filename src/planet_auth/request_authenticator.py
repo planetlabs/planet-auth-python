@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from abc import abstractmethod, ABC
-from typing import Dict
+from typing import Dict, Optional
 
 import httpx
 import requests.auth
@@ -94,7 +94,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         super().__init__(**kwargs)
         self._credential = credential
 
-    def update_credential(self, new_credential: Credential):
+    def update_credential(self, new_credential: Credential) -> None:
         """
         Update the request authenticator with a new credential.
         It is the job of a derived class to know how to map the contents
@@ -108,7 +108,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         # requests.
         self._token_body = None
 
-    def update_credential_data(self, new_credential_data: Dict):
+    def update_credential_data(self, new_credential_data: Dict) -> None:
         """
         Provide raw data that should be used to update the Credential
         object used to authenticate requests.  This information will
@@ -130,13 +130,14 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         # requests.
         self._token_body = None
 
-    def credential(self):
+    def credential(self, refresh_if_needed: bool = False) -> Optional[Credential]:
         """
         Return the current credential.
 
         This may not be the credential the authenticator was constructed with.
         Request Authenticators are free to refresh credentials depending in the
-        needs of the implementation.
+        needs of the implementation.  This may happen upon this request,
+        or may happen as a side effect of RequestAuthenticator operations.
         """
         return self._credential
 
@@ -162,7 +163,7 @@ class SimpleInMemoryRequestAuthenticator(CredentialRequestAuthenticator):
     def pre_request_hook(self):
         pass
 
-    def update_credential(self, new_credential: Credential):
+    def update_credential(self, new_credential: Credential) -> None:
         auth_logger.warning(msg="Generic SimpleInMemoryRequestAuthenticator ignores update_credential()")
 
 

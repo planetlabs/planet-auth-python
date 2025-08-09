@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ from .options import (
     opt_password,
     opt_loglevel,
     opt_open_browser,
-    opt_show_qr_code,
+    opt_qr_code,
     opt_sops,
     opt_audience,
     opt_scope,
@@ -49,8 +49,8 @@ from .util import recast_exceptions_to_click, post_login_cmd_helper
 
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
-@opt_loglevel
-@opt_profile
+@opt_loglevel()
+@opt_profile()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth(ctx, loglevel, auth_profile):
@@ -84,7 +84,10 @@ def cmd_plauth_embedded(ctx):
     Embeddable version of the Planet Auth Client root command.
     The embedded command differs from the stand-alone command in that it
     expects the context to be instantiated and options to be handled by
-    the parent command.  See [planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context][]
+    the parent command.  The [planet_auth.Auth][] library context _must_
+    be saved to the object field `AUTH` in the click context object.
+
+    See [planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context][]
     for user-friendly auth client context initialization.
 
     See [examples](/examples/#embedding-the-click-auth-command).
@@ -146,20 +149,20 @@ def cmd_plauth_reset():
 
 
 @cmd_plauth.command("login")
-@opt_open_browser
-@opt_show_qr_code
-@opt_scope
+@opt_open_browser()
+@opt_qr_code()
+@opt_scope()
 @opt_audience()
-@opt_organization
-@opt_project
-@opt_profile
-@opt_client_id
-@opt_client_secret
-@opt_api_key
+@opt_organization()
+@opt_project()
+@opt_profile()
+@opt_client_id()
+@opt_client_secret()
+@opt_api_key()
 @opt_username()
 @opt_password()
-@opt_sops
-@opt_yes_no
+@opt_sops()
+@opt_yes_no()
 @click.pass_context
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_plauth_login(
@@ -180,9 +183,12 @@ def cmd_plauth_login(
     yes,
 ):
     """
-    Perform an initial login, obtain user authorization, and save access
-    tokens for the selected authentication profile.  The specific process
-    used depends on the selected options and authentication profile.
+    Perform an initial login.
+
+    This command performs an initial login, obtains user authorization,
+    and saves access tokens for the selected authentication profile.
+    The specific process used depends on the selected options and
+    authentication profile.
     """
     extra = {}
     if project:

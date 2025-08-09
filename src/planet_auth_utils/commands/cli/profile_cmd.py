@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,7 +70,9 @@ def _dialogue_choose_auth_profile():
             filtered_builtin_profile_names.append(profile_name)
 
     filtered_builtin_profile_names.sort()
-    sorted_on_disk_profile_names = Profile.list_on_disk_profiles().copy()
+
+    # Loading filters out invalid profile configurations that may be on disk
+    sorted_on_disk_profile_names = list(_load_all_on_disk_profiles().keys())
     sorted_on_disk_profile_names.sort()
     all_profile_names = filtered_builtin_profile_names + sorted_on_disk_profile_names
     choices = []
@@ -127,48 +129,40 @@ def _load_all_on_disk_profiles() -> dict:
 
 
 @cmd_profile.command("list")
-@opt_long
+@opt_long()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_list(long):
     """
     List auth profiles.
     """
+    click.echo("Built-in profiles:")
+    profile_names = Builtins.builtin_profile_names().copy()
+    profile_names.sort()
+    display_dicts = OrderedDict()
+    display_names = []
+    for profile_name in profile_names:
+        config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
+        # The idea of a "hidden" profile currently only applies to built-in profiles.
+        # This is largely so we can have partial SKEL profiles.
+        if not config_dict.get("_hidden", False):
+            display_dicts[profile_name] = config_dict
+            display_names.append(profile_name)
     if long:
-        click.echo("Built-in profiles:")
-        profile_names = Builtins.builtin_profile_names().copy()
-        profile_names.sort()
-        display_object = OrderedDict()
-        for profile_name in profile_names:
-            config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
-            # The idea of a "hidden" profile currently only applies to built-in profiles.
-            # This is largely so we can have partial SKEL profiles.
-            if not config_dict.get("_hidden", False):
-                display_object[profile_name] = config_dict
-        print_obj(display_object)
-
-        click.echo("\nLocally defined profiles:")
-        print_obj(_load_all_on_disk_profiles())
-
+        print_obj(display_dicts)
     else:
-        click.echo("Built-in profiles:")
-        display_profile_names = []
-        for profile_name in Builtins.builtin_profile_names():
-            config_dict = Builtins.builtin_profile_auth_client_config_dict(profile_name)
-            # The idea of a "hidden" profile currently only applies to built-in profiles.
-            # This is largely so we can have partial SKEL profiles.
-            if not config_dict.get("_hidden", False):
-                display_profile_names.append(profile_name)
-        display_profile_names.sort()
-        print_obj(display_profile_names)
+        print_obj(display_names)
 
-        click.echo("\nLocally defined profiles:")
-        display_profile_names = Profile.list_on_disk_profiles()
-        display_profile_names.sort()
-        print_obj(display_profile_names)
+    click.echo("\nLocally defined profiles:")
+    profile_dicts = _load_all_on_disk_profiles()
+    profile_names = list(profile_dicts.keys())
+    if long:
+        print_obj(profile_dicts)
+    else:
+        print_obj(profile_names)
 
 
 @cmd_profile.command("create")
-@opt_sops
+@opt_sops()
 @click.argument("new_profile_name", required=False)
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_create(sops, new_profile_name):
@@ -225,27 +219,35 @@ def cmd_profile_edit():
     raise AuthException("Function not implemented")
 
 
-@cmd_profile.command("copy")
+# Separte help since the docstring here is developer oriented, not user oriented.
+@cmd_profile.command(
+    "copy",
+    help="Copy an existing profile to create a new profile.  Only the persistent"
+    " profile configuration will be copied.  User access tokens initialized"
+    " via a call to `login` will not be copied.",
+)
 @click.argument("src")
 @click.argument("dst")
-@opt_sops
+@opt_sops()
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_copy(sops, src, dst):
     """
     Copy an existing profile to create a new profile.  Only the persistent
     profile configuration will be copied.  User access tokens initialized
-    via a call to `login` will not be copied.  Note: Depending on the
-    type of [planet_auth.AuthClient] configured in the source profile,
-    the new profile may have long term credentials (e.g. OAuth
-    client credential secrets, API keys. etc.).  External support files,
-    such as public/private keypair files, are not copied.
+    via a call to `login` will not be copied.
+
+    Note: Depending on the type of [planet_auth.AuthClient] configured in
+    the source profile, the new profile may have long term credentials
+    (e.g. OAuth client credential secrets, API keys. etc.).
+
+    Note: External support files, such as public/private keypair files,
+    are not copied.
 
     This command will work with built-in as well as custom profiles,
     so it is possible to bootstrap profiles to manage multiple user
     identities with an otherwise default client profile:
     ```
-    profile copy default <my_new_profile>
-    profile copy legacy  <my_new_profile>
+    profile copy my_app_builtin_default <my_new_profile>
     ```
 
     """
@@ -271,10 +273,16 @@ def cmd_profile_copy(sops, src, dst):
 @recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
 def cmd_profile_set(selected_profile):
     """
-    Configure the default authentication profile to use when one is not otherwise specified.
+    Configure the default authentication profile. Preference will be saved to disk
+    and will be used when one is not otherwise specified.  Command line options
+    and environment variables override on-disk preferences.
     """
     if not selected_profile:
         selected_profile = _dialogue_choose_auth_profile()
+    else:
+        # Validate user input.  Dialogue selected profiles should be pre-vetted.
+        normalized_profile_name, _ = PlanetAuthFactory.load_auth_client_config_from_profile(selected_profile)
+        selected_profile = normalized_profile_name
 
     try:
         user_profile_config_file = PlanetAuthUserConfig()

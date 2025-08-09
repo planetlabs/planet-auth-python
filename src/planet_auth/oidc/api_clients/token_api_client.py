@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -292,7 +292,7 @@ class TokenApiClient(OidcApiClient):
                 authorization (login).
             requested_audiences: A list of strings specifying the audiences
                 to request.
-            auth_enricher: Function to layer un the application of client credentials.
+            auth_enricher: Function to layer in the application of client credentials.
             extra: Dict of extra parameters to pass to the token endpoint.
 
         Returns:

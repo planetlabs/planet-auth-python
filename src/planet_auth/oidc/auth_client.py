@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -404,7 +404,7 @@ class OidcAuthClient(AuthClient, ABC):
         flow. The base implementation here handles common config fallback
         behaviors. Concrete subclasses must implement the flow specific logic
         in a _oidc_flow_login() method.
-        Args:
+        Parameters:
             allow_open_browser: specify whether login is permitted to open
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
@@ -488,7 +488,7 @@ class OidcAuthClient(AuthClient, ABC):
     ) -> FileBackedOidcCredential:
         """
         Refresh auth tokens using the provided refresh token
-        Args:
+        Parameters:
             refresh_token: the refresh token to use.
             requested_scopes: a list of strings specifying the scopes to
                 request during the token refresh. If not specified, server

@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """
-The Planet Authentication package
+# The Planet Authentication Package : `planet_auth`
 
 This package contains functionality for authenticating clients to the
 service and managing authentication material.  This package knows nothing
-about the service itself apart from how to interact with authentication
-APIs.
+about the application services apart from how to interact with authentication
+layers.
 
 This package understands multiple authentication mechanisms, whose details
 are encapsulated in implementation subclasses that implement the primary
@@ -32,23 +32,28 @@ See the documentation for [configuration](../configuration).
 The primary interfaces implemented for users of this package are as follows:
 
 - [planet_auth.Auth][] - A container class for initializing and grouping
-      a working set of authentication objects (below).
+      a working set of authentication objects.
 - [planet_auth.AuthClient][] & [planet_auth.AuthClientConfig][] - Responsible for
       interacting with authentication services to obtain a credential that
       may be used with other API requests. Different clients have different
       configuration needs, so a configuration type exists for each client
       type to keep configuration on rails.
-- [planet_auth.Credential][] - Models just a credential.
-      Responsible for reading and writing saved credentials to disk and
-      performing basic data validation.  Knows nothing about how to get a
-      credential, or how to use a credential.
+- [planet_auth.Credential][] - Models just a credential.  A credential
+      is the unit of authorization material that is obtained from an
+      authorization service, and provided to an applicaiton service so
+      so that the client may make authenticated applicaiton requests.
+      This class is responsible for reading and writing saved credentials
+      to storage and performing basic data validation.  This class knows
+      nothing about how to get a credential or how to use a credential.
 - [planet_auth.RequestAuthenticator][] - Responsible for
-      decorating API requests with a credential. Compatible with `httpx` and
-      `requests` libraries.  Some authentication mechanisms require that
-      the request authenticator also have an
+      decorating application API requests with a credential. Compatible with
+      `httpx` and `requests` libraries.  Some authentication mechanisms require
+      that the request authenticator also have an
       [AuthClient][planet_auth.AuthClient], others do not.  Whether or not
       this is required is driven by the specifics of the authentication
-      mechanism.
+      mechanism.  It is because of this relationship between credentials,
+      auth clients, and request authenticators that the [planet_auth.Auth][]
+      class exists.
 """
 
 from .auth import Auth
