@@ -193,6 +193,50 @@ def opt_issuer(
     return decorator
 
 
+def opt_key(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_KEY
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a key literal.
+    """
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--key",
+            help="Key string.",
+            type=str,
+            envvar=envvar,
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=False,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_key_file(
+    default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_KEY_FILE
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying a key file location for the
+    planet_auth package's click commands.
+    """
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--key-file",
+            type=click.Path(exists=True, file_okay=True, readable=True, path_type=pathlib.Path),
+            envvar=envvar,
+            help="File containing a key.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
 def opt_loglevel(
     default="INFO", hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_LOGLEVEL
 ) -> _click_option_decorator_type:
