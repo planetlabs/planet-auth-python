@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -172,8 +172,8 @@ class OidcMultiIssuerValidator:
             auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
                 trusted_auth_server_configs=[
                     {
-                        "auth_server": "https://account-next.planet.com/oauth2/auth_server_id",
-                        "audiences": ["https://api.staging.planet-labs.com/"],
+                        "auth_server": "https://oauth_server.example.com/oauth2/auth_server_id",
+                        "audiences": ["https://api.example.com/"],
                     },
                 ],
             )

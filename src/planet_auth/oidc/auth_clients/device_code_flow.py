@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         to prompt the user.  After prompting the user, `device_login_complete()`
         should be called to complete the login process.
 
-        Args:
+        Parameters:
             requested_scopes: a list of strings specifying the scopes to
                 request.
             requested_audiences: a list of strings specifying the audiences
@@ -115,7 +115,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         Obtain tokens from the OIDC auth server using the Device Code OAuth
         flow. This method completes the process initiated by a call to `device_login_initiate()`.
 
-        Args:
+        Parameters:
             initiated_login_data: The dictionary returned from a successful call to
                 `device_login_initiate()`
          Returns:
@@ -147,7 +147,7 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
         Obtain tokens from the OIDC auth server using the Device Code OAuth
         flow.
 
-        Args:
+        Parameters:
             requested_scopes: a list of strings specifying the scopes to
                 request.
             requested_audiences: a list of strings specifying the audiences
@@ -161,6 +161,9 @@ class DeviceCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthe
          Returns:
             A FileBackedOidcCredential object
         """
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password", "client_id", "client_secret"], **kwargs)
+
         if not allow_tty_prompt:
             # Without a TTY to confirm the authorization code with the user,
             # the client using this library really must use device_login_initiate and

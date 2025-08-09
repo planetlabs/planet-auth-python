@@ -25,9 +25,7 @@ To release a new version, complete the following steps:
 
 1. Create a release branch off of `main` that bumps the version number in
    branch invariant [version.txt](./version.txt) file, and updates the
-   [changelog.md](./docs/changelog.md).  The [version-with-buildnum.txt](./version-with-buildnum.txt)
-   should also be kept up to date, and is used to assign versions to local
-   builds.
+   [changelog.md](./docs/changelog.md).
 2. Collect all features targeted for the intended release in the branch, and
    create a PR to merge the release branch into `main`.
 3. Ensure that all tests are passing on `main` branch after all merges.

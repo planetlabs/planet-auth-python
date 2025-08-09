@@ -7,7 +7,6 @@ from functools import wraps
 from typing import List, Optional
 
 import planet_auth
-import planet_auth_config  # type: ignore
 
 #############################################################################
 # Logging Configuration
@@ -42,48 +41,26 @@ logging.basicConfig(format="%(message)s", level=logging.DEBUG)
 #############################################################################
 # Validator Configuration
 #############################################################################
-# The Planet auth config package provides constants that describe
-# various Planet environments.  The environments described in that
-# package are not considered part of the auth library, which is
-# deployment agnostic, and serves both client and server use cases.
+# Never ever ever EVER NEVER EVER accept authorities that cross trust realms
+# in the same service.  This is a recipe for compromising the integrity of
+# your secure environments.
 #
-# Services may lean on the config library to provide easy deployment
-# ergonomics for common use cases, and benefit from published config
-# value changes.  But, services should also maintain the ability
-# to be deployed to arbitrary trust environments for development
-# and testing purposes.
-#
-# Never ever ever EVER NEVER EVER accept staging authorities in a
-# production deployment.
-# NEVER. NEVER NEVER.
+# NEVER. NEVER EVER.
 # Do not cross the streams.
 # Seriously.  Don't do it.
 
-named_env = os.getenv("MY_DEPLOYMENT_ENV")
-if named_env == "production":
-    auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
-        trusted_auth_server_configs=[planet_auth_config.Production.PRIMARY_PUBLIC_OAUTH_AUTHORITY],
-        secondary_auth_server_configs=[planet_auth_config.Production.DEPRECATED_PUBLIC_OAUTH_AUTHORITY], # type: ignore
-    )
-elif named_env == "staging":
-    auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
-        trusted_auth_server_configs=[planet_auth_config.Staging.PRIMARY_PUBLIC_OAUTH_AUTHORITY],
-        secondary_auth_server_configs=[planet_auth_config.Staging.DEPRECATED_PUBLIC_OAUTH_AUTHORITY], # type: ignore
-    )
-else:
-    # in this example, MY_DEPLOYMENT_ENV trumps any other settings
-    auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
-        trusted_auth_server_configs=[
-            {
-                "auth_server": os.getenv("MY_TRUSTED_ISSUER_PRIMARY"),
-                "audiences": [os.getenv("MY_TRUSTED_AUDIENCE_PRIMARY")],
-            },
-            {
-                "auth_server": os.getenv("MY_TRUSTED_ISSUER_DEPRECATED"),
-                "audiences": [os.getenv("MY_TRUSTED_AUDIENCE_DEPRECATED")],
-            }
-        ],
-    )
+auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
+    trusted_auth_server_configs=[
+        {
+            "auth_server": os.getenv("MY_TRUSTED_ISSUER_PRIMARY"),
+            "audiences": [os.getenv("MY_TRUSTED_AUDIENCE_PRIMARY")],
+        },
+        {
+            "auth_server": os.getenv("MY_TRUSTED_ISSUER_DEPRECATED"),
+            "audiences": [os.getenv("MY_TRUSTED_AUDIENCE_DEPRECATED")],
+        },
+    ],
+)
 
 
 #############################################################################

@@ -1,4 +1,4 @@
-from planet_auth import Auth
+import planet_auth
 import planet_auth_config  # type: ignore
 
 
@@ -8,7 +8,9 @@ def main():
         "client_type": "planet_legacy",
     }
     # Be careful where you save the token file
-    auth_ctx = Auth.initialize_from_config_dict(client_config=_legacy_client_config, token_file="/saved_token.json")
+    auth_ctx = planet_auth.Auth.initialize_from_config_dict(
+        client_config=_legacy_client_config, token_file="/saved_token.json"
+    )
     auth_ctx.login(allow_tty_prompt=True)
 
 

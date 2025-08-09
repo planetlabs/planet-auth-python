@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -255,12 +255,11 @@ class AuthClient(ABC):
         Authentication parameters are specific to each implementation. Consult
         subclass documentation for details.
 
-        Args:
+        Parameters:
             allow_open_browser: specify whether login is permitted to open
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
                 input from the terminal.
-
         Returns:
             Upon successful login, a Credential will be returned. The returned
                 value will be in memory only. It is the responsibility of the
@@ -290,7 +289,7 @@ class AuthClient(ABC):
         """
         Complete a login process that was initiated by a call to `device_login_initiate()`.
 
-        Args:
+        Parameters:
             initiated_login_data: The dictionary that was returned by `device_login_initiate()`
 
         Returns:

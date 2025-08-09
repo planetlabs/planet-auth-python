@@ -6,17 +6,22 @@ import planet_auth_utils
 
 logging.basicConfig(level=logging.DEBUG)
 
+# TODO: This example does not show how the application may use built-in profile
+#     dependency injection to provide a smooth user experience when using an
+#     OAuth sevice account that is defined by a client ID and client secret.
 
-# TODO: Update (look at current planet SDK)
+
 @click.group(help="my cli main help message")
 @planet_auth_utils.opt_profile
-@planet_auth_utils.opt_token_file
+@planet_auth_utils.opt_client_id()
+@planet_auth_utils.opt_client_secret()
 @click.pass_context
-def my_cli_main(ctx, auth_profile, token_file):
+def my_cli_main(ctx, auth_profile, auth_client_id, auth_client_secret):
     ctx.ensure_object(dict)
     ctx.obj["AUTH"] = planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context(
         auth_profile_opt=auth_profile,
-        token_file_opt=token_file,
+        auth_client_id_opt=auth_client_id,
+        auth_client_secret_opt=auth_client_secret,
     )
 
 

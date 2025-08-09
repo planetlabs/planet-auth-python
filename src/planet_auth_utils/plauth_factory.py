@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ from planet_auth_utils.constants import EnvironmentVariables
 from planet_auth.logging.auth_logger import getAuthLogger
 
 auth_logger = getAuthLogger()
+_PL_API_KEY_ADHOC_PROFILE_NAME = "_PL_API_KEY"
 
 
 class PlanetAuthFactory:
@@ -110,6 +111,7 @@ class PlanetAuthFactory:
             profile_name=normalized_selected_profile, overide_path=token_file_opt, save_token_file=save_token_file  # type: ignore
         )
 
+        auth_logger.debug(msg=f"Initializing Auth from profile {normalized_selected_profile}")
         return Auth.initialize_from_config(
             client_config=auth_client_config,
             token_file=token_file_path,
@@ -143,6 +145,7 @@ class PlanetAuthFactory:
             profile_name=adhoc_profile_name, overide_path=token_file_opt, save_token_file=save_token_file
         )
 
+        auth_logger.debug(msg=f"Initializing Auth for service account {m2m_realm_name}:{client_id}")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=token_file_path,
@@ -169,6 +172,7 @@ class PlanetAuthFactory:
             profile_name=profile_name, overide_path=None, save_token_file=save_token_file
         )
 
+        auth_logger.debug(msg="Initializing Auth from provided configuration")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=client_config,
             initial_token_data=initial_token_data,
@@ -215,7 +219,8 @@ class PlanetAuthFactory:
             "api_key": api_key,
             "bearer_token_prefix": PlanetLegacyRequestAuthenticator.TOKEN_PREFIX,
         }
-        adhoc_profile_name = "_PL_API_KEY"
+        adhoc_profile_name = _PL_API_KEY_ADHOC_PROFILE_NAME
+        auth_logger.debug(msg="Initializing Auth from API key")
         plauth_context = Auth.initialize_from_config_dict(
             client_config=constructed_client_config_dict,
             token_file=None,
@@ -239,6 +244,8 @@ class PlanetAuthFactory:
         # TODO?: initial_token_data: dict = None,
         save_token_file: bool = True,
         save_profile_config: bool = False,
+        use_env: bool = True,
+        use_configfile: bool = True,
         # Not supporting custom storage providers at this time.
         # The preferred behavior of Profiles with custom storage providers is TBD.
         # storage_provider: Optional[ObjectStorageProvider] = None,
@@ -249,41 +256,44 @@ class PlanetAuthFactory:
         Between built-in profiles to interactively login users, customer or third party
         registered OAuth clients and corresponding custom profiles that may be saved on disk,
         OAuth service account profiles, and static API keys, there are a number of
-        ways to configure how an application build with this library should authenticate
-        requests made to the service.  Add to this, configration may come from explict
-        parameters set by the user, environment variables, or configuration files, and the
-        number of possibilities rises.
+        ways to configure how an application built with this library should authenticate
+        requests made to the service.  Add to this configration may come from explict
+        parameters set by the user, environment variables, configuration files, or values
+        hard-coded by the application developer, and the number of possibilities rises.
 
         This helper function is provided to help build applications with a consistent
         user experience when sharing auth context with the CLI.  This function
-        does not at this time support using custom storage providers.
+        does not support using custom storage providers at this time.
 
-        Arguments to this function are taken to be explicitly set by the user, and are
-        given the highest priority.  Internally, the priority used for the source of
-        any particular configuration values is, from highest to lowest priority, as follows:
-            - Arguments to this function.
-            - Environment variables.
-            - Values from configuration file.
-            - Built-in defaults.
+        Arguments to this function are taken to be explicitly set by the user or
+        application developer, and are given the highest priority.  Internally, the
+        priority used for the source of any particular configuration values is, from
+        highest to lowest priority, as follows:
+
+        - Arguments to this function.
+        - Environment variables.
+        - Values from configuration file.
+        - Built-in defaults.
 
         In constructing the returned Auth context, the following priority is applied, from
         highest to lowest:
-            - A user selected auth profile, as specified by `auth_profile_opt`. This may either
-              specify a built-in profile name, or a fully custom profile defined by files in
-              a `~/.planet/<profile name>` directory.
-            - A user selected OAuth service account, as specified by `auth_client_id_opt` and `auth_client_secret_opt`.
-            - A user specified API key, as specified by `auth_api_key_opt`
-            - A user selected auth profile, as determined from either environment variables or config files.
-            - A user selected OAuth service account, as determined from either environment variables or config files.
-            - A user selected API key, as determined from either environment variables or config files.
-            - A built-in default auth profile, which may require interactive user authentication.
+
+        - A user selected auth profile, as specified by `auth_profile_opt`. This may either
+          specify a built-in profile name, or a fully custom profile defined by files in
+          a `~/.planet/<profile name>` directory.
+        - A user selected OAuth service account, as specified by `auth_client_id_opt` and `auth_client_secret_opt`.
+        - A user specified API key, as specified by `auth_api_key_opt`
+        - A user selected auth profile, as determined from either environment variables or config files.
+        - A user selected OAuth service account, as determined from either environment variables or config files.
+        - A user selected API key, as determined from either environment variables or config files.
+        - A built-in default auth profile, which may require interactive user authentication.
 
         Example:
             ```python
             @click.group(help="my cli main help message")
-            @opt_auth_profile
-            @opt_auth_client_id
-            @opt_auth_client_secret
+            @opt_auth_profile()
+            @opt_auth_client_id()
+            @opt_auth_client_secret()
             @click.pass_context
             def my_cli_main(ctx, auth_profile, auth_client_id, auth_client_secret):
                 ctx.ensure_object(dict)
@@ -292,6 +302,23 @@ class PlanetAuthFactory:
                 )
                 # Click program may now use the auth context in all commands...
             ```
+
+        Parameters:
+            auth_profile_opt: The name of a built-in or custom profile to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_client_id_opt: The client ID of a registered OAuth client to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_client_secret_opt: The client secret of a registered OAuth client to use for authentication.
+                This option should reflect the explict choice of the user or application developer.
+            auth_api_key_opt: The API key to use for authentication. Deprecated.
+                This option should reflect the explict choice of the user or application developer.
+            token_file_opt: The path to a file to store the access token.
+                This options should not generally be used, and may be removed in the future.
+            save_token_file: Whether to save the access token to disk.  If `False`, in-memory
+                operation will be used, and login sessions will not be persisted locally.
+            save_profile_config: Whether to save the profile configuration to disk.
+            use_env: Whether to use environment variables to determine configuration values.
+            use_configfile: Whether to use configuration files to determine configuration values.
         """
         #
         # Initialize from explicit user selected options
@@ -326,6 +353,8 @@ class PlanetAuthFactory:
         effective_user_selected_profile = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_PROFILE,
             override_value=auth_profile_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_profile:
             try:
@@ -345,10 +374,14 @@ class PlanetAuthFactory:
         effective_user_selected_client_id = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_CLIENT_ID,
             override_value=auth_client_id_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         effective_user_selected_client_secret = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_CLIENT_SECRET,
             override_value=auth_client_secret_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_client_id and effective_user_selected_client_secret:
             return PlanetAuthFactory._init_context_from_oauth_svc_account(
@@ -363,6 +396,8 @@ class PlanetAuthFactory:
         effective_user_selected_api_key = user_config_file.effective_conf_value(
             config_key=EnvironmentVariables.AUTH_API_KEY,
             override_value=auth_api_key_opt,
+            use_env=use_env,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_api_key:
             return PlanetAuthFactory._init_context_from_api_key(
@@ -370,9 +405,10 @@ class PlanetAuthFactory:
             )
 
         effective_user_selected_api_key = user_config_file.effective_conf_value(
-            config_key="key",  # For backwards compatibility
+            config_key="key",  # For backwards compatibility, we know the old SDK used this in json files.
             override_value=auth_api_key_opt,
             use_env=False,
+            use_configfile=use_configfile,
         )
         if effective_user_selected_api_key:
             return PlanetAuthFactory._init_context_from_api_key(
@@ -411,6 +447,20 @@ class PlanetAuthFactory:
         with the plauth CLI utility.  If a custom storage provider
         is supplied, sessions will not be visible to the plauth
         CLI tools.
+
+        Parameters:
+            client_config: The client configuration dictionary to use for authentication.
+            profile_name: The name of the profile to use for the created auth context.
+            initial_token_data: Optional initial token data to use for authentication.
+                This may be used to pass in previously saved login state.
+            save_token_file: Whether to save the access token to disk using the storage provider.
+                If `False`, in-memory operation will be used, and login sessions will not be
+                persisted.
+            save_profile_config: Whether to save the profile configuration to disk using
+                the storage provider.
+            storage_provider: Optional custom storage provider for session persistence.
+                If not provided, a default storage provider will be used that utilizes
+                the user's home directory for storage.
         """
         return PlanetAuthFactory._init_context_from_client_config(
             client_config=client_config,
@@ -431,12 +481,17 @@ class PlanetAuthFactory:
         use by a resource server to validate access tokens in the
         specified deployment environment.
 
-        The passed `environment` must be one of `"production"`, `"staging"`,
-        or `"custom"`. `environment` is case-insensitive.
-
         If `"custom"` is selected, trusted_auth_server_configs` must also be specified.
         If custom is not selected, the aforementioned argument will be ignored.
         See `OidcMultiIssuerValidator.from_auth_server_configs` for more info.
+
+        Parameters:
+            environment: Specify a built-in environment to use for the validator.
+                Valid environments are defined by built-in profile provider implemented
+                by the application developer.
+            trusted_auth_server_configs: A list of trusted auth server configurations
+                to use if the environment is one designated as a custom environment
+                by the built-in profile provider implemented by the application developer.
         """
         if not environment:
             raise ValueError(f"Passed environment must be one of {Builtins.builtin_environment_names()}.")

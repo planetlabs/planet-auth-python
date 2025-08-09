@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
         flow with PKCE.  The Auth Code flow is inherently user interactive,
         and one of allow_tty_prompt or allow_open_browser must be true.
 
-        Args:
+        Parameters:
             allow_open_browser: specify whether login is permitted to open
                 a browser window.
             allow_tty_prompt: specify whether login is permitted to request
@@ -131,6 +131,9 @@ class AuthCodeAuthClientBase(OidcAuthClientWithRefreshingOidcTokenRequestAuthent
         Returns:
             A FileBackedOidcCredential object
         """
+
+        self._warn_password_kwarg(**kwargs)
+        self._warn_ignored_kwargs(["username", "password", "client_id", "client_secret"], **kwargs)
 
         pkce_code_verifier, pkce_code_challenge = create_pkce_challenge_verifier_pair()
         if allow_open_browser:

@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ from planet_auth.auth_client import AuthClientConfig
 from planet_auth.constants import (
     AUTH_CONFIG_FILE_SOPS,
     AUTH_CONFIG_FILE_PLAIN,
+    PROFILE_DIR,
 )
 from planet_auth.storage_utils import ObjectStorageProvider
 
@@ -43,13 +44,13 @@ class Profile:
         """
         Root storage directory used for profile data.
         """
-        # return pathlib.Path.home().joinpath(".planet")
+        # return pathlib.Path.home().joinpath(PROFILE_DIR)
         # We used to assume file storage.  We now support pluggable storage implementation.
         # We let the storage provider determine the real path (if there is one) and in this
         # Profile class we now (mostly) deal in the abstract idea of the path as an object
         # identifier that may or may not be file system based, depending on the storage
         # provider in use.
-        return pathlib.Path(".planet")
+        return pathlib.Path(PROFILE_DIR)
 
     @staticmethod
     def get_profile_dir_path(profile: str) -> pathlib.Path:

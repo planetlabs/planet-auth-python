@@ -1,4 +1,4 @@
-# Copyright 2024 Planet Labs PBC.
+# Copyright 2024-2025 Planet Labs PBC.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,5 +19,6 @@ AUTH_CONFIG_FILE_SOPS = "auth_client.sops.json"
 TOKEN_FILE_PLAIN = "token.json"
 TOKEN_FILE_SOPS = "token.sops.json"
 USER_CONFIG_FILE = ".planet.json"
+PROFILE_DIR = ".planet"
 X_PLANET_APP = f"planet-auth-library-{importlib.metadata.version('planet-auth')}"
 X_PLANET_APP_HEADER = "X-Planet-App"
