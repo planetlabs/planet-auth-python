@@ -1,6 +1,9 @@
 # Changelog
 
-## 2.1.0 - 2025-??-??
+## 2.1.1 - 2025-XX-XX
+- Typing fixes
+
+## 2.1.0 - 2025-07-09
 - Initial public release targeting integration with the
   [Planet Client for Python](https://github.com/planetlabs/planet-client-python).
 
