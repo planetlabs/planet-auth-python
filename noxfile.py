@@ -180,7 +180,7 @@ def mkdocs_build(session):
 def mkdocs_checklinks(session):
     """Check links in the documentation"""
     session.install("-e", ".[docs]")
-    session.run("mkdocs-linkcheck", "-v", "-r", "docs")
+    session.run("mkdocs-linkcheck", "-v", "-r", "--sync", "docs")
 
 
 @nox.session(python=_DEFAULT_PYTHON)

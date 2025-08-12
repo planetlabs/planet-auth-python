@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.1 - 2025-08-11
+- Add py.typed to all top level packages
+
 ## 2.1.0 - 2025-07-09
 - Initial public release targeting integration with the
   [Planet Client for Python](https://github.com/planetlabs/planet-client-python).
