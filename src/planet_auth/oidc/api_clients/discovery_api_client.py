@@ -30,6 +30,7 @@ class DiscoveryApiClient(OidcApiClient):
 
     # TODO: Revisit if this is where I should cache. I did work
     #       on the JWKS client after this, and I think it is more mature.
+    # TODO - different kinds of discovery - Protected resource, OIDC, OAuth
     def __init__(self, discovery_uri: Optional[str] = None, auth_server: Optional[str] = None):
         """
         Create a new OIDC discovery API client.
