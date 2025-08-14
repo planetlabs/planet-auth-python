@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.2.0 - Unreleased
+- Enhanced jwt utilities
+
 ## 2.1.0 - 2025-07-09
 - Initial public release targeting integration with the
   [Planet Client for Python](https://github.com/planetlabs/planet-client-python).
