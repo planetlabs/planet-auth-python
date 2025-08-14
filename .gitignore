@@ -16,4 +16,5 @@ site
 *.venv
 venv*
 version-with-buildnum.txt
+.vscode
 __pycache__
