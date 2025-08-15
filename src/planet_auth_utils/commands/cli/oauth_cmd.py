@@ -26,6 +26,7 @@ from planet_auth import (
 from .options import (
     opt_audience,
     opt_client_id,
+    opt_client_name,
     opt_client_secret,
     opt_extra,
     opt_human_readable,
@@ -33,6 +34,7 @@ from .options import (
     opt_organization,
     opt_password,
     opt_project,
+    opt_redirect_uris,
     opt_refresh,
     opt_scope,
     opt_qr_code,
@@ -436,3 +438,19 @@ def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
     """
     saved_token = FileBackedOidcCredential(None, ctx.obj["AUTH"].token_file_path())
     hazmat_print_jwt(saved_token.refresh_token(), human_readable=human_readable)
+
+
+@cmd_oauth.command("client-register")
+@click.pass_context
+@opt_client_name(required=True)
+@opt_redirect_uris(required=True)
+@recast_exceptions_to_click(AuthException)
+def cmd_oauth_client_register(ctx, client_name, redirect_uris):
+    """
+    Register a new OAuth client using dynamic client registration.
+    """
+    reg_client = ctx.obj["AUTH"].auth_client().registration_client()
+    new_client = reg_client.register_client(name=client_name, redirect_uris=redirect_uris, token_auth_method="none")
+    print_obj(new_client)
+    # TODO: write a profile
+    # TODO: prompt to set as default profile?

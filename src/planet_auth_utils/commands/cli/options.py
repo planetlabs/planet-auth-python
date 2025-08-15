@@ -98,6 +98,30 @@ def opt_client_id(
     return decorator
 
 
+def opt_client_name(
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_NAME
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying an OAuth client name.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--client-name",
+            type=str,
+            envvar=envvar,
+            help="Specify the OAuth client name.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=False,
+            required=required,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
 def opt_client_secret(
     default=None, hidden: bool = False, envvar: Optional[str] = EnvironmentVariables.AUTH_CLIENT_SECRET
 ) -> _click_option_decorator_type:
@@ -371,6 +395,33 @@ def opt_qr_code(default=False, hidden: bool = False) -> _click_option_decorator_
             help="Control whether a QR code is displayed for the user.",
             default=default,
             show_default=True,
+            hidden=hidden,
+        )(function)
+        return function
+
+    return decorator
+
+
+def opt_redirect_uris(
+    default=None, hidden: bool = False, required=False, envvar: Optional[str] = EnvironmentVariables.AUTH_REDIRECT_URIS
+) -> _click_option_decorator_type:
+    """
+    Click option for specifying redirect URIs.
+    """
+
+    def decorator(function) -> _click_option_decorator_type:
+        function = click.option(
+            "--redirect-uris",
+            multiple=True,
+            type=str,
+            envvar=envvar,
+            help="Redirect URIs.  Specify multiple options to specify"
+            " multiple URIs.  When set via environment variable, URIs"
+            " should be white space delimited.",
+            default=default,
+            show_envvar=bool(envvar),
+            show_default=True,
+            required=required,
             hidden=hidden,
         )(function)
         return function

@@ -59,6 +59,14 @@ class EnvironmentVariables:
         return cls._namespace_variable("PL_AUTH_CLIENT_ID")
 
     @classproperty
+    def AUTH_CLIENT_NAME(cls):  # pylint: disable=no-self-argument
+        """
+        Client Name for an OAuth client
+        """
+        return cls._namespace_variable("PL_AUTH_CLIENT_NAME")
+
+
+    @classproperty
     def AUTH_CLIENT_SECRET(cls):  # pylint: disable=no-self-argument
         """
         Client Secret for an OAuth service account
@@ -131,6 +139,14 @@ class EnvironmentVariables:
         Only used for some authentication mechanisms.
         """
         return cls._namespace_variable("PL_AUTH_PASSWORD")
+
+    @classproperty
+    def AUTH_REDIRECT_URIS(cls):  # pylint: disable=no-self-argument
+        """
+        Client redirect URIs.
+        Only used for some authentication mechanisms.
+        """
+        return cls._namespace_variable("PL_AUTH_REDIRECT_URIS")
 
     @classproperty
     def AUTH_SCOPE(cls):  # pylint: disable=no-self-argument

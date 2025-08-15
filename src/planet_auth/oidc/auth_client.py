@@ -27,6 +27,7 @@ from planet_auth.oidc.token_validator import TokenValidator
 from planet_auth.oidc.api_clients.revocation_api_client import RevocationApiClient
 from planet_auth.oidc.api_clients.userinfo_api_client import UserinfoApiClient
 from planet_auth.oidc.api_clients.token_api_client import TokenApiClient
+from planet_auth.oidc.api_clients.dynamic_client_registration_client import DynamicClientRegistrationApiClient
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
 import planet_auth.logging.auth_logger
 
@@ -55,6 +56,7 @@ class OidcAuthClientConfig(AuthClientConfig, ABC):
         revocation_endpoint: str = None,
         userinfo_endpoint: str = None,
         token_endpoint: str = None,
+        registraton_endpoint: str = None,
         authorization_callback_acknowledgement: str = None,
         authorization_callback_acknowledgement_file: str = None,
         **kwargs,
@@ -77,6 +79,7 @@ class OidcAuthClientConfig(AuthClientConfig, ABC):
         self._data["revocation_endpoint"] = revocation_endpoint
         self._data["userinfo_endpoint"] = userinfo_endpoint
         self._data["token_endpoint"] = token_endpoint
+        self._data["registration_endpoint"] = registraton_endpoint
 
         # Loaded JIT. Not in the serialized self._data representation.
         self._authorization_callback_acknowledgement_data: Optional[str] = None
@@ -159,6 +162,9 @@ class OidcAuthClientConfig(AuthClientConfig, ABC):
     def token_endpoint(self) -> str:
         return self.lazy_get("token_endpoint")
 
+    def registration_endpoint(self) -> str:
+        return self.lazy_get("registration_endpoint")
+
     def _lazy_load_authorization_callback_acknowledgement(self):
         # TODO: handle refresh if the file has changed?
         if not self._authorization_callback_acknowledgement_data:
@@ -210,6 +216,7 @@ class OidcAuthClient(AuthClient, ABC):
         self.__introspection_client = None
         self.__revocation_client = None
         self.__userinfo_client = None
+        self.__registration_client = None
         self.__jwks_client = None
         self.__token_validator = None
         self.__issuer = None
@@ -253,7 +260,7 @@ class OidcAuthClient(AuthClient, ABC):
             self.__token_validator = TokenValidator(self.jwks_client())
         return self.__token_validator
 
-    def authorization_client(self):
+    def authorization_client(self) -> AuthorizationApiClient:
         if not self.__authorization_client:
             if self._oidc_client_config.authorization_endpoint():
                 auth_endpoint = self._oidc_client_config.authorization_endpoint()
@@ -269,7 +276,7 @@ class OidcAuthClient(AuthClient, ABC):
             )
         return self.__authorization_client
 
-    def device_authorization_client(self):
+    def device_authorization_client(self) -> DeviceAuthorizationApiClient:
         if not self.__device_authorization_client:
             if self._oidc_client_config.device_authorization_endpoint():
                 device_auth_endpoint = self._oidc_client_config.device_authorization_endpoint()
@@ -280,7 +287,7 @@ class OidcAuthClient(AuthClient, ABC):
             )
         return self.__device_authorization_client
 
-    def introspection_client(self):
+    def introspection_client(self) -> IntrospectionApiClient:
         if not self.__introspection_client:
             if self._oidc_client_config.introspection_endpoint():
                 introspection_endpoint = self._oidc_client_config.introspection_endpoint()
@@ -293,7 +300,7 @@ class OidcAuthClient(AuthClient, ABC):
             self.__introspection_client = IntrospectionApiClient(introspection_endpoint)
         return self.__introspection_client
 
-    def jwks_client(self):
+    def jwks_client(self) -> JwksApiClient:
         if not self.__jwks_client:
             if self._oidc_client_config.jwks_endpoint():
                 jwks_endpoint = self._oidc_client_config.jwks_endpoint()
@@ -306,7 +313,7 @@ class OidcAuthClient(AuthClient, ABC):
             self.__jwks_client = JwksApiClient(jwks_endpoint)
         return self.__jwks_client
 
-    def revocation_client(self):
+    def revocation_client(self) -> RevocationApiClient:
         if not self.__revocation_client:
             if self._oidc_client_config.revocation_endpoint():
                 revocation_endpoint = self._oidc_client_config.revocation_endpoint()
@@ -319,7 +326,7 @@ class OidcAuthClient(AuthClient, ABC):
             self.__revocation_client = RevocationApiClient(revocation_endpoint)
         return self.__revocation_client
 
-    def userinfo_client(self):
+    def userinfo_client(self) -> UserinfoApiClient:
         if not self.__userinfo_client:
             if self._oidc_client_config.userinfo_endpoint():
                 userinfo_endpoint = self._oidc_client_config.userinfo_endpoint()
@@ -332,7 +339,7 @@ class OidcAuthClient(AuthClient, ABC):
             self.__userinfo_client = UserinfoApiClient(userinfo_endpoint)
         return self.__userinfo_client
 
-    def token_client(self):
+    def token_client(self) -> TokenApiClient:
         if not self.__token_client:
             if self._oidc_client_config.token_endpoint():
                 token_endpoint = self._oidc_client_config.token_endpoint()
@@ -344,6 +351,20 @@ class OidcAuthClient(AuthClient, ABC):
                 )
             self.__token_client = TokenApiClient(token_endpoint)
         return self.__token_client
+
+    def registration_client(self) -> DynamicClientRegistrationApiClient:
+        if not self.__registration_client:
+            if self._oidc_client_config.registration_endpoint():
+                registration_endpoint = self._oidc_client_config.registration_endpoint()
+            else:
+                registration_endpoint = self._discovery().get("registration_endpoint")
+            if not registration_endpoint:
+                raise AuthClientException(
+                    message="Registration endpoint is not available for the current authorization server"
+                )
+            self.__registration_client = DynamicClientRegistrationApiClient(registration_endpoint)
+        return self.__registration_client
+
 
     # Note: I don't really like that auth_client knows about the HTTP-ness,
     #       that's the job of the API client classes to abstract.  It's

@@ -11,11 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException, _RequestParamsType, _RequestAuthType
-
 
 class DynamicClientRegistrationApiException(OidcApiClientException):
     def __init__(self, message=None, raw_response=None):
@@ -36,22 +34,26 @@ class DynamicClientRegistrationApiClient(OidcApiClient):
 
     @staticmethod
     def _check_dynamic_client_registration_response(json_response: Dict) -> Dict:
-        raise DynamicClientRegistrationApiException(message="Not implemented DCR protcol checks")
-        # TODO - protocol specific checks
+        if not json_response.get("client_id"):
+            raise DynamicClientRegistrationApiException(message="Missing client_id", raw_response=json_response)
         return json_response
 
     def _checked_dynamic_client_registration_call(
         self, request_params: _RequestParamsType, auth: Optional[_RequestAuthType]
     ) -> Dict:
-        json_response = self._checked_post_json_response(params=request_params, request_auth=auth)
+        json_response = self._checked_post_form_response_json(params=request_params, request_auth=auth)
         return self._check_dynamic_client_registration_response(json_response)
 
-    def register_client(self) -> Dict:
+    def register_client(self, name: str, redirect_uris: List[str], token_auth_method: str) -> Dict:
         """
         Register a new client using Dynamic Client Registration.
         """
         reg_payload = {
-            "foo": "bar"
+            "client_name": name,
+            "redirect_uris": redirect_uris,
+            "token_endpoint_auth_method": token_auth_method
         }
+        print(reg_payload)
+        # FIXME - this is not posting JSON.  It's posting application/x-www-form-urlencoded
         return self._checked_dynamic_client_registration_call(request_params=reg_payload, auth=None)
 
