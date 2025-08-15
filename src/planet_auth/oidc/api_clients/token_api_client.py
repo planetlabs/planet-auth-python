@@ -69,7 +69,7 @@ class TokenApiClient(OidcApiClient):
         if auth_enricher:
             token_params, request_auth = auth_enricher(token_params, self._endpoint_uri)
 
-        json_response = self._checked_post_json_response(token_params, request_auth)
+        json_response = self._checked_post_form_response_json(token_params, request_auth)
         self._check_valid_token_response(json_response)
         return json_response
 

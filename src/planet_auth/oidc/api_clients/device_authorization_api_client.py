@@ -87,7 +87,7 @@ class DeviceAuthorizationApiClient(OidcApiClient):
     def _checked_request_device_code_call(
         self, request_params: _RequestParamsType, request_auth: Optional[_RequestAuthType]
     ) -> Dict:
-        json_response = self._checked_post_json_response(request_params, request_auth)
+        json_response = self._checked_post_form_response_json(request_params, request_auth)
         return self._check_device_auth_response(json_response)
 
     def request_device_code(

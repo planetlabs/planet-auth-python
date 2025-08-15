@@ -65,7 +65,6 @@ class EnvironmentVariables:
         """
         return cls._namespace_variable("PL_AUTH_CLIENT_NAME")
 
-
     @classproperty
     def AUTH_CLIENT_SECRET(cls):  # pylint: disable=no-self-argument
         """

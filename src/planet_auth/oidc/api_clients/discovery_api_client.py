@@ -54,7 +54,7 @@ class DiscoveryApiClient(OidcApiClient):
         Contact the discovery endpoint, download discovery information, and cache the
         results inside the client.
         """
-        self._oidc_discovery = self._checked_get_json_response(None, None)
+        self._oidc_discovery = self._checked_get_response_json(None, None)
 
     def do_discovery_jit(self) -> None:
         """

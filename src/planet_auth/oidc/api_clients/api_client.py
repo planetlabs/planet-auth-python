@@ -72,7 +72,7 @@ class OidcApiClient(ABC):
                 raw_response=response,
             )
 
-    def __check_oidc_payload_json_error(self, response: _RequestResponseType) -> None:
+    def __check_oidc_payload_error(self, response: _RequestResponseType) -> None:
         if response.content:
             ct = parse_content_type(response.headers.get("content-type"))
             if not ct["content-type"] == "application/json":
@@ -100,28 +100,30 @@ class OidcApiClient(ABC):
                     raw_response=response,
                 )
 
-    @staticmethod
-    def __checked_json_response(response: _RequestResponseType) -> Dict:
+    def __check_json_response(self, response: _RequestResponseType) -> None:
         json_response = None
         if response.content:
             ct = parse_content_type(response.headers.get("content-type"))
             if not ct["content-type"] == "application/json":
                 raise OidcApiClientException(
-                    message='Expected json content-type, but got "{}"'.format(response.headers.get("content-type")),
+                    message='Error from OIDC endpoint at {}: Expected json content-type, but got "{}"'.format(
+                        self._endpoint_uri, response.headers.get("content-type")
+                    ),
                     raw_response=response,
                 )
             json_response = response.json()
         if not json_response:
             raise OidcApiClientException(
-                messsage="Response was not understood. Expected JSON response payload, but none was found.",
+                messsage="Error from OIDC endpoint at {}: Expected JSON response payload, but none was found.".format(
+                    self._endpoint_uri
+                ),
                 raw_response=response,
             )
-        return json_response
+        # return json_response
 
-    def __check_response(self, response: _RequestResponseType) -> None:
-        # Check for the json error first so we throw a more specific parsed
-        # error if we understand it, regardless of HTTP status code.
-        self.__check_oidc_payload_json_error(response)
+    def __check_response_baseline(self, response: _RequestResponseType) -> None:
+        # Check for the most specific errors first to throw most specific errors we can.
+        self.__check_oidc_payload_error(response)
         self.__check_http_error(response)
 
     def _checked_get(
@@ -133,17 +135,18 @@ class OidcApiClient(ABC):
             auth=request_auth,
             headers={"Accept": "application/json", X_PLANET_APP_HEADER: X_PLANET_APP},
         )
-        self.__check_response(response)
+        self.__check_response_baseline(response)
         return response
 
-    def _checked_post(
+    def _checked_post_form(
         self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
     ) -> _RequestResponseType:
+        # Note: It is perhaps confusing to call our data payload "params".
+        #     This was born out older iterations that posted OIDC params
+        #     in the URL (which is accepted by some implementations),
+        #     but sending data in the payload seems to be more universal.
         response = self._session.post(
             self._endpoint_uri,
-            # Note: is the data/params crossing confusing? This was born out
-            #       of some OIDC services accepting either in some cases,
-            #       and others not doing so.
             data=params,
             auth=request_auth,
             headers={
@@ -152,18 +155,22 @@ class OidcApiClient(ABC):
                 X_PLANET_APP_HEADER: X_PLANET_APP,
             },
         )
-        self.__check_response(response)
+        self.__check_response_baseline(response)
         return response
 
-    def _checked_post_json_response(
+    def _checked_post_form_response_json(
         self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
     ) -> Dict:
-        return self.__checked_json_response(self._checked_post(params, request_auth))
+        partially_checked_response = self._checked_post_form(params, request_auth)
+        self.__check_json_response(partially_checked_response)
+        return partially_checked_response.json()
 
-    def _checked_get_json_response(
+    def _checked_get_response_json(
         self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
     ) -> Dict:
-        return self.__checked_json_response(self._checked_get(params, request_auth))
+        partially_checked_response = self._checked_get(params, request_auth)
+        self.__check_json_response(partially_checked_response)
+        return partially_checked_response.json()
 
 
 class OidcApiClientException(AuthClientException):

@@ -13,7 +13,13 @@
 # limitations under the License.
 from typing import Dict, List, Optional
 
-from planet_auth.oidc.api_clients.api_client import OidcApiClient, OidcApiClientException, _RequestParamsType, _RequestAuthType
+from planet_auth.oidc.api_clients.api_client import (
+    OidcApiClient,
+    OidcApiClientException,
+    _RequestParamsType,
+    _RequestAuthType,
+)
+
 
 class DynamicClientRegistrationApiException(OidcApiClientException):
     def __init__(self, message=None, raw_response=None):
@@ -51,9 +57,8 @@ class DynamicClientRegistrationApiClient(OidcApiClient):
         reg_payload = {
             "client_name": name,
             "redirect_uris": redirect_uris,
-            "token_endpoint_auth_method": token_auth_method
+            "token_endpoint_auth_method": token_auth_method,
         }
         print(reg_payload)
         # FIXME - this is not posting JSON.  It's posting application/x-www-form-urlencoded
         return self._checked_dynamic_client_registration_call(request_params=reg_payload, auth=None)
-

@@ -365,7 +365,6 @@ class OidcAuthClient(AuthClient, ABC):
             self.__registration_client = DynamicClientRegistrationApiClient(registration_endpoint)
         return self.__registration_client
 
-
     # Note: I don't really like that auth_client knows about the HTTP-ness,
     #       that's the job of the API client classes to abstract.  It's
     #       difficult to entirely separate these concerns, since the high

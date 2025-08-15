@@ -36,7 +36,7 @@ class JwksApiClient(OidcApiClient):
         super().__init__(endpoint_uri=jwks_uri)
 
     def _checked_fetch(self):
-        return self._checked_get_json_response(None, None)
+        return self._checked_get_response_json(None, None)
 
     def jwks(self) -> Dict:
         """

@@ -72,7 +72,7 @@ class IntrospectionApiClient(OidcApiClient):
     def _checked_introspection_call(
         self, validate_params: _RequestParamsType, auth: Optional[_RequestAuthType]
     ) -> Dict:
-        json_response = self._checked_post_json_response(validate_params, auth)
+        json_response = self._checked_post_form_response_json(validate_params, auth)
         return self._check_introspection_response(json_response)
 
     def _validate_token(self, token: str, token_hint: str, auth_enricher: Optional[EnricherFuncType] = None) -> Dict:

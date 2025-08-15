@@ -39,7 +39,7 @@ class RevocationApiClient(OidcApiClient):
         super().__init__(endpoint_uri=revocation_uri)
 
     def _checked_revocation_call(self, params: _RequestParamsType, request_auth: Optional[_RequestAuthType]) -> None:
-        self._checked_post(params, request_auth)
+        self._checked_post_form(params, request_auth)
         # if response.content:
         #    # No payload expected on success. All HTTP and known json error
         #    # checks in base class.

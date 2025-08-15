@@ -34,7 +34,7 @@ class UserinfoApiClient(OidcApiClient):
         super().__init__(endpoint_uri=userinfo_uri)
 
     def _checked_userinfo_call(self, access_token: str) -> Dict:
-        return self._checked_get_json_response(params=None, request_auth=self.TokenBearerAuth(access_token))
+        return self._checked_get_response_json(params=None, request_auth=self.TokenBearerAuth(access_token))
 
     def userinfo_from_access_token(self, access_token: str) -> Dict:
         """
