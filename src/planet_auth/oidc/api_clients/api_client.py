@@ -23,6 +23,8 @@ from planet_auth.auth_client import AuthClientException
 from planet_auth.constants import X_PLANET_APP_HEADER, X_PLANET_APP
 from planet_auth.util import parse_content_type
 
+from . import http_debug
+
 EnricherPayloadType = Dict
 # EnricherAudType = str
 EnricherReturnType = Tuple[Dict, Optional[AuthBase]]
@@ -158,10 +160,37 @@ class OidcApiClient(ABC):
         self.__check_response_baseline(response)
         return response
 
+    def _checked_post_json(
+        self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
+    ) -> _RequestResponseType:
+        # Note: It is perhaps confusing to call our data payload "params".
+        #     This was born out older iterations that posted OIDC params
+        #     in the URL (which is accepted by some implementations),
+        #     but sending data in the payload seems to be more universal.
+        response = self._session.post(
+            self._endpoint_uri,
+            json=params,
+            auth=request_auth,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                X_PLANET_APP_HEADER: X_PLANET_APP,
+            },
+        )
+        self.__check_response_baseline(response)
+        return response
+
     def _checked_post_form_response_json(
         self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
     ) -> Dict:
         partially_checked_response = self._checked_post_form(params, request_auth)
+        self.__check_json_response(partially_checked_response)
+        return partially_checked_response.json()
+
+    def _checked_post_json_response_json(
+        self, params: Optional[_RequestParamsType], request_auth: Optional[_RequestAuthType]
+    ) -> Dict:
+        partially_checked_response = self._checked_post_json(params, request_auth)
         self.__check_json_response(partially_checked_response)
         return partially_checked_response.json()
 

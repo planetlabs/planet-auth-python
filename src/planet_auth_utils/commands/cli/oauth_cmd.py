@@ -16,6 +16,8 @@ import click
 import sys
 
 from planet_auth import (
+    AuthClientConfig,
+    AuthCodeClientConfig,
     AuthException,
     FileBackedOidcCredential,
     OidcAuthClient,
@@ -44,7 +46,7 @@ from .options import (
 )
 from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
 from .jwt_cmd import json_dumps_for_jwt_dict, hazmat_print_jwt
-
+from ...plauth_factory import PlanetAuthFactory
 
 def _check_client_type(ctx):
     if not isinstance(ctx.obj["AUTH"].auth_client(), OidcAuthClient):
@@ -443,14 +445,47 @@ def cmd_oauth_decode_jwt_refresh_token(ctx, human_readable):
 @cmd_oauth.command("client-register")
 @click.pass_context
 @opt_client_name(required=True)
-@opt_redirect_uris(required=True)
+@opt_redirect_uris(required=True, default=["http://localhost:9090/"])
 @recast_exceptions_to_click(AuthException)
 def cmd_oauth_client_register(ctx, client_name, redirect_uris):
     """
     Register a new OAuth client using dynamic client registration.
     """
-    reg_client = ctx.obj["AUTH"].auth_client().registration_client()
-    new_client = reg_client.register_client(name=client_name, redirect_uris=redirect_uris, token_auth_method="none")
-    print_obj(new_client)
-    # TODO: write a profile
+    # TODO: control creating the new client with an arg (maybe we do not want it)
+    # TODO: We only support registering public, non-confidential, auth code flow clients
+    # TODO: sops
+    # TODO: client secret handling
+    # TODO: fallback to current client scopes? Defer to server default?
+    _scopes = ["planet", "openid", "profile", "offline_access"]  # TODO - Args
+
+    auth_client = ctx.obj["AUTH"].auth_client()
+    new_client_oauth = auth_client.registration_client().register_client(name=client_name, redirect_uris=redirect_uris, token_auth_method="none")
+
+    # Bootstrap a new AuthClient config dict from the current client used to create the client.
+    auth_client_plauth_conf = auth_client.config().data()
+    new_client_plauth_conf = {
+        **{key: auth_client_plauth_conf[key] for key in set(auth_client_plauth_conf.keys()).intersection({"auth_server", "audiences"}) },
+        **{"redirect_uris": redirect_uris},
+        **{key: new_client_oauth[key] for key in set(new_client_oauth.keys()).intersection({"client_id", "redirect_uris"}) },
+    }
+
+    new_client_plauth_conf[AuthClientConfig.CLIENT_TYPE_KEY] = AuthCodeClientConfig.meta()["client_type"]
+    # A simplifying default assumption - the first callback URL is the one the lib should use.
+    _redirect_uris = new_client_plauth_conf.get("redirect_uris", [])
+    if len(_redirect_uris) > 0:
+        new_client_plauth_conf["redirect_uri"] = _redirect_uris[0]
+
+    print_obj(auth_client_plauth_conf)
+    print_obj(new_client_oauth)
+    print_obj(new_client_plauth_conf)
+
+    # Create a config so we can check.
+    new_auth_context = PlanetAuthFactory.initialize_auth_client_context_from_custom_config(
+        client_config=new_client_plauth_conf,
+        profile_name="test-dynamic-client",
+        save_token_file=True,
+        save_profile_config=True,
+    )
+
+    # TODO: write a profile  (Done by above)
     # TODO: prompt to set as default profile?

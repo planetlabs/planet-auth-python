@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from typing import Dict, List, Optional
+import uuid
 
 from planet_auth.oidc.api_clients.api_client import (
     OidcApiClient,
@@ -47,17 +48,33 @@ class DynamicClientRegistrationApiClient(OidcApiClient):
     def _checked_dynamic_client_registration_call(
         self, request_params: _RequestParamsType, auth: Optional[_RequestAuthType]
     ) -> Dict:
-        json_response = self._checked_post_form_response_json(params=request_params, request_auth=auth)
+        json_response = self._checked_post_json_response_json(params=request_params, request_auth=auth)
         return self._check_dynamic_client_registration_response(json_response)
 
     def register_client(self, name: str, redirect_uris: List[str], token_auth_method: str) -> Dict:
         """
         Register a new client using Dynamic Client Registration.
         """
+        _client_uri = "https://www.planet.com/"  # TODO - args
+        _grant_types = ["authorization_code", "refresh_token"]  # TODO - Args
+        _scopes = ["planet", "openid", "profile", "offline_access"]  # TODO - Args
+        _contacts = ["carl.adams@planet.com", "carlalex@overlords.com"]  # TODO - Args
+        _tos_uri = "https://www.planet.com/"  # TODO - args
+        _policy_uri = "https://www.planet.com/"  # TODO - args
+        _software_id = str(uuid.uuid4())  # TODO - args
+        _software_version = "0.0"  # TODO - args
         reg_payload = {
             "client_name": name,
+            "grant_types": _grant_types,
             "redirect_uris": redirect_uris,
+            "scope": " ".join(_scopes),
             "token_endpoint_auth_method": token_auth_method,
+            #
+            "client_uri": _client_uri,
+            "policy_uri": _policy_uri,
+            "software_id": _software_id,
+            "software_version": _software_version,
+            "tos_uri": _tos_uri,
         }
         print(reg_payload)
         # FIXME - this is not posting JSON.  It's posting application/x-www-form-urlencoded
