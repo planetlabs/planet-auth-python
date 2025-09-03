@@ -244,7 +244,7 @@ def setStructuredLogging(nested_key=DEFAULT_NESTED_KEY):
         nested_key : dict key in which to wrap the library's data logged under
             the `extra` field.  The default is to include all library logged
             extra fields encapsulated inside a dictionary with the single key
-            `props`.  This default was chosen to comform to the expectations of
+            `props`.  This default was chosen to conform to the expectations of
             the `json_logging` python module. For example, by default extra data
             will be submitted to the logger as
             `log(msg="log msg", extra={"props": {library_provided_extra_keys}})`.

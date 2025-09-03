@@ -92,6 +92,16 @@ class Builtins:
             Builtins._builtin = _load_builtins()
             auth_logger.debug(msg=f"Successfully loaded built-in provider: {Builtins._builtin.__class__.__name__}")
 
+    # TODO, or, you know, just have them pass the class directly, or provide both a
+    #   load_provider and load_provider_by_name method.
+    @staticmethod
+    def load_provider(provider_class: str):
+        new_provider = _load_builtins_worker(provider_class, log_warning=True)
+        if not new_provider:
+            raise BuiltinsException(message=f"Failed to load built-in provider: {provider_class}")
+        Builtins._builtin = new_provider
+        auth_logger.debug(msg=f"Successfully loaded built-in provider: {Builtins._builtin.__class__.__name__}")
+
     @staticmethod
     def namespace() -> str:
         Builtins._load_builtin_jit()
