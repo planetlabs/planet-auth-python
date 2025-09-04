@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.2.0 - 2025-10-01
+- Update supported python versions
+
 ## 2.1.1 - 2025-08-11
 - Add py.typed to all top level packages
 

@@ -3,7 +3,7 @@
 ## ###########################################################################
 [project]
 name = "planet-auth"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["version"]
 # version = "X.X.X"
 description = "Planet Auth Utility Code"
