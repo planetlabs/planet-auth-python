@@ -21,7 +21,7 @@ nox.options.sessions = [
 ]
 
 _DEFAULT_PYTHON = "3.13"
-_ALL_PYTHON = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+_ALL_PYTHON = ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
 
 
 @nox.session(python=_ALL_PYTHON)
