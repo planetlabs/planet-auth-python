@@ -12,19 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import jwt
+import time
 from typing import Optional
 
 from planet_auth.credential import Credential
 from planet_auth.storage_utils import InvalidDataException, ObjectStorageProvider
+from planet_auth.oidc.token_validator import TokenValidator, InvalidArgumentException
 
 
 class FileBackedOidcCredential(Credential):
     """
     Credential object for storing OAuth/OIDC tokens.
+    Credential should conform to the "token" response
+    defined in RFC 6749 for OAuth access tokens with OIDC extensions
+    for ID tokens.
     """
 
     def __init__(self, data=None, credential_file=None, storage_provider: Optional[ObjectStorageProvider] = None):
         super().__init__(data=data, file_path=credential_file, storage_provider=storage_provider)
+        self._augment_rfc6749_data()
 
     def check_data(self, data):
         """
@@ -35,6 +42,68 @@ class FileBackedOidcCredential(Credential):
             raise InvalidDataException(
                 message="'access_token', 'id_token', or 'refresh_token' not found in file {}".format(self._file_path)
             )
+
+    def _augment_rfc6749_data(self):
+        # TODO - I am depending on saving an explicit None for "never expires".  Check whether I allow this.
+        # TODO - Verify behavior when new fields do not exist.
+        # TODO - Check the none save-reload behavior
+        # TODO - unit test for all flavors of 0/null exp / iat in token data.
+        # RFC 6749 includes an optional "expires_in" expressing the lifespan of
+        # the token.  But without knowing when a token was issued it tells us
+        # nothing about whether a token is actually valid.
+        #
+        # This function lest us augment our representation of this data to
+        # make this credential useful when reconstructed from saved data
+        # at a time that is distant from when the token was obtained from the
+        # authorization server.
+        if not self._data:
+            return
+
+        if self._data.get("_iat") and self._data.get("_exp"):
+            return
+
+        access_token_str = self.access_token()
+        if not access_token_str:
+            return
+
+        try:
+            (_, hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
+        except InvalidArgumentException as e:
+            # Proceed as if it's not a JWT.
+            hazmat_body = None
+
+        if hazmat_body:
+            # For JWTs, inspect the token to get values
+            iat = hazmat_body.get("iat", None)
+            exp = hazmat_body.get("exp", None)
+        else:
+            # "expires_in" is only recommended by the RFC, not required.
+            # Without it, we can only guess when opaque tokens expire.
+            # Our guess is that it never expires.
+            now = int(time.time())
+            iat = self._data.get("_iat", now)
+            lifespan = self._data.get("expires_in", 0)
+            if lifespan > 0:
+                exp = iat + lifespan
+            else:
+                exp = None
+
+        # Edge case - It's possible that a JWT ID token has an expiration time
+        # that is different from the access token.
+        self._data["_iat"] = iat
+        self._data["_exp"] = exp
+        if exp is None:
+            self._data["_expiring"] = True
+        else:
+            self._data["_expiring"] = False
+
+    def set_data(self, data):
+        """
+        Set credential data for an OAuth/OIDC credential.  The data structure is expected
+        to be an RFC 6749 /token response structure.
+        """
+        super().set_data(data)
+        self._augment_rfc6749_data()
 
     def access_token(self):
         """
@@ -53,3 +122,9 @@ class FileBackedOidcCredential(Credential):
         Get the current refresh token.
         """
         return self.lazy_get("refresh_token")
+
+    def expiry_time(self):
+        return self.lazy_get("_exp")
+
+    def issued_time(self):
+        return self.lazy_get("_iat")

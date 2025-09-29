@@ -113,8 +113,60 @@ class Auth:
         For example, simple API key clients only need an API key in their
         configuration.  OAuth2 user clients need to have performed
         a user login and obtained access or refresh tokens.
+
+        Note: This will not detect when a credential is expired or
+        otherwise invalid.
         """
         return self._request_authenticator.is_initialized() or self._auth_client.can_login_unattended()
+
+    def draft_insure_ready(self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False):
+        """
+        Do everything necessary to insure the request authenticator is ready for use,
+        while still biasing towards not making unnecessary network requests
+        or prompts for user interaction.
+
+        This can be more complex than it sounds, given the variety of capabilities
+        of authentication client types.
+
+        There still may be conditions where we believe we are
+        ready, but requests will still ultimately fail.  For example, if
+        the auth context holds a static API key or username/password, it is
+        assumed to be ready but the credentials could be bad. Even when ready,
+        requests could fail for completely valid credentials if service
+        policy denies the request to the authenticated client.
+        """
+        # TODO: be careful about when we trigger calls.
+        #  Should we have a broader "is_ready()" or "insure_ready(allowed_tty, allowed_browser)"?
+        #  making ourselves ready is more than checking if the authenticator is ready.
+        #  if the authenticator isn't ready, making it ready may require the auth client.
+
+        def has_credential() -> bool:
+            # Does not do any JIT checks
+            return self._request_authenticator.is_initialized()
+
+        def can_obtain_credentials_unattended() -> bool:
+            # Does not do any JIT checks
+            return self._auth_client.can_login_unattended()
+
+        def is_not_expired() -> bool:
+            # Does not do any JIT check
+            return False
+
+        if has_credential() and is_not_expired():
+            return True
+
+        if can_obtain_credentials_unattended():
+            # Should we fetch one?  we do not because the bias is towards JIT operations.
+            # This so programs can initialize and not fail unless the credential is actually needed.
+            # TODO: make caller configurable. "do_credential_prefetch" arg?
+            return True
+
+        # TODO: attempt interaction-free refresh  ... if has_refresh() ... or try refresh()
+        # TODO: check how we implemented "refresh" vs "login" for flow that do not require
+        #     user interaction.  We should make them the same.
+
+        # TODO: attempt user-interactive login
+        return False
 
     def login(self, **kwargs) -> Credential:
         """

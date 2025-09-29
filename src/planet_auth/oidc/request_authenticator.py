@@ -53,29 +53,23 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._auth_client = auth_client
         self._refresh_at = 0
 
-    def _load(self):
+    def _load_and_prime(self):
         if self._credential.path():
             # allow in memory operation.
             self._credential.load()
 
-        access_token_str = self._credential.access_token()
-        # Absolutely not appropriate to not verify the signature in a token
-        # validation context (e.g. server side auth of a client). Here we
-        # know that's not what we are doing. This is a client helper class
-        # for clients who will be presenting tokens to such a server.  We
-        # are inspecting ourselves, not verifying for trust purposes.
-        # We are not expected to be the audience.
-        # TODO: we should use `expires_in` from the response from the
-        #    OAuth server, which would work for non-JWT opaque OAuth
-        #    tokens.  Since that is a relative time, we would also need
-        #    to augment our FileBackedOidcCredential with an issued
-        #    at time.
-        unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})  # nosemgrep
-        iat = unverified_decoded_atoken.get("iat") or 0
-        exp = unverified_decoded_atoken.get("exp") or 0
-        # refresh at the 3/4 life
+        self._token_body = self._credential.access_token()
+        # TODO - Continuity - Old token files won't have the augmented data, but they will expire.
+        #     Since they are JWTs, will it just work?
+        # TODO - should treat the expiry of the access and ID token separately?
+        # TODO - handle non-expiring tokens
+        # TODO - Test all flavors of missing times:
+        #     exp: None, iat: Any - Never expires
+        #     exp: time, iat: None - Expires at time. Refresh per fallback grace period.
+        #     exp: time: iat: time - Expires at time. Refresh at the 3/4 life.
+        iat = self._credential.issued_time() or 0
+        exp = self._credential.expiry_time() or 0
         self._refresh_at = int(iat + (3 * (exp - iat) / 4))
-        self._token_body = access_token_str
 
     def _refresh(self):
         if self._auth_client:
@@ -91,7 +85,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
 
             # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
-            self._load()
+            self._load_and_prime()
 
     def _refresh_if_needed(self):
         # Reload the file before refreshing. Another process might
@@ -110,7 +104,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         now = int(time.time())
         if now > self._refresh_at:
             try:
-                self._load()
+                self._load_and_prime()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
                     msg=f"Error loading auth token. Continuing with old configuration and token data. Load error: {str(e)}"
@@ -158,7 +152,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # has already taken place or a _load() is in progress, and we
         # should behave as  if we are finishing a _refresh() call.
         super().update_credential_data(new_credential_data=new_credential_data)
-        self._load()
+        self._load_and_prime()
 
     def credential(self, refresh_if_needed: bool = False) -> Optional[Credential]:
         if refresh_if_needed:
@@ -201,4 +195,4 @@ class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAu
 
             # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
-            self._load()
+            self._load_and_prime()

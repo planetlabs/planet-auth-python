@@ -257,9 +257,15 @@ class TokenValidator:
         return validated_claims
 
     @staticmethod
+    @InvalidArgumentException.recast(jwt.exceptions.DecodeError)
     def hazmat_unverified_decode(token_str):
-        # WARNING: Treat unverified token claims like toxic waste.
-        #          Nothing can be trusted until the token is verified.
+        """
+        Decide a JWT without verifying the signature or any claims.
+
+        !!! Warning
+            Treat unverified token claims with extreme caution.
+            Nothing can be trusted until the token is verified.
+        """
         unverified_complete = jwt.decode_complete(token_str, options={"verify_signature": False})  # nosemgrep
         return unverified_complete["header"], unverified_complete["payload"], unverified_complete["signature"]
 
