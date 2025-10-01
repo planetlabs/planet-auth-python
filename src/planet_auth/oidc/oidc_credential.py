@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import jwt
 import time
 from typing import Optional
 
@@ -59,50 +58,48 @@ class FileBackedOidcCredential(Credential):
         if not self._data:
             return
 
-        if self._data.get("_iat") and self._data.get("_exp"):
-            return
-
         access_token_str = self.access_token()
         if not access_token_str:
             return
 
         try:
-            (_, hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
-        except InvalidArgumentException as e:
+            (_, jwt_hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
+        except InvalidArgumentException:
             # Proceed as if it's not a JWT.
-            hazmat_body = None
+            jwt_hazmat_body = None
 
-        if hazmat_body:
-            # For JWTs, inspect the token to get values
-            iat = hazmat_body.get("iat", None)
-            exp = hazmat_body.get("exp", None)
+        # It's possible for the combination of a transparent bearer token,
+        # saved iat and exp values, and a expires_in value to be
+        # over-constrained.  We apply the following priority, from highest
+        # to lowest:
+        #     - Bearer token claims
+        #     - Saved values in the credential file
+        #     - Newly calculated values
+        # If a reasonable expiration time cannot be derived,
+        # tokens are assumed to never expire.
+        rfc6749_lifespan = self._data.get("expires_in", 0)
+        if jwt_hazmat_body:
+            _iat = jwt_hazmat_body.get("iat", self._data.get("_iat", int(time.time())))
+            _exp = jwt_hazmat_body.get("exp", self._data.get("_exp", None))
         else:
-            # "expires_in" is only recommended by the RFC, not required.
-            # Without it, we can only guess when opaque tokens expire.
-            # Our guess is that it never expires.
-            now = int(time.time())
-            iat = self._data.get("_iat", now)
-            lifespan = self._data.get("expires_in", 0)
-            if lifespan > 0:
-                exp = iat + lifespan
-            else:
-                exp = None
+            _iat = self._data.get("_iat", int(time.time()))
+            _exp = self._data.get("_exp", None)
+
+        if _exp is None and rfc6749_lifespan > 0:
+            _exp = _iat + rfc6749_lifespan
 
         # Edge case - It's possible that a JWT ID token has an expiration time
-        # that is different from the access token.
-        self._data["_iat"] = iat
-        self._data["_exp"] = exp
-        if exp is None:
-            self._data["_expiring"] = True
-        else:
-            self._data["_expiring"] = False
+        # that is different from the access token. We are really only tracking
+        # access token expiration at this time.
+        self._data["_iat"] = _iat
+        self._data["_exp"] = _exp
 
-    def set_data(self, data):
+    def set_data(self, data, copy_data: bool = True):
         """
         Set credential data for an OAuth/OIDC credential.  The data structure is expected
         to be an RFC 6749 /token response structure.
         """
-        super().set_data(data)
+        super().set_data(data, copy_data)
         self._augment_rfc6749_data()
 
     def access_token(self):
@@ -128,3 +125,9 @@ class FileBackedOidcCredential(Credential):
 
     def issued_time(self):
         return self.lazy_get("_iat")
+
+    def is_expiring(self) -> bool:
+        return self.expiry_time() is not None
+
+    def is_non_expiring(self) -> bool:
+        return not self.is_expiring()
