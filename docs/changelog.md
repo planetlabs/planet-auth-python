@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.0 - TBD
+- Improve the user experience around old stale sessions that appear to be
+  initialized, but are actually expired.
+- Save computed expiration time in token files.
+- Support non-expiring tokens.
+
 ## 2.1.1 - 2025-08-11
 - Add py.typed to all top level packages
 
