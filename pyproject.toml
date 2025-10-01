@@ -85,7 +85,7 @@ internal = [
 plauth = "planet_auth_utils.commands.cli.main:cmd_plauth"
 
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>=8", "wheel"]
+requires = ["setuptools>=80", "setuptools_scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
