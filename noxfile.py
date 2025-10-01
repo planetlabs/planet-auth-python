@@ -40,7 +40,7 @@ def pytest(session):
 @nox.session(python=_DEFAULT_PYTHON)
 def semgrep_src(session):
     """Scan the code for security problems with semgrep"""
-    session.install("-e", ".[test]")
+    session.install("-e", ".[testsecurity]")
     # session.run("semgrep", "scan", "--strict", "--verbose", "--error", "--junit-xml", "--junit-xml-output=semgrep-src.xml", "src")
     session.run("semgrep", "scan", "--strict", "--verbose", "--error", "src")
 

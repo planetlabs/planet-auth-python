@@ -69,8 +69,10 @@ test = [
     "pytest",
     "pytest-cov",
     "pytest-xdist",
-    "semgrep",
     "validators",
+]
+testsecurity = [
+    "semgrep",
 ]
 dev = [
     "planet-auth[test, docs, build]",
@@ -85,7 +87,7 @@ internal = [
 plauth = "planet_auth_utils.commands.cli.main:cmd_plauth"
 
 [build-system]
-requires = ["setuptools>=80", "setuptools_scm>=8", "wheel"]
+requires = ["setuptools >= 77.0.3", "setuptools_scm >= 8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
