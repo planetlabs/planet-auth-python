@@ -18,7 +18,7 @@ import logging
 import importlib.metadata
 
 from contextlib import suppress
-from typing import Dict
+from typing import Dict, Optional
 
 from .events import AuthEvent
 from planet_auth.auth_exception import AuthException, InvalidTokenException
@@ -234,14 +234,14 @@ def setPyLoggerForAuthLogger(py_logger: logging.Logger):
     _lib_global_py_logger = py_logger
 
 
-def setStructuredLogging(nested_key=DEFAULT_NESTED_KEY):
+def setStructuredLogging(nested_key: Optional[str] = DEFAULT_NESTED_KEY):
     """
     Configure the library to emit structured log messages.  When this
     mode is set, logs will be emitted specifying information using the logger's
     `extra` field.
 
     Parameters:
-        nested_key : dict key in which to wrap the library's data logged under
+        nested_key: dict key in which to wrap the library's data logged under
             the `extra` field.  The default is to include all library logged
             extra fields encapsulated inside a dictionary with the single key
             `props`.  This default was chosen to comform to the expectations of
