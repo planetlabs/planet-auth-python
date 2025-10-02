@@ -122,11 +122,29 @@ class Auth:
     def draft_insure_ready(self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False):
         """
         Do everything necessary to insure the request authenticator is ready for use,
-        while still biasing towards not making unnecessary network requests
-        or prompts for user interaction.
+        while still biasing towards just-in-time operations, not making
+        unnecessary network requests or prompts for user interaction.
 
-        This can be more complex than it sounds, given the variety of capabilities
-        of authentication client types.
+        This can be more complex than it sounds given the variations in the
+        capabilities of authentication clients and possible session states.
+        Client may be initialized with active sessions, initialized with stale
+        but still valid sessions, initialized with invalid or expired
+        sessions, or completely uninitialized. The process taken to ensure
+        client readiness with as little user disruption as possible
+        is as follows:
+
+        1. If the client has been logged in and has a non-expired
+           short term access token the client will be considered
+           ready without prompting the user or probing the network.
+        2. If the client has not been logged in and is a type that
+           can do so without prompting the user or probing the network.
+        3. If the client has been logged in and has an expired short
+           term access token the network will be probed to attempt
+           a refresh of the session.  If this fails, the user will
+           be prompted to perform a fresh login.
+        4. If the client has not been logged in and is a type that
+           requires a user interactive login a user interactive
+           login will be initiated.
 
         There still may be conditions where we believe we are
         ready, but requests will still ultimately fail.  For example, if
@@ -166,6 +184,9 @@ class Auth:
         #     user interaction.  We should make them the same.
 
         # TODO: attempt user-interactive login
+        # TODO: document the allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False) parames
+        #    through the login functions in this class.
+        # TODO: document parameters in pydocs
         return False
 
     def login(self, **kwargs) -> Credential:
