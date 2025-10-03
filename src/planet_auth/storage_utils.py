@@ -364,14 +364,17 @@ class FileBackedJsonObject:
             new_data = sparse_update_data
         self.set_data(new_data)
 
-    def set_data(self, data):
+    def set_data(self, data, copy_data: bool = True):
         """
         Set the current in memory data. The data will be checked for validity
         before in memory values are set.  Invalid data will result in an exception
         being thrown and no change being made to the in memory object.
         """
         self.check_data(data)
-        self._data = data.copy()
+        if copy_data:
+            self._data = data.copy()
+        else:
+            self._data = data
         self._load_time = int(time.time())
 
     def check_data(self, data):
@@ -459,9 +462,7 @@ class FileBackedJsonObject:
             return  # we now allow in memory operation.  Should we raise an error if the current data is invalid?
 
         new_data = self._object_storage_provider.load_obj(self._file_path)
-        self.check_data(new_data)
-        self._data = new_data
-        self._load_time = int(time.time())
+        self.set_data(new_data, copy_data=False)
 
     def lazy_load(self):
         """

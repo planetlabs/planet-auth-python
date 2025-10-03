@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.0 - TBD
+- Improve the user experience around old stale sessions that appear to be
+  initialized, but are actually expired.  This is done by providing the new
+  utility method `Auth.ensure_request_authenticator_is_ready()`.
+- Save computed expiration time and issued time in token files. This allows
+  for the persistence of this information when dealing with opaque tokens.
+- Support non-expiring tokens.
+
 ## 2.2.0 - 2025-10-02
 - Update supported python versions.
   Support for 3.9 dropped.  Support through 3.14 added.

@@ -104,12 +104,18 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
+
         validated_claims = under_test.validate_token(
             access_token,
             issuer=self.token_builder_1.issuer,
             audience=self.token_builder_1.audience,
         )
         self.assertEqual(TEST_TOKEN_USER, validated_claims["sub"])
+
+        u_header, u_body, _ = TokenValidator.hazmat_unverified_decode(access_token)
+        self.assertDictEqual(u_header, {"alg": "RS256", "kid": "test_keypair1", "typ": "JWT"})
+        self.assertEqual(u_body.get("aud"), "test_token_audience_for_keypair1")
+        self.assertEqual(u_body.get("sub"), "unit_test_user")
 
     def test_empty_access_token(self):
         # QE TC3, TC5
@@ -126,26 +132,36 @@ class TestTokenValidator(unittest.TestCase):
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode("")
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode(None)
 
     def test_malformed_token_1(self):
         # QE TC6 - just some random garbage.
         under_test = self.under_test_1
+        test_token = secrets.token_bytes(2048)
         with self.assertRaises(InvalidTokenException):
             under_test.validate_token(
-                token_str=secrets.token_bytes(2048),
+                token_str=test_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode(test_token)
 
     def test_malformed_token_2(self):
         # QE TC6 - just some random garbage, but URL safe.
         under_test = self.under_test_1
+        test_token = secrets.token_urlsafe(2048)
         with self.assertRaises(InvalidTokenException):
             under_test.validate_token(
-                token_str=secrets.token_urlsafe(2048),
+                token_str=test_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode(test_token)
 
     def test_malformed_token_3(self):
         # QE TC6 - random garbage, but has JWT three dot structure.
@@ -162,11 +178,14 @@ class TestTokenValidator(unittest.TestCase):
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode(fake_jwt)
 
     def test_malformed_token_4(self):
         # QE TC6 - random garbage, but looks more JWT like with encoded json.
         def _fake_token(header, body):
-            return "{}.{}.{}".format(
+            fake_sig_bytes = secrets.token_bytes(256)
+            fake_jwt = "{}.{}.{}".format(
                 str(
                     jwt.utils.base64url_encode(
                         bytes(
@@ -180,11 +199,12 @@ class TestTokenValidator(unittest.TestCase):
                     jwt.utils.base64url_encode(bytes(json.dumps(body), "utf-8")),
                     encoding="utf-8",
                 ),
-                str(jwt.utils.base64url_encode(secrets.token_bytes(256)), encoding="utf-8"),
+                str(jwt.utils.base64url_encode(fake_sig_bytes), encoding="utf-8"),
             )
+            return fake_jwt, fake_sig_bytes
 
         under_test = self.under_test_1
-        fake_jwt = _fake_token(
+        fake_jwt, fake_sig_bytes = _fake_token(
             {
                 "alg": self.token_builder_1.signing_key_algorithm,
                 "kid": self.token_builder_1.signing_key_id,
@@ -198,6 +218,13 @@ class TestTokenValidator(unittest.TestCase):
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+
+        # This is good enough for an unverified decode. It's still invalid, which is
+        # why you are careful with unverified decoded data.
+        u_header, u_body, u_sig = TokenValidator.hazmat_unverified_decode(fake_jwt)
+        self.assertDictEqual(u_header, {"alg": "RS256", "kid": "test_keypair1"})
+        self.assertDictEqual(u_body, {"fake_claim": "test claim value"})
+        self.assertEqual(u_sig, fake_sig_bytes)
 
     def test_malformed_token_missing_issuer(self):
         # QE TC14
@@ -287,6 +314,11 @@ class TestTokenValidator(unittest.TestCase):
                 audience=self.token_builder_1.audience,
             )
 
+        u_header, u_body, u_sig = TokenValidator.hazmat_unverified_decode(bad_jwt)
+        self.assertIsNotNone(u_header)
+        self.assertIsNotNone(u_body)
+        self.assertEqual(u_sig, b"")
+
     def test_missing_signature_2(self):
         # QE TC11 - JWT without a signature, and with no second "."
         def _bad_token(header, body):
@@ -321,6 +353,8 @@ class TestTokenValidator(unittest.TestCase):
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        with self.assertRaises(InvalidArgumentException):
+            TokenValidator.hazmat_unverified_decode(bad_jwt)
 
     def test_empty_issuer_arg(self):
         under_test = self.under_test_1
