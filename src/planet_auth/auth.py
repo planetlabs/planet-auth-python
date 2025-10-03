@@ -119,10 +119,12 @@ class Auth:
         """
         return self._request_authenticator.is_initialized() or self._auth_client.can_login_unattended()
 
-    def draft_insure_ready(self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False):
+    def ensure_request_authenticator_is_ready(
+        self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False
+    ) -> None:
         """
-        Do everything necessary to insure the request authenticator is ready for use,
-        while still biasing towards just-in-time operations, not making
+        Do everything necessary to ensure the request authenticator is ready for use,
+        while still biasing towards just-in-time operations and not making
         unnecessary network requests or prompts for user interaction.
 
         This can be more complex than it sounds given the variations in the
@@ -134,16 +136,21 @@ class Auth:
         is as follows:
 
         1. If the client has been logged in and has a non-expired
-           short term access token the client will be considered
+           short-term access token, the client will be considered
            ready without prompting the user or probing the network.
+           This will not require user interaction.
         2. If the client has not been logged in and is a type that
-           can do so without prompting the user or probing the network.
-        3. If the client has been logged in and has an expired short
-           term access token the network will be probed to attempt
-           a refresh of the session.  If this fails, the user will
-           be prompted to perform a fresh login.
-        4. If the client has not been logged in and is a type that
-           requires a user interactive login a user interactive
+           can do so without prompting the user or probing the network,
+           the client will be considered ready without prompting
+           the user or probing the network. This will not require
+           user interaction.  Login will be delayed until it is required.
+        3. If the client has been logged in and has an expired
+           short-term access token, the network will be probed to attempt
+           a refresh of the session. This should not require user interaction.
+           If refresh fails, the user will be prompted to perform a fresh login,
+           requiring user interaction.
+        4. If the client has never been logged in and is a type that
+           requires a user interactive login, a user interactive
            login will be initiated.
 
         There still may be conditions where we believe we are
@@ -152,44 +159,68 @@ class Auth:
         assumed to be ready but the credentials could be bad. Even when ready,
         requests could fail for completely valid credentials if service
         policy denies the request to the authenticated client.
-        """
-        # TODO: be careful about when we trigger calls.
-        #  Should we have a broader "is_ready()" or "insure_ready(allowed_tty, allowed_browser)"?
-        #  making ourselves ready is more than checking if the authenticator is ready.
-        #  if the authenticator isn't ready, making it ready may require the auth client.
 
-        def has_credential() -> bool:
+        Parameters:
+            allow_open_browser: specify whether login is permitted to open
+                a browser window.
+            allow_tty_prompt: specify whether login is permitted to request
+                input from the terminal.
+        """
+
+        def _has_credential() -> bool:
             # Does not do any JIT checks
             return self._request_authenticator.is_initialized()
 
-        def can_obtain_credentials_unattended() -> bool:
+        def _can_obtain_credentials_unattended() -> bool:
             # Does not do any JIT checks
             return self._auth_client.can_login_unattended()
 
-        def is_not_expired() -> bool:
+        def _is_expired() -> bool:
             # Does not do any JIT check
-            return False
-
-        if has_credential() and is_not_expired():
+            new_cred = self._request_authenticator.credential(refresh_if_needed=False)
+            if new_cred:
+                return new_cred.is_expired()
             return True
 
-        if can_obtain_credentials_unattended():
-            # Should we fetch one?  we do not because the bias is towards JIT operations.
-            # This so programs can initialize and not fail unless the credential is actually needed.
-            # TODO: make caller configurable. "do_credential_prefetch" arg?
-            return True
+        # Case #1 above.
+        if _has_credential() and not _is_expired():
+            return
 
-        # TODO: attempt interaction-free refresh  ... if has_refresh() ... or try refresh()
-        # TODO: check how we implemented "refresh" vs "login" for flow that do not require
-        #     user interaction.  We should make them the same.
+        # Case #2 above.
+        if _can_obtain_credentials_unattended():
+            # TODO? Should we fetch one?  We do not by default because the bias is towards
+            #  JIT operations and silent operations.  This so programs can initialize and
+            #  not fail for auth reasons unless the credential is actually needed.
+            return
 
-        # TODO: attempt user-interactive login
-        # TODO: document the allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False) parames
-        #    through the login functions in this class.
-        # TODO: document parameters in pydocs
-        return False
+        # Case #3 above.
+        if _has_credential() and _is_expired():
+            try:
+                # This takes care of making sure the authenticator's credential is
+                # current with the update. No further action needed on our part.
+                new_cred = self._request_authenticator.credential(refresh_if_needed=True)
+                if not new_cred:
+                    raise RuntimeError("Unable to refresh credentials.")
+                if new_cred.is_expired():
+                    raise RuntimeError("Refreshed credentials are still expired.")
+                return
+            except Exception as e:
+                auth_logger.warning(
+                    msg=f"Failed to refresh expired credentials (Error: {str(e)}).  Attempting interactive login."
+                )
+                # Fall through to case #4 below.
+                # self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
+                # return
 
-    def login(self, **kwargs) -> Credential:
+        # Case #4 above.
+        new_cred = self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
+        if not new_cred:
+            # Most login failures should raise their own more details exceptions.
+            raise RuntimeError("Unable to ready request authenticator.")
+
+    def login(
+        self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False, **kwargs
+    ) -> Credential:
         """
         Perform a login with the configured auth client.
         This higher level function will ensure that the token is saved to
@@ -197,8 +228,16 @@ class Auth:
         storage path.  Otherwise, the token will be held only in memory.
         In all cases, the request authenticator will also be updated with
         the new credentials.
+
+        Parameters:
+            allow_open_browser: specify whether login is permitted to open
+                a browser window.
+            allow_tty_prompt: specify whether login is permitted to request
+                input from the terminal.
         """
-        new_credential = self._auth_client.login(**kwargs)
+        new_credential = self._auth_client.login(
+            allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt, **kwargs
+        )
         new_credential.set_path(self._token_file_path)
         new_credential.set_storage_provider(self._storage_provider)
         new_credential.save()

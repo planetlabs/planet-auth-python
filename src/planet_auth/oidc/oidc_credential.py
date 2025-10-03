@@ -119,15 +119,3 @@ class FileBackedOidcCredential(Credential):
         Get the current refresh token.
         """
         return self.lazy_get("refresh_token")
-
-    def expiry_time(self):
-        return self.lazy_get("_exp")
-
-    def issued_time(self):
-        return self.lazy_get("_iat")
-
-    def is_expiring(self) -> bool:
-        return self.expiry_time() is not None
-
-    def is_non_expiring(self) -> bool:
-        return not self.is_expiring()

@@ -135,7 +135,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         Return the current credential.
 
         This may not be the credential the authenticator was constructed with.
-        Request Authenticators are free to refresh credentials depending in the
+        Request Authenticators are free to refresh credentials depending on the
         needs of the implementation.  This may happen upon this request,
         or may happen as a side effect of RequestAuthenticator operations.
         """

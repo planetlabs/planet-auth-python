@@ -160,6 +160,12 @@ class TestOidcCredential(unittest.TestCase):
         self.assertFalse(under_test.is_expiring())
         self.assertTrue(under_test.is_non_expiring())
 
+
+class TestBaseCredential(unittest.TestCase):
+    # Test the Credential base class functions using the OidcCredential derived class.
+    # The primary base class functionality under test is the IAT and EXP times
+    # and their persistence behavior.
+
     @freezegun.freeze_time(as_kwarg="frozen_time")
     def test_save_persists_computed_values_with_lifespan(self, frozen_time):
         tmp_dir = tempfile.TemporaryDirectory()
@@ -177,6 +183,10 @@ class TestOidcCredential(unittest.TestCase):
         )
         self.assertEqual(t0, under_test_1.issued_time())
         self.assertEqual(t0 + 1000, under_test_1.expiry_time())
+        self.assertTrue(under_test_1.is_expiring())
+        self.assertFalse(under_test_1.is_non_expiring())
+        self.assertFalse(under_test_1.is_expired())
+        self.assertTrue(under_test_1.is_not_expired())
         under_test_1.set_path(test_path)
         under_test_1.save()
 
@@ -185,6 +195,15 @@ class TestOidcCredential(unittest.TestCase):
         under_test_2 = FileBackedOidcCredential(data=None, credential_file=test_path)
         self.assertEqual(t0, under_test_2.issued_time())
         self.assertEqual(t0 + 1000, under_test_2.expiry_time())
+        self.assertTrue(under_test_2.is_expiring())
+        self.assertFalse(under_test_2.is_non_expiring())
+        self.assertFalse(under_test_2.is_expired())
+        self.assertTrue(under_test_2.is_not_expired())
+
+        frozen_time.tick(1000)
+
+        self.assertTrue(under_test_2.is_expired())
+        self.assertFalse(under_test_2.is_not_expired())
 
     @freezegun.freeze_time(as_kwarg="frozen_time")
     def test_save_persists_computed_values_without_lifespan(self, frozen_time):
@@ -202,6 +221,10 @@ class TestOidcCredential(unittest.TestCase):
         )
         self.assertEqual(t0, under_test_1.issued_time())
         self.assertIsNone(under_test_1.expiry_time())
+        self.assertFalse(under_test_1.is_expiring())
+        self.assertTrue(under_test_1.is_non_expiring())
+        self.assertFalse(under_test_1.is_expired())
+        self.assertTrue(under_test_1.is_not_expired())
         under_test_1.set_path(test_path)
         under_test_1.save()
 
@@ -210,3 +233,12 @@ class TestOidcCredential(unittest.TestCase):
         under_test_2 = FileBackedOidcCredential(data=None, credential_file=test_path)
         self.assertEqual(t0, under_test_2.issued_time())
         self.assertIsNone(under_test_2.expiry_time())
+        self.assertFalse(under_test_2.is_expiring())
+        self.assertTrue(under_test_2.is_non_expiring())
+        self.assertFalse(under_test_2.is_expired())
+        self.assertTrue(under_test_2.is_not_expired())
+
+        frozen_time.tick(1000)
+
+        self.assertFalse(under_test_2.is_expired())
+        self.assertTrue(under_test_2.is_not_expired())
