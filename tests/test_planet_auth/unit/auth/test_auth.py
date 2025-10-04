@@ -16,7 +16,7 @@ import pathlib
 import time
 import unittest
 from typing import List, Optional
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 from planet_auth.auth import Auth, Credential, CredentialRequestAuthenticator, AuthClientContextException
 from planet_auth.auth_client import AuthClient, AuthClientConfig, AuthClientException
@@ -179,8 +179,7 @@ class FakeRequestAuthenticator(CredentialRequestAuthenticator):
         self._auth_client = auth_client
 
     def pre_request_hook(self):
-        # self._refresh_if_needed()
-        super().pre_request_hook()
+        pass
 
     def _refresh_needed(self):
         if not self._credential:
