@@ -43,10 +43,6 @@ class FileBackedOidcCredential(Credential):
             )
 
     def _augment_rfc6749_data(self):
-        # TODO - I am depending on saving an explicit None for "never expires".  Check whether I allow this.
-        # TODO - Verify behavior when new fields do not exist.
-        # TODO - Check the none save-reload behavior
-        # TODO - unit test for all flavors of 0/null exp / iat in token data.
         # RFC 6749 includes an optional "expires_in" expressing the lifespan of
         # the token.  But without knowing when a token was issued it tells us
         # nothing about whether a token is actually valid.
@@ -55,15 +51,21 @@ class FileBackedOidcCredential(Credential):
         # make this credential useful when reconstructed from saved data
         # at a time that is distant from when the token was obtained from the
         # authorization server.
+        #
+        # Edge case - It's possible that a JWT ID token has an expiration time
+        # that is different from the access token. It's also possible that
+        # we have a refresh token and not any other tokens (this state could
+        # be used for bootstrapping). We are really only tracking
+        # access token expiration at this time.
         if not self._data:
             return
 
-        access_token_str = self.access_token()
-        if not access_token_str:
-            return
-
         try:
-            (_, jwt_hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
+            access_token_str = self.access_token()
+            if access_token_str:
+                (_, jwt_hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
+            else:
+                jwt_hazmat_body = None
         except InvalidArgumentException:
             # Proceed as if it's not a JWT.
             jwt_hazmat_body = None
@@ -88,9 +90,6 @@ class FileBackedOidcCredential(Credential):
         if _exp is None and rfc6749_lifespan > 0:
             _exp = _iat + rfc6749_lifespan
 
-        # Edge case - It's possible that a JWT ID token has an expiration time
-        # that is different from the access token. We are really only tracking
-        # access token expiration at this time.
         self._data["_iat"] = _iat
         self._data["_exp"] = _exp
 
