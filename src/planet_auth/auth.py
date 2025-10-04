@@ -18,6 +18,7 @@ import pathlib
 from typing import Optional, Union
 
 from planet_auth.auth_client import AuthClient, AuthClientConfig
+from planet_auth.auth_exception import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 from planet_auth.storage_utils import ObjectStorageProvider
@@ -25,9 +26,10 @@ from planet_auth.logging.auth_logger import getAuthLogger
 
 auth_logger = getAuthLogger()
 
-# class AuthClientContextException(AuthException):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
+
+class AuthClientContextException(AuthException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class Auth:
@@ -200,9 +202,9 @@ class Auth:
                 # current with the update. No further action needed on our part.
                 new_cred = self._request_authenticator.credential(refresh_if_needed=True)
                 if not new_cred:
-                    raise RuntimeError("Unable to refresh credentials.")
+                    raise RuntimeError("Unable to refresh credentials - Unknown error")
                 if new_cred.is_expired():
-                    raise RuntimeError("Refreshed credentials are still expired.")
+                    raise RuntimeError("Unable to refresh credentials - Refreshed credentials are still expired.")
                 return
             except Exception as e:
                 auth_logger.warning(
@@ -213,10 +215,7 @@ class Auth:
                 # return
 
         # Case #4 above.
-        new_cred = self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
-        if not new_cred:
-            # Most login failures should raise their own more details exceptions.
-            raise RuntimeError("Unable to ready request authenticator.")
+        self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
 
     def login(
         self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False, **kwargs
@@ -238,6 +237,10 @@ class Auth:
         new_credential = self._auth_client.login(
             allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt, **kwargs
         )
+        if not new_credential:
+            # AuthClient.login() is supposed to raise on failure.
+            raise AuthClientContextException(message="Unknown login failure. No credentials and no error returned.")
+
         new_credential.set_path(self._token_file_path)
         new_credential.set_storage_provider(self._storage_provider)
         new_credential.save()

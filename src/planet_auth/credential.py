@@ -82,7 +82,7 @@ class Credential(FileBackedJsonObject):
             at_time = int(time.time())
 
         exp = self.expiry_time()
-        return at_time >= exp  # type: ignore[operator]
+        return bool(at_time >= exp)  # type: ignore[operator]
 
     def is_not_expired(self, at_time: Optional[int] = None) -> bool:
         """

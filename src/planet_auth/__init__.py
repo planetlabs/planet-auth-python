@@ -56,7 +56,7 @@ The primary interfaces implemented for users of this package are as follows:
       class exists.
 """
 
-from .auth import Auth
+from .auth import Auth, AuthClientContextException
 from .auth_exception import AuthException
 from .auth_client import AuthClientConfig, AuthClient
 from .credential import Credential
@@ -145,6 +145,7 @@ __all__ = [
     "Auth",
     "AuthClient",
     "AuthClientConfig",
+    "AuthClientContextException",
     "AuthCodeAuthClient",
     "AuthCodeClientConfig",
     "AuthCodeWithClientSecretAuthClient",

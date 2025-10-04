@@ -126,7 +126,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         self._credential.set_data(new_credential_data)
         self._credential.save()  # Clobber old data that may be saved to disk.
         # Clear-out auth material when a new credential is set.
-        # child classes are expected to populate it JIT for auth
+        # Child classes are expected to populate it JIT for auth
         # requests.
         self._token_body = None
 
