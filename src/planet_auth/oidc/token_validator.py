@@ -260,7 +260,7 @@ class TokenValidator:
     @InvalidArgumentException.recast(jwt.exceptions.DecodeError)
     def hazmat_unverified_decode(token_str) -> Tuple[Dict, Dict, Any]:
         """
-        Decide a JWT without verifying the signature or any claims.
+        Decode a JWT without verifying the signature or any claims.
 
         !!! Warning
             Treat unverified token claims with extreme caution.
