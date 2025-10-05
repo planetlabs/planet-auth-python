@@ -126,7 +126,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         self._credential.set_data(new_credential_data)
         self._credential.save()  # Clobber old data that may be saved to disk.
         # Clear-out auth material when a new credential is set.
-        # child classes are expected to populate it JIT for auth
+        # Child classes are expected to populate it JIT for auth
         # requests.
         self._token_body = None
 
@@ -135,7 +135,7 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         Return the current credential.
 
         This may not be the credential the authenticator was constructed with.
-        Request Authenticators are free to refresh credentials depending in the
+        Request Authenticators are free to refresh credentials depending on the
         needs of the implementation.  This may happen upon this request,
         or may happen as a side effect of RequestAuthenticator operations.
         """

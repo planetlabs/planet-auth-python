@@ -69,9 +69,10 @@ class UtilTokenBuilderBase(ABC):
             "sub": username,
             "aud": self.audience,
             "iat": now,
-            "exp": now + ttl,
             "jti": str(uuid.uuid4()),
         }
+        if ttl:
+            unsigned_jwt["exp"] = now + ttl
         unsigned_jwt.update(extra_claims)
         if remove_claims:
             for remove_claim in remove_claims:
@@ -118,9 +119,10 @@ class UtilTokenBuilderBase(ABC):
             "sub": client_id,
             "aud": client_id,
             "iat": now,
-            "exp": now + ttl,
             "jti": str(uuid.uuid4()),
         }
+        if ttl:
+            unsigned_jwt["exp"] = now + ttl
         if extra_claims:
             # Note: this is clobbering of the claims above!  might be fine
             # for this test class, but be warned if you copy-paste somewhere.
@@ -322,9 +324,10 @@ class StubOidcAuthClient(OidcAuthClient):
 
         credential_data = {
             "token_type": "Bearer",
-            "expires_in": self._mock_client_config.stub_authority_ttl,
             "scope": " ".join(requested_scopes),
         }
+        if self._mock_client_config.stub_authority_ttl:
+            credential_data["expires_in"] = self._mock_client_config.stub_authority_ttl
         if get_access_token:
             credential_data["access_token"] = jwt_access_token
         if get_id_token:
