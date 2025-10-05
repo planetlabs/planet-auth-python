@@ -190,7 +190,7 @@ class Auth:
 
         # Case #2 above.
         if _can_obtain_credentials_unattended():
-            # TODO? Should we fetch one?  We do not by default because the bias is towards
+            # Should we fetch one?  We do not by default because the bias is towards
             #  JIT operations and silent operations.  This so programs can initialize and
             #  not fail for auth reasons unless the credential is actually needed.
             return
