@@ -286,7 +286,7 @@ class OidcMultiIssuerValidator:
         """
 
         if not token:
-            raise InvalidArgumentException(message="Cannot validate empty string as a token")
+            raise InvalidArgumentException(message="Cannot decode empty string as a token")
 
         validator = self._select_validator(token)
         local_validation, remote_validation = self._check_access_token(

@@ -181,7 +181,7 @@ class TokenValidator:
         """
         # PyJWT should enforce this, but we have unit tests in case...
         if not token_str:
-            raise InvalidArgumentException(message="Cannot validate empty string as a token")
+            raise InvalidArgumentException(message="Cannot decode empty string as a token")
         if not issuer:
             # PyJWT does not seem to raise if the issuer is explicitly None, even when
             # verify_iss was selected.
