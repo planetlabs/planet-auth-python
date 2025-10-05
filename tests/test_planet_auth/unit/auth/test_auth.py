@@ -212,7 +212,7 @@ class TestRefreshException(AuthException):
         super().__init__(**kwargs)
 
 
-class AuthTestNew(unittest.TestCase):
+class AuthTestEnsureAuthenticatorIsReady(unittest.TestCase):
     """Tests for Auth.ensure_request_authenticator_is_ready()"""
 
     def _create_auth_with_state(
