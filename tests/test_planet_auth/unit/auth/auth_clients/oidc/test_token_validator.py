@@ -148,7 +148,7 @@ class TestTokenValidator(unittest.TestCase):
         # QE TC6 - just some random garbage.
         under_test = self.under_test_1
         test_token = secrets.token_bytes(2048)
-        with self.assertRaises(InvalidTokenException) as raised1:
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=test_token,
                 issuer=self.token_builder_1.issuer,
@@ -157,7 +157,7 @@ class TestTokenValidator(unittest.TestCase):
         # Random garbage may throw different errors.
         # self.assertEqual("TBD", str(raised1.exception))
 
-        with self.assertRaises(InvalidArgumentException) as raised2:
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(test_token)
         # Random garbage may throw different errors
         # self.assertEqual("TBD", str(raised2.exception))
@@ -166,7 +166,7 @@ class TestTokenValidator(unittest.TestCase):
         # QE TC6 - just some random garbage, but URL safe.
         under_test = self.under_test_1
         test_token = secrets.token_urlsafe(2048)
-        with self.assertRaises(InvalidTokenException) as raised1:
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=test_token,
                 issuer=self.token_builder_1.issuer,
@@ -175,7 +175,7 @@ class TestTokenValidator(unittest.TestCase):
         # Random garbage may throw different errors.
         # self.assertEqual("TBD", str(raised1.exception))
 
-        with self.assertRaises(InvalidArgumentException) as raised2:
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(test_token)
         # Random garbage may throw different errors.
         # self.assertEqual("TBD", str(raised2.exception))
@@ -189,7 +189,7 @@ class TestTokenValidator(unittest.TestCase):
             str(jwt.utils.base64url_encode(secrets.token_bytes(256)), encoding="utf-8"),
         )
 
-        with self.assertRaises(InvalidTokenException) as raised1:
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=fake_jwt,
                 issuer=self.token_builder_1.issuer,
@@ -198,7 +198,7 @@ class TestTokenValidator(unittest.TestCase):
         # Random garbage may throw different errors.
         # self.assertEqual("TBD", str(raised1.exception))
 
-        with self.assertRaises(InvalidArgumentException) as raised2:
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(fake_jwt)
         # Random garbage may throw different errors.
         # self.assertEqual("TBD", str(raised2.exception))
@@ -592,14 +592,13 @@ class TestTokenValidator(unittest.TestCase):
             audience=self.token_builder_1.audience,
             scopes_anyof=[TEST_TOKEN_SCOPE_1, TEST_TOKEN_SCOPE_2],
         )
-        with self.assertRaises(ScopeNotGrantedTokenException) as raised1:
+        with self.assertRaises(ScopeNotGrantedTokenException):
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
                 scopes_anyof=[TEST_TOKEN_SCOPE_3],
             )
-        # self.assertRegexpMatches(str(raised1.exception), r"Access token did not grant sufficient scope.")
 
     def test_access_token_scope_validation__scope_required__rfc8693(self):
         # QE TC16
