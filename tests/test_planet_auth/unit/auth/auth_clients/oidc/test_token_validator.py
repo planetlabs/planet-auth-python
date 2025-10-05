@@ -120,48 +120,65 @@ class TestTokenValidator(unittest.TestCase):
     def test_empty_access_token(self):
         # QE TC3, TC5
         under_test = self.under_test_1
-        with self.assertRaises(InvalidArgumentException):
+        with self.assertRaises(InvalidArgumentException) as raised1:
             under_test.validate_token(
                 "",
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Cannot decode empty string as a token", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised2:
             under_test.validate_token(
                 None,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Cannot decode empty string as a token", str(raised2.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised3:
             TokenValidator.hazmat_unverified_decode("")
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Not enough segments (DecodeError)", str(raised3.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised4:
             TokenValidator.hazmat_unverified_decode(None)
+        self.assertEqual("Invalid token type. Token must be a <class 'bytes'> (DecodeError)", str(raised4.exception))
 
     def test_malformed_token_1(self):
         # QE TC6 - just some random garbage.
         under_test = self.under_test_1
         test_token = secrets.token_bytes(2048)
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=test_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        # Random garbage may throw different errors.
+        # self.assertEqual("TBD", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(test_token)
+        # Random garbage may throw different errors
+        # self.assertEqual("TBD", str(raised2.exception))
 
     def test_malformed_token_2(self):
         # QE TC6 - just some random garbage, but URL safe.
         under_test = self.under_test_1
         test_token = secrets.token_urlsafe(2048)
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=test_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        # Random garbage may throw different errors.
+        # self.assertEqual("TBD", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(test_token)
+        # Random garbage may throw different errors.
+        # self.assertEqual("TBD", str(raised2.exception))
 
     def test_malformed_token_3(self):
         # QE TC6 - random garbage, but has JWT three dot structure.
@@ -172,14 +189,19 @@ class TestTokenValidator(unittest.TestCase):
             str(jwt.utils.base64url_encode(secrets.token_bytes(256)), encoding="utf-8"),
         )
 
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException):  # as raised1:
             under_test.validate_token(
                 token_str=fake_jwt,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        # Random garbage may throw different errors.
+        # self.assertEqual("TBD", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException):  # as raised2:
             TokenValidator.hazmat_unverified_decode(fake_jwt)
+        # Random garbage may throw different errors.
+        # self.assertEqual("TBD", str(raised2.exception))
 
     def test_malformed_token_4(self):
         # QE TC6 - random garbage, but looks more JWT like with encoded json.
@@ -212,12 +234,14 @@ class TestTokenValidator(unittest.TestCase):
             {"fake_claim": "test claim value"},
         )
 
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 token_str=fake_jwt,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        # Will random garbage always parse to this exact error?
+        self.assertEqual("Signature verification failed (InvalidSignatureError)", str(raised1.exception))
 
         # This is good enough for an unverified decode. It's still invalid, which is
         # why you are careful with unverified decoded data.
@@ -232,12 +256,13 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL, remove_claims=["iss"]
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual('Token is missing the "iss" claim (MissingRequiredClaimError)', str(raised1.exception))
 
     def test_altered_token(self):
         # QE TC10
@@ -272,12 +297,13 @@ class TestTokenValidator(unittest.TestCase):
 
         # Now, actually change the claim value, and look for the exception
         altered_access_token = _alter_token(access_token, "sensitive_value_A", "sensitive_value_B")
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 altered_access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual("Signature verification failed (InvalidSignatureError)", str(raised1.exception))
 
     def test_missing_signature_1(self):
         # QE TC11 - JWT without a signature, but with the "."
@@ -307,12 +333,13 @@ class TestTokenValidator(unittest.TestCase):
             {"fake_claim": "test claim value"},
         )
 
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 token_str=bad_jwt,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual("Signature verification failed (InvalidSignatureError)", str(raised1.exception))
 
         u_header, u_body, u_sig = TokenValidator.hazmat_unverified_decode(bad_jwt)
         self.assertIsNotNone(u_header)
@@ -347,14 +374,17 @@ class TestTokenValidator(unittest.TestCase):
             {"fake_claim": "test claim value"},
         )
 
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 token_str=bad_jwt,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Not enough segments (DecodeError)", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised2:
             TokenValidator.hazmat_unverified_decode(bad_jwt)
+        self.assertEqual("Not enough segments (DecodeError)", str(raised2.exception))
 
     def test_empty_issuer_arg(self):
         under_test = self.under_test_1
@@ -367,18 +397,21 @@ class TestTokenValidator(unittest.TestCase):
             audience=self.token_builder_1.audience,
         )
         self.assertEqual(TEST_TOKEN_USER, validated_claims["sub"])
-        with self.assertRaises(InvalidArgumentException):
+        with self.assertRaises(InvalidArgumentException) as raised1:
             validated_claims = under_test.validate_token(
                 access_token,
                 issuer="",
                 audience=self.token_builder_1.audience,
             )
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Cannot validate token with no required issuer provided", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised2:
             validated_claims = under_test.validate_token(
                 access_token,
                 issuer=None,
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual("Cannot validate token with no required issuer provided", str(raised2.exception))
 
     def test_empty_audience_arg(self):
         under_test = self.under_test_1
@@ -391,18 +424,21 @@ class TestTokenValidator(unittest.TestCase):
             audience=self.token_builder_1.audience,
         )
         self.assertEqual(TEST_TOKEN_USER, validated_claims["sub"])
-        with self.assertRaises(InvalidArgumentException):
+        with self.assertRaises(InvalidArgumentException) as raised1:
             validated_claims = under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience="",
             )
-        with self.assertRaises(InvalidArgumentException):
+        self.assertEqual("Cannot validate token with no required audience provided", str(raised1.exception))
+
+        with self.assertRaises(InvalidArgumentException) as raised2:
             validated_claims = under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=None,
             )
+        self.assertEqual("Cannot validate token with no required audience provided", str(raised2.exception))
 
     def test_access_token_unknown_signing_key(self):
         # QE TC12
@@ -410,12 +446,13 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_2.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(UnknownSigningKeyTokenException):
+        with self.assertRaises(UnknownSigningKeyTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_2.issuer,
                 audience=self.token_builder_2.audience,
             )
+        self.assertEqual("Could not find signing key for key ID test_keypair2", str(raised1.exception))
 
     def test_access_token_issuer_mismatch(self):
         # QE TC15 untrusted issuer. (See also multi-validator tests)
@@ -423,12 +460,13 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer + "_make_it_mismatch",
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual("Invalid issuer (InvalidIssuerError)", str(raised1.exception))
 
     def test_access_token_incorrect_audience(self):
         # QE TC17
@@ -436,12 +474,13 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience + "_make_it_mismatch",
             )
+        self.assertEqual("Audience doesn't match (InvalidAudienceError)", str(raised1.exception))
 
     def test_access_token_multiple_audiences(self):
         # QE TC17
@@ -461,10 +500,11 @@ class TestTokenValidator(unittest.TestCase):
         under_test.validate_token(
             token_str=access_token, issuer=self.token_builder_1.issuer, audience="extra_audience_2"
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 token_str=access_token, issuer=self.token_builder_1.issuer, audience="extra_audience_3"
             )
+        self.assertEqual("Audience doesn't match (InvalidAudienceError)", str(raised1.exception))
 
     @freezegun.freeze_time(as_kwarg="frozen_time")
     def test_access_token_expired(self, frozen_time):
@@ -474,25 +514,29 @@ class TestTokenValidator(unittest.TestCase):
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=3
         )
         frozen_time.tick(5)
-        with self.assertRaises(ExpiredTokenException):
+        with self.assertRaises(ExpiredTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
             )
+        self.assertEqual("Signature has expired (ExpiredSignatureError)", str(raised1.exception))
 
     def test_access_token_missing_claim(self):
         under_test = self.under_test_1
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_1.issuer,
                 audience=self.token_builder_1.audience,
                 required_claims=["missing_claim_1", "missing_claim_2"],
             )
+        self.assertEqual(
+            'Token is missing the "missing_claim_1" claim (MissingRequiredClaimError)', str(raised1.exception)
+        )
 
     def test_access_token_scope_validation__no_scopes_required__rfc8692(self):
         under_test = self.under_test_1
@@ -567,8 +611,9 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=[], ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             self._scope_validation_assertions(under_test, access_token)
+        self.assertEqual("No OAuth2 Scopes claim could be found in the access token", str(raised1.exception))
 
     def test_access_token_scope_validation__scope_required__okta(self):
         # QE TC16
@@ -581,8 +626,9 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_1.construct_oidc_access_token_okta(
             username=TEST_TOKEN_USER, requested_scopes=[], ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             self._scope_validation_assertions(under_test, access_token)
+        self.assertEqual("No OAuth2 Scopes claim could be found in the access token", str(raised1.exception))
 
     def test_id_token_nonce(self):
         under_test = self.under_test_1
@@ -596,10 +642,11 @@ class TestTokenValidator(unittest.TestCase):
         under_test.validate_id_token(
             id_token_with_nonce, issuer=self.token_builder_1.issuer, client_id="test_client_id", nonce="12345"
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_id_token(
                 id_token_with_nonce, issuer=self.token_builder_1.issuer, client_id="test_client_id", nonce="67890"
             )
+        self.assertEqual("Token nonce did not match expected value", str(raised1.exception))
 
         # TODO: See comments in the class.  Unsure if we should make missing
         #  nonce check's fatal when there is a nonce.  It would be very strict.
@@ -607,13 +654,15 @@ class TestTokenValidator(unittest.TestCase):
             id_token_with_nonce, issuer=self.token_builder_1.issuer, client_id="test_client_id", nonce=None
         )
 
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised2:
             under_test.validate_id_token(
                 id_token_without_nonce,
                 issuer=self.token_builder_1.issuer,
                 client_id="test_client_id",
                 nonce="12345",
             )
+        self.assertEqual('Token is missing the "nonce" claim (MissingRequiredClaimError)', str(raised2.exception))
+
         under_test.validate_id_token(
             id_token_with_nonce, issuer=self.token_builder_1.issuer, client_id="test_client_id"
         )
@@ -638,8 +687,11 @@ class TestTokenValidator(unittest.TestCase):
             client_id="test_client_id",
             extra_claims={"aud": ["test_client_id", "extra_audience_1", "extra_audience_2"]},
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised1:
             under_test.validate_id_token(id_token, issuer=self.token_builder_1.issuer, client_id="test_client_id")
+        self.assertEqual(
+            '"azp" claim mut be present when ID token contains multiple audiences.', str(raised1.exception)
+        )
 
         # azp claim doesn't contain expected value when multiple audiences
         # are present
@@ -648,8 +700,12 @@ class TestTokenValidator(unittest.TestCase):
             client_id="test_client_id",
             extra_claims={"aud": ["test_client_id", "extra_audience_1", "extra_audience_2"], "azp": "mismatch_azp"},
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised2:
             under_test.validate_id_token(id_token, issuer=self.token_builder_1.issuer, client_id="test_client_id")
+        self.assertEqual(
+            'ID token "azp" claim expected to match the client ID "test_client_id", but was "mismatch_azp"',
+            str(raised2.exception),
+        )
 
     @freezegun.freeze_time(as_kwarg="frozen_time")
     def test_min_jwks_fetch_interval(self, frozen_time):
@@ -665,12 +721,13 @@ class TestTokenValidator(unittest.TestCase):
         self.assertEqual(0, under_test._jwks_client.jwks.call_count)
 
         # t1 - key miss loads keys
-        with self.assertRaises(UnknownSigningKeyTokenException):
+        with self.assertRaises(UnknownSigningKeyTokenException) as raised1:
             under_test.validate_token(
                 token_unknown_signer,
                 issuer=self.token_builder_2.issuer,
                 audience=self.token_builder_2.audience,
             )
+        self.assertEqual("Could not find signing key for key ID test_keypair2", str(raised1.exception))
         self.assertEqual(1, under_test._jwks_client.jwks.call_count)
 
         # t2 - key hit should pull from hot cache.
@@ -684,12 +741,14 @@ class TestTokenValidator(unittest.TestCase):
         # t3 - Repeated key hits and misses inside the fetch interval should
         # not trigger a reload of the jwks verification keys
         for n in range(5):
-            with self.assertRaises(InvalidTokenException):
+            with self.assertRaises(InvalidTokenException) as raised_repeatedly:
                 under_test.validate_token(
                     token_unknown_signer,
                     issuer=self.token_builder_2.issuer,
                     audience=self.token_builder_2.audience,
                 )
+            self.assertEqual("Could not find signing key for key ID test_keypair2", str(raised_repeatedly.exception))
+
             under_test.validate_token(
                 token_known_signer,
                 issuer=self.token_builder_1.issuer,
@@ -708,12 +767,13 @@ class TestTokenValidator(unittest.TestCase):
             issuer=self.token_builder_1.issuer,
             audience=self.token_builder_1.audience,
         )
-        with self.assertRaises(InvalidTokenException):
+        with self.assertRaises(InvalidTokenException) as raised3:
             under_test.validate_token(
                 token_unknown_signer,
                 issuer=self.token_builder_2.issuer,
                 audience=self.token_builder_2.audience,
             )
+        self.assertEqual("Could not find signing key for key ID test_keypair2", str(raised3.exception))
         self.assertEqual(2, under_test._jwks_client.jwks.call_count)
 
     def test_untrusted_token_algorithm(self):
@@ -722,12 +782,13 @@ class TestTokenValidator(unittest.TestCase):
         test_token = self.token_builder_3.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(InvalidAlgorithmTokenException):
+        with self.assertRaises(InvalidAlgorithmTokenException) as raised1:
             under_test.validate_token(
                 test_token,
                 issuer=self.token_builder_3.issuer,
                 audience=self.token_builder_3.audience,
             )
+        self.assertEqual("Unknown or unsupported token algorithm RS512", str(raised1.exception))
 
     def test_jwks_endpoint_lists_unsupported_algorithm(self):
         # See CG-867
@@ -762,12 +823,13 @@ class TestTokenValidator(unittest.TestCase):
         access_token = self.token_builder_4.construct_oidc_access_token_rfc8693(
             username=TEST_TOKEN_USER, requested_scopes=TEST_TOKEN_SCOPES, ttl=TEST_TOKEN_TTL
         )
-        with self.assertRaises(UnknownSigningKeyTokenException):
+        with self.assertRaises(UnknownSigningKeyTokenException) as raised1:
             under_test.validate_token(
                 access_token,
                 issuer=self.token_builder_4.issuer,
                 audience=self.token_builder_4.audience,
             )
+        self.assertEqual("Could not find signing key for key ID test_keypair4", str(raised1.exception))
 
     # def test_max_jwks_age(self):
     #     # Feature not implemented.
