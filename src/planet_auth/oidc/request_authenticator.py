@@ -58,10 +58,6 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
             self._credential.load()
 
         self._token_body = self._credential.access_token()
-        # TODO - Test all flavors of missing times:
-        #     exp: None, iat: Any - Never expires
-        #     exp: time, iat: None - Expires at time. Refresh per fallback grace period.
-        #     exp: time: iat: time - Expires at time. Refresh at the 3/4 life.
         iat = self._credential.issued_time() or 0
         exp = self._credential.expiry_time()
         if exp is None:
