@@ -148,7 +148,6 @@ class CredentialRequestAuthenticator(RequestAuthenticator, ABC):
         is checked for the existence of a credential, but it will not be loaded
         from storage at this time, preserving JIT loading behavior.
         """
-        # TODO: Rename to "has_credential()"?
         if self._credential:
             return bool(self._credential.data()) or self._credential.is_persisted_to_storage()
         return False

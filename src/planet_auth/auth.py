@@ -142,25 +142,25 @@ class Auth:
            ready without prompting the user or probing the network.
            This will not require user interaction.
         2. If the client has not been logged in and is a type that
-           can do so without prompting the user or probing the network,
-           the client will be considered ready without prompting
-           the user or probing the network. This will not require
-           user interaction.  Login will be delayed until it is required.
+           can do so without prompting the user, the client will be
+           considered ready without prompting the user or probing
+           the network. This will not require user interaction.
+           Login will be delayed until it is required.
         3. If the client has been logged in and has an expired
            short-term access token, the network will be probed to attempt
            a refresh of the session. This should not require user interaction.
-           If refresh fails, the user will be prompted to perform a fresh login,
-           requiring user interaction.
+           If refresh fails, the user will be prompted to perform a fresh
+           login, requiring user interaction.
         4. If the client has never been logged in and is a type that
            requires a user interactive login, a user interactive
            login will be initiated.
 
         There still may be conditions where we believe we are
-        ready, but requests will still ultimately fail.  For example, if
+        ready, but requests still ultimately fail.  For example, if
         the auth context holds a static API key or username/password, it is
-        assumed to be ready but the credentials could be bad. Even when ready,
-        requests could fail for completely valid credentials if service
-        policy denies the request to the authenticated client.
+        assumed to be ready but the credentials could be bad. Even when ready
+        with valid credentia, requests could fail if the service
+        rejects the request due to its own policy configuration.
 
         Parameters:
             allow_open_browser: specify whether login is permitted to open
