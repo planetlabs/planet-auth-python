@@ -105,9 +105,8 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # Another process might have done it for us, and save us the
         # network call.
         #
-        # Also, if refresh tokens may be configured to be one time use,
-        # we want a fresh refresh token. Stale refresh tokens may be
-        # invalid.
+        # Also, we should always try to use a fresh refresh token.
+        # Refresh might be configured to be one time use.
         #
         # Also, it's possible that we have a valid refresh token,
         # but not an access token.  When that's true, we should
@@ -156,8 +155,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                 f"{type(self).__name__} does not support {type(new_credential)} credentials.  Use FileBackedOidcCredential."
             )
         super().update_credential(new_credential=new_credential)
-        self._refresh_at = 0  # This mimics __init__.  Check refresh JIT.
-        # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
+        # Mimic __init__.
+        #   Set refresh_at to 0 to force a JIT check.
+        #   Do not load the credential at this time.  Let that happen JIT.
+        self._refresh_at = 0
+        # self._load_and_prime()
 
     def update_credential_data(self, new_credential_data: Dict) -> None:
         # This is more different than update_credential() than it may
