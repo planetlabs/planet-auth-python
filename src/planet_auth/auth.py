@@ -210,9 +210,6 @@ class Auth:
                 auth_logger.warning(
                     msg=f"Failed to refresh expired credentials (Error: {str(e)}).  Attempting interactive login."
                 )
-                # Fall through to case #4 below.
-                # self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
-                # return
 
         # Case #4 above.
         self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)

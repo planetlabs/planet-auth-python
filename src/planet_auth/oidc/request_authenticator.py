@@ -84,7 +84,9 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
 
     def _refresh_needed(self, check_time: Optional[int] = None) -> bool:
         if self._token_body is None:
-            # Always consider no token in need of a refresh.
+            # Always consider not having the token loaded and primed to be
+            # in need of a refresh.  In _refresh_if_needed(), this will
+            # trigger a reload before doing a network refresh.
             return True
 
         if self._refresh_at is None:
