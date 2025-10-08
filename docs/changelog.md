@@ -6,6 +6,10 @@
   utility method `Auth.ensure_request_authenticator_is_ready()`.
 - Save computed expiration time and issued time in token files. This allows
   for the persistence of this information when dealing with opaque tokens.
+  - **Note**: Previously saved OAuth access tokens that are not JWTs with
+    an `exp` claim that can be inspected will be considered to expire in
+    `expires_in` seconds from the time they are loaded, since the time
+    they were issued was not saved in the past.
 - Support non-expiring tokens.
 
 ## 2.2.0 - 2025-10-02
