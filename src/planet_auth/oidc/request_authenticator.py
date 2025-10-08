@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import jwt
 import time
 from typing import Dict, Optional
 
@@ -53,29 +52,19 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         self._auth_client = auth_client
         self._refresh_at = 0
 
-    def _load(self):
+    def _load_and_prime(self):
         if self._credential.path():
             # allow in memory operation.
             self._credential.load()
 
-        access_token_str = self._credential.access_token()
-        # Absolutely not appropriate to not verify the signature in a token
-        # validation context (e.g. server side auth of a client). Here we
-        # know that's not what we are doing. This is a client helper class
-        # for clients who will be presenting tokens to such a server.  We
-        # are inspecting ourselves, not verifying for trust purposes.
-        # We are not expected to be the audience.
-        # TODO: we should use `expires_in` from the response from the
-        #    OAuth server, which would work for non-JWT opaque OAuth
-        #    tokens.  Since that is a relative time, we would also need
-        #    to augment our FileBackedOidcCredential with an issued
-        #    at time.
-        unverified_decoded_atoken = jwt.decode(access_token_str, options={"verify_signature": False})  # nosemgrep
-        iat = unverified_decoded_atoken.get("iat") or 0
-        exp = unverified_decoded_atoken.get("exp") or 0
-        # refresh at the 3/4 life
-        self._refresh_at = int(iat + (3 * (exp - iat) / 4))
-        self._token_body = access_token_str
+        self._token_body = self._credential.access_token()
+        iat = self._credential.issued_time() or 0
+        exp = self._credential.expiry_time()
+        if exp is None:
+            # Never expires.
+            self._refresh_at = None
+        else:
+            self._refresh_at = int(iat + (3 * (exp - iat) / 4))
 
     def _refresh(self):
         if self._auth_client:
@@ -91,15 +80,31 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
 
             # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
-            self._load()
+            self._load_and_prime()
+
+    def _refresh_needed(self, check_time: Optional[int] = None) -> bool:
+        if self._token_body is None:
+            # Always consider not having the token loaded and primed to be
+            # in need of a refresh.  In _refresh_if_needed(), this will
+            # trigger a reload before doing a network refresh.
+            return True
+
+        if self._refresh_at is None:
+            # Non-expiring token is currently loaded.
+            return False
+
+        if check_time is None:
+            check_time = int(time.time())
+
+        return check_time > self._refresh_at
 
     def _refresh_if_needed(self):
-        # Reload the file before refreshing. Another process might
-        # have done it for us, and save us the network call.
+        # Reload the file before doing a refresh with the auth server.
+        # Another process might have done it for us, and save us the
+        # network call.
         #
-        # Also, if refresh tokens are configured to be one time use,
-        # we want a fresh refresh token. Stale refresh tokens may be
-        # invalid depending on server configuration.
+        # Also, we should always try to use a fresh refresh token.
+        # Refresh might be configured to be one time use.
         #
         # Also, it's possible that we have a valid refresh token,
         # but not an access token.  When that's true, we should
@@ -107,15 +112,17 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         #
         # If everything fails, continue with what we have. Let the API
         # we are calling decide if it's good enough.
+
         now = int(time.time())
-        if now > self._refresh_at:
+        if self._refresh_needed(now):
             try:
-                self._load()
+                self._load_and_prime()
             except Exception as e:  # pylint: disable=broad-exception-caught
                 auth_logger.warning(
                     msg=f"Error loading auth token. Continuing with old configuration and token data. Load error: {str(e)}"
                 )
-        if now > self._refresh_at:
+
+        if self._refresh_needed(now):
             try:
                 self._refresh()
             except Exception as e:  # pylint: disable=broad-exception-caught
@@ -146,8 +153,11 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
                 f"{type(self).__name__} does not support {type(new_credential)} credentials.  Use FileBackedOidcCredential."
             )
         super().update_credential(new_credential=new_credential)
+        # Mimic __init__.
+        #   Set refresh_at to 0 to force a JIT check.
+        #   Do not load the credential at this time.  Let that happen JIT.
         self._refresh_at = 0
-        # self._load()  # Mimic __init__.  Don't load, let that happen JIT.
+        # self._load_and_prime()
 
     def update_credential_data(self, new_credential_data: Dict) -> None:
         # This is more different than update_credential() than it may
@@ -158,7 +168,7 @@ class RefreshingOidcTokenRequestAuthenticator(CredentialRequestAuthenticator):
         # has already taken place or a _load() is in progress, and we
         # should behave as  if we are finishing a _refresh() call.
         super().update_credential_data(new_credential_data=new_credential_data)
-        self._load()
+        self._load_and_prime()
 
     def credential(self, refresh_if_needed: bool = False) -> Optional[Credential]:
         if refresh_if_needed:
@@ -201,4 +211,4 @@ class RefreshOrReloginOidcTokenRequestAuthenticator(RefreshingOidcTokenRequestAu
 
             # self.update_credential(new_credential=new_credentials)
             self._credential = new_credentials
-            self._load()
+            self._load_and_prime()

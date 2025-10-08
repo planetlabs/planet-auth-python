@@ -18,6 +18,7 @@ import pathlib
 from typing import Optional, Union
 
 from planet_auth.auth_client import AuthClient, AuthClientConfig
+from planet_auth.auth_exception import AuthException
 from planet_auth.credential import Credential
 from planet_auth.request_authenticator import CredentialRequestAuthenticator
 from planet_auth.storage_utils import ObjectStorageProvider
@@ -25,9 +26,10 @@ from planet_auth.logging.auth_logger import getAuthLogger
 
 auth_logger = getAuthLogger()
 
-# class AuthClientContextException(AuthException):
-#     def __init__(self, **kwargs):
-#         super().__init__(**kwargs)
+
+class AuthClientContextException(AuthException):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class Auth:
@@ -113,10 +115,108 @@ class Auth:
         For example, simple API key clients only need an API key in their
         configuration.  OAuth2 user clients need to have performed
         a user login and obtained access or refresh tokens.
+
+        Note: This will not detect when a credential is expired or
+        otherwise invalid.
         """
         return self._request_authenticator.is_initialized() or self._auth_client.can_login_unattended()
 
-    def login(self, **kwargs) -> Credential:
+    def ensure_request_authenticator_is_ready(
+        self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False
+    ) -> None:
+        """
+        Do everything necessary to ensure the request authenticator is ready for use,
+        while still biasing towards just-in-time operations and not making
+        unnecessary network requests or prompts for user interaction.
+
+        This can be more complex than it sounds given the variations in the
+        capabilities of authentication clients and possible session states.
+        Clients may be initialized with active sessions, initialized with stale
+        but still valid sessions, initialized with invalid or expired
+        sessions, or completely uninitialized. The process taken to ensure
+        client readiness with as little user disruption as possible
+        is as follows:
+
+        1. If the client has been logged in and has a non-expired
+           short-term access token, the client will be considered
+           ready without prompting the user or probing the network.
+           This will not require user interaction.
+        2. If the client has not been logged in and is a type that
+           can do so without prompting the user, the client will be
+           considered ready without prompting the user or probing
+           the network. This will not require user interaction.
+           Login will be delayed until it is required.
+        3. If the client has been logged in and has an expired
+           short-term access token, the network will be probed to attempt
+           a refresh of the session. This should not require user interaction.
+           If refresh fails, the user will be prompted to perform a fresh
+           login, requiring user interaction.
+        4. If the client has never been logged in and is a type that
+           requires a user interactive login, a user interactive
+           login will be initiated.
+
+        There still may be conditions where we believe we are
+        ready, but requests still ultimately fail.  For example, if
+        the auth context holds a static API key or username/password, it is
+        assumed to be ready but the credentials could be bad. Even when ready
+        with valid credentia, requests could fail if the service
+        rejects the request due to its own policy configuration.
+
+        Parameters:
+            allow_open_browser: specify whether login is permitted to open
+                a browser window.
+            allow_tty_prompt: specify whether login is permitted to request
+                input from the terminal.
+        """
+
+        def _has_credential() -> bool:
+            # Does not do any JIT checks
+            return self._request_authenticator.is_initialized()
+
+        def _can_obtain_credentials_unattended() -> bool:
+            # Does not do any JIT checks
+            return self._auth_client.can_login_unattended()
+
+        def _is_expired() -> bool:
+            # Does not do any JIT check
+            new_cred = self._request_authenticator.credential(refresh_if_needed=False)
+            if new_cred:
+                return new_cred.is_expired()
+            return True
+
+        # Case #1 above.
+        if _has_credential() and not _is_expired():
+            return
+
+        # Case #2 above.
+        if _can_obtain_credentials_unattended():
+            # Should we fetch one?  We do not by default because the bias is towards
+            #  JIT operations and silent operations.  This so programs can initialize and
+            #  not fail for auth reasons unless the credential is actually needed.
+            return
+
+        # Case #3 above.
+        if _has_credential() and _is_expired():
+            try:
+                # This takes care of making sure the authenticator's credential is
+                # current with the update. No further action needed on our part.
+                new_cred = self._request_authenticator.credential(refresh_if_needed=True)
+                if not new_cred:
+                    raise RuntimeError("Unable to refresh credentials - Unknown error")
+                if new_cred.is_expired():
+                    raise RuntimeError("Unable to refresh credentials - Refreshed credentials are still expired.")
+                return
+            except Exception as e:
+                auth_logger.warning(
+                    msg=f"Failed to refresh expired credentials (Error: {str(e)}).  Attempting interactive login."
+                )
+
+        # Case #4 above.
+        self.login(allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt)
+
+    def login(
+        self, allow_open_browser: Optional[bool] = False, allow_tty_prompt: Optional[bool] = False, **kwargs
+    ) -> Credential:
         """
         Perform a login with the configured auth client.
         This higher level function will ensure that the token is saved to
@@ -124,8 +224,20 @@ class Auth:
         storage path.  Otherwise, the token will be held only in memory.
         In all cases, the request authenticator will also be updated with
         the new credentials.
+
+        Parameters:
+            allow_open_browser: specify whether login is permitted to open
+                a browser window.
+            allow_tty_prompt: specify whether login is permitted to request
+                input from the terminal.
         """
-        new_credential = self._auth_client.login(**kwargs)
+        new_credential = self._auth_client.login(
+            allow_open_browser=allow_open_browser, allow_tty_prompt=allow_tty_prompt, **kwargs
+        )
+        if not new_credential:
+            # AuthClient.login() is supposed to raise on failure.
+            raise AuthClientContextException(message="Unknown login failure. No credentials and no error returned.")
+
         new_credential.set_path(self._token_file_path)
         new_credential.set_storage_provider(self._storage_provider)
         new_credential.save()

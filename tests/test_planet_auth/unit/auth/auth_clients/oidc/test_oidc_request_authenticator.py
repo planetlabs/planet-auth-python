@@ -41,6 +41,14 @@ TEST_STUB_CLIENT_CONFIG = StubOidcClientConfig(
     stub_authority_pub_key_file=TEST_SIGNING_PUBKEY_FILE,
     scopes=["offline_access", "profile", "openid", "test_scope_1", "test_scope_2"],
 )
+TEST_STUB_CLIENT_WITH_NON_EXPIRING_TOKENS_CONFIG = StubOidcClientConfig(
+    auth_server=TEST_AUTH_SERVER,
+    stub_authority_ttl=None,
+    stub_authority_access_token_audience=TEST_TOKEN_AUDENCE,
+    stub_authority_signing_key_file=TEST_SIGNING_KEY_FILE,
+    stub_authority_pub_key_file=TEST_SIGNING_PUBKEY_FILE,
+    scopes=["offline_access", "profile", "openid", "test_scope_1", "test_scope_2"],
+)
 
 
 class ORAUnitTestException(Exception):
@@ -60,6 +68,8 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.wrapped_stub_auth_client = MagicMock(wraps=self.stub_auth_client)
         self.refresh_failing_auth_client = RefreshFailingStubOidcAuthClient(TEST_STUB_CLIENT_CONFIG)
         self.wrapper_refresh_failing_auth_client = MagicMock(wraps=self.refresh_failing_auth_client)
+        self.non_expiring_auth_client = StubOidcAuthClient(TEST_STUB_CLIENT_WITH_NON_EXPIRING_TOKENS_CONFIG)
+        self.wrapped_non_expiring_auth_client = MagicMock(wraps=self.non_expiring_auth_client)
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.tmp_dir_path = pathlib.Path(self.tmp_dir.name)
 
@@ -114,16 +124,33 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
             credential=test_credential, auth_client=self.wrapper_refresh_failing_auth_client
         )
 
+    def under_test_non_expiring_token(self):
+        credential_path = self.tmp_dir_path / "refreshing_oidc_authenticator_test_token__non_expiring_token.json"
+        test_credential = self.mock_auth_login_and_command_initialize(
+            credential_path=credential_path, auth_client=self.non_expiring_auth_client, remove_claims=["iat", "exp"]
+        )
+        return RefreshingOidcTokenRequestAuthenticator(
+            credential=test_credential, auth_client=self.wrapped_non_expiring_auth_client
+        )
+
     @staticmethod
     def mock_auth_login_and_command_initialize(
-        credential_path, auth_client, get_access_token=True, get_id_token=True, get_refresh_token=True
+        credential_path,
+        auth_client,
+        get_access_token=True,
+        get_id_token=True,
+        get_refresh_token=True,
+        remove_claims=None,
     ):
         # pretend to bootstrap client auth configuration on disk, the way
         # it may be used by a user in an interactive shell:
 
         # bash$ planet auth login
         initial_credential = auth_client.login(
-            get_access_token=get_access_token, get_refresh_token=get_refresh_token, get_id_token=get_id_token
+            get_access_token=get_access_token,
+            get_refresh_token=get_refresh_token,
+            get_id_token=get_id_token,
+            remove_claims=remove_claims,
         )
         initial_credential.set_path(credential_path)
         initial_credential.save()
@@ -231,6 +258,39 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.mock_api_call(under_test)
         self.assertIsNotNone(under_test._credential.data())
         self.assertEqual(1, under_test._auth_client.refresh.call_count)
+
+    @freezegun.freeze_time(as_kwarg="frozen_time")
+    def test_happy_path_3_non_expiring_token(self, frozen_time):
+        under_test = self.under_test_non_expiring_token()
+
+        self.assertIsNone(under_test._credential.data())
+        self.mock_api_call(under_test)
+        self.assertIsNotNone(under_test._credential.data())
+        self.assertEqual(0, under_test._auth_client.refresh.call_count)
+        access_token_t1 = under_test._credential.access_token()
+
+        # inside the refresh window, more access should not refresh
+        self.mock_api_call(under_test)
+        self.mock_api_call(under_test)
+        self.mock_api_call(under_test)
+        self.assertEqual(0, under_test._auth_client.refresh.call_count)
+        access_token_t2 = under_test._credential.access_token()
+        self.assertEqual(access_token_t1, access_token_t2)
+
+        # When the token reaches the 3/4 life, the authenticator should not
+        # attempt a token refresh.
+        frozen_time.tick(((3 * TEST_TOKEN_TTL) / 4) + 2)
+        self.mock_api_call(under_test)
+        self.assertEqual(0, under_test._auth_client.refresh.call_count)
+        access_token_t3 = under_test._credential.access_token()
+        self.assertEqual(access_token_t1, access_token_t3)
+
+        # In the distant future, we should still not refresh the token.
+        frozen_time.tick(TEST_TOKEN_TTL * 100)
+        self.mock_api_call(under_test)
+        self.assertEqual(0, under_test._auth_client.refresh.call_count)
+        access_token_t4 = under_test._credential.access_token()
+        self.assertEqual(access_token_t1, access_token_t4)
 
     @freezegun.freeze_time(as_kwarg="frozen_time")
     def test_refresh_fails(self, frozen_time):
