@@ -131,7 +131,7 @@ class Auth:
 
         This can be more complex than it sounds given the variations in the
         capabilities of authentication clients and possible session states.
-        Client may be initialized with active sessions, initialized with stale
+        Clients may be initialized with active sessions, initialized with stale
         but still valid sessions, initialized with invalid or expired
         sessions, or completely uninitialized. The process taken to ensure
         client readiness with as little user disruption as possible
