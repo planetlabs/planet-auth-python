@@ -1,9 +1,9 @@
 # Changelog
 
-## 2.3.0 - TBD
+## 2.3.0 - 2025-10-20
 - Improve the user experience around old stale sessions that appear to be
   initialized, but are actually expired.  This is done by providing the new
-  utility method `Auth.ensure_request_authenticator_is_ready()`.
+  utility method: `Auth.ensure_request_authenticator_is_ready()`.
 - Save computed expiration time and issued time in token files. This allows
   for the persistence of this information when dealing with opaque tokens.
   - **Note**: Previously saved OAuth access tokens that are not JWTs with
