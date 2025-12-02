@@ -128,6 +128,7 @@ def cmd_oauth_login(
         extra=login_extra,
     )
     print("Login succeeded.")  # Errors should throw.
+    # FIXME sops-ness of profiles is being lost
     post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 

@@ -227,6 +227,7 @@ def cmd_plauth_login(
     )
     print("Login succeeded.")  # Errors should throw.
 
+    # FIXME: sops
     post_login_cmd_helper(override_auth_context=override_auth_context, use_sops=sops, prompt_pre_selection=yes)
 
 
