@@ -96,6 +96,10 @@ def post_login_cmd_helper(
     # explict command line option.
     use_sops = use_sops_opt
     if not use_sops:
+        # Here in the CLI we can assume that the default storage provider
+        # _SOPSAwareFilesystemObjectStorageProvider is being used.  Unlike general
+        # library use, we do not support caller provided custom storage providers
+        # in the CLI tools at this time.
         _config_data = override_auth_context.auth_client().config().data() or {}
         if (
             _config_data.get(_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY)
