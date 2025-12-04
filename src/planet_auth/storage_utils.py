@@ -132,11 +132,7 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
 
     @staticmethod
     def _filter_write_object(data: dict) -> dict:
-        final_data = {
-            k: v
-            for k, v in data.items()
-            if not (isinstance(k, str) and k.startswith("__"))
-        }
+        final_data = {k: v for k, v in data.items() if not (isinstance(k, str) and k.startswith("__"))}
         return final_data
 
     @staticmethod

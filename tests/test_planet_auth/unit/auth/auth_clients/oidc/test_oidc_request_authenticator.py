@@ -77,11 +77,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
     def _filter_spdata(data: dict) -> dict:
         # Storage providers are known to add "__" keys for their own use.
         # These should not be considered part of the general data.
-        filtered_data = {
-            k: v
-            for k, v in data.items()
-            if not (isinstance(k, str) and k.startswith("__"))
-        }
+        filtered_data = {k: v for k, v in data.items() if not (isinstance(k, str) and k.startswith("__"))}
         return filtered_data
 
     def under_test_happy_path(self):
