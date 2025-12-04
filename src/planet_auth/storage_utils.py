@@ -130,23 +130,11 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         #   files with a ".sops.json" suffix.
         return bool(file_path.suffixes == [".sops", ".json"])
 
-    # @staticmethod
-    # def _convert_to_sops_path(file_path: pathlib.Path) -> pathlib.Path:
-    #     if _SOPSAwareFilesystemObjectStorageProvider._is_sops_path(file_path):
-    #         return file_path
-    #     else:
-    #         if bool(file_path.suffix == ".json"):
-    #             return file_path.with_name(file_path.stem + ".sops" + file_path.suffix)
-    #         else:
-    #            return file_path.with_suffix(file_path.suffix + ".sops.json")
-
     @staticmethod
     def _filter_write_object(data: dict) -> dict:
-        # TODO: consider making this part of the base class?
         final_data = {
             k: v
             for k, v in data.items()
-            # if k not in [_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY]
             if not (isinstance(k, str) and k.startswith("__"))
         }
         return final_data
@@ -213,7 +201,11 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         ):
             auth_logger.warning(msg=f"Data sourced from SOPS being written cleartext to the file {file_path}.")
             # Upgrading to SOPS would be great, but also problematic.
-            # return True
+            # The problem is that if we are writing to SOPS we should use a
+            # SOPS file name so that we know we should read it as a SOPS file
+            # later.  We can't change the name here because the caller would
+            # not know what we did, and may not be able to find the object
+            # later.
 
         return False
 
@@ -224,9 +216,6 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         write_data = _SOPSAwareFilesystemObjectStorageProvider._filter_write_object(data)
 
         if do_sops:
-            # This has to be with the caller, otherwise the caller would not know
-            # where we actually wrote the data and would likely not be able to find it again.
-            # sops_file_path = _SOPSAwareFilesystemObjectStorageProvider._convert_to_sops_path(file_path)
             _SOPSAwareFilesystemObjectStorageProvider._write_json_sops(file_path, write_data)
         else:
             _SOPSAwareFilesystemObjectStorageProvider._write_json(file_path, write_data)

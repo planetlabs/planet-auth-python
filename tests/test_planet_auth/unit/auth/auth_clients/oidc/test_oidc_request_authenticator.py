@@ -80,7 +80,6 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         filtered_data = {
             k: v
             for k, v in data.items()
-            # if k not in [_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY]
             if not (isinstance(k, str) and k.startswith("__"))
         }
         return filtered_data
