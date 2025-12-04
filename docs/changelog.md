@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.3.1 - 2025-12-XX
+## 2.3.1 - 2025-12-10
 - Fix a bug where sops protected files would be rewritten without preserving
   their sops protection.
 
