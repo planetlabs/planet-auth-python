@@ -73,6 +73,18 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         self.tmp_dir = tempfile.TemporaryDirectory()
         self.tmp_dir_path = pathlib.Path(self.tmp_dir.name)
 
+    @staticmethod
+    def _filter_spdata(data: dict) -> dict:
+        # Storage providers are known to add "__" keys for their own use.
+        # These should not be considered part of the general data.
+        filtered_data = {
+            k: v
+            for k, v in data.items()
+            # if k not in [_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY]
+            if not (isinstance(k, str) and k.startswith("__"))
+        }
+        return filtered_data
+
     def under_test_happy_path(self):
         credential_path = self.tmp_dir_path / "refreshing_oidc_authenticator_test_token__with_refresh.json"
         test_credential = self.mock_auth_login_and_command_initialize(
@@ -485,7 +497,7 @@ class RefreshingOidcRequestAuthenticatorTest(unittest.TestCase):
         # It should not be necessary to simulate an API call for everything to be set
         current_credential_data = under_test._credential.data()
         self.assertNotEqual(current_credential_data, initial_credential_data)
-        self.assertEqual(current_credential_data, sideband_credential.data())
+        self.assertEqual(self._filter_spdata(current_credential_data), sideband_credential.data())
         self.assertEqual(under_test._token_body, sideband_credential.access_token())
         self.assertNotEqual(0, under_test._refresh_at)
         self.assertNotEqual(0, under_test._credential._load_time)
