@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.1 - 2025-12-10
+- Fix a bug where sops protected files would be rewritten without preserving
+  their sops protection.
+
 ## 2.3.0 - 2025-10-20
 - Improve the user experience around old stale sessions that appear to be
   initialized, but are actually expired.  This is done by providing the new

@@ -81,7 +81,7 @@ def cmd_pllegacy_login(ctx, username, password, sops, yes):
         password=password,
     )
     print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
+    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 @cmd_pllegacy.command("print-api-key")

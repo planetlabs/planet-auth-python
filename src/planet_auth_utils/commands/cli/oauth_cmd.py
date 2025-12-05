@@ -128,7 +128,7 @@ def cmd_oauth_login(
         extra=login_extra,
     )
     print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops=sops, prompt_pre_selection=yes)
+    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 @cmd_oauth.command("refresh")

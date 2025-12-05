@@ -17,13 +17,17 @@ import functools
 import json
 from typing import List, Optional
 
+import planet_auth.logging.auth_logger
 import planet_auth
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
+from planet_auth.storage_utils import _SOPSAwareFilesystemObjectStorageProvider
 from planet_auth.util import custom_json_class_dumper
 
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
 from .prompts import prompt_and_change_user_default_profile_if_different
+
+auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 
 def monkeypatch_hide_click_cmd_options(cmd, hide_options: List[str]):
@@ -68,7 +72,7 @@ def print_obj(obj):
 
 
 def post_login_cmd_helper(
-    override_auth_context: planet_auth.Auth, use_sops, prompt_pre_selection: Optional[bool] = None
+    override_auth_context: planet_auth.Auth, use_sops_opt, prompt_pre_selection: Optional[bool] = None
 ):
     override_profile_name = override_auth_context.profile_name()
     if not override_profile_name:
@@ -87,6 +91,22 @@ def post_login_cmd_helper(
     # where in-memory operations are desired.  This util function is for
     # helping CLI commands, we can be more opinionated about what is to
     # be done.
+
+    # If the profile was read from sops, selected sops even if wasn't an
+    # explict command line option.
+    use_sops = use_sops_opt
+    if not use_sops:
+        # Here in the CLI we can assume that the default storage provider
+        # _SOPSAwareFilesystemObjectStorageProvider is being used.  Unlike general
+        # library use, we do not support caller provided custom storage providers
+        # in the CLI tools at this time.
+        _config_data = override_auth_context.auth_client().config().data() or {}
+        if (
+            _config_data.get(_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY)
+            == _SOPSAwareFilesystemObjectStorageProvider._StorageType.SOPS.value
+        ):
+            auth_logger.debug(msg="Implicitly selecting SOPS based on data originating from SOPS protected storage.")
+            use_sops = True
 
     # Don't clobber built-in profiles.
     if not Builtins.is_builtin_profile(override_profile_name):

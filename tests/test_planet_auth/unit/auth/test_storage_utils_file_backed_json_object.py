@@ -88,6 +88,13 @@ class TestFileBackedJsonObject(unittest.TestCase):
         # This seems to help.
         os.environ["TZ"] = "UTC"
 
+    @staticmethod
+    def _filter_spdata(data: dict) -> dict:
+        # Storage providers are known to add "__" keys for their own use.
+        # These should not be considered part of the general data.
+        filtered_data = {k: v for k, v in data.items() if not (isinstance(k, str) and k.startswith("__"))}
+        return filtered_data
+
     def test_set_data_asserts_valid(self):
         under_test = Credential(data=None, file_path=None)
         with self.assertRaises(FileBackedJsonObjectException):
@@ -129,14 +136,14 @@ class TestFileBackedJsonObject(unittest.TestCase):
         # Load works when we have a valid file
         under_test.set_path(tdata_resource_file_path("keys/base_test_credential.json"))
         under_test.load()
-        self.assertEqual({"test_key": "test_value"}, under_test.data())
+        self.assertEqual({"test_key": "test_value"}, self._filter_spdata(under_test.data()))
 
         # A subsequent failed load should throw, but leave the data unchanged.
         under_test.set_path(tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
         with self.assertRaises(FileNotFoundError):
             under_test.load()
 
-        self.assertEqual({"test_key": "test_value"}, under_test.data())
+        self.assertEqual({"test_key": "test_value"}, self._filter_spdata(under_test.data()))
 
     def test_load_file_not_found(self):
         under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
@@ -166,7 +173,7 @@ class TestFileBackedJsonObject(unittest.TestCase):
         under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/base_test_credential.json"))
         self.assertIsNone(under_test.data())
         under_test.lazy_load()
-        self.assertEqual({"test_key": "test_value"}, under_test.data())
+        self.assertEqual({"test_key": "test_value"}, self._filter_spdata(under_test.data()))
 
         # if the path is invalid, it should error.
         under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
@@ -204,7 +211,7 @@ class TestFileBackedJsonObject(unittest.TestCase):
         under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/base_test_credential.json"))
         self.assertIsNone(under_test.data())
         under_test.lazy_reload()
-        self.assertEqual({"test_key": "test_value"}, under_test.data())
+        self.assertEqual({"test_key": "test_value"}, self._filter_spdata(under_test.data()))
 
         # if the path is invalid, it should error.
         under_test = Credential(data=None, file_path=tdata_resource_file_path("keys/FILE_DOES_NOT_EXIST.json"))
@@ -299,7 +306,7 @@ class TestFileBackedJsonObject(unittest.TestCase):
         under_test.save()
         test_reader = Credential(data=None, file_path=test_path)
         test_reader.load()
-        self.assertEqual(test_data, test_reader.data())
+        self.assertEqual(test_data, self._filter_spdata(test_reader.data()))
 
     def test_getters_setters(self):
         test_path = pathlib.Path("/test/test_credential.json")

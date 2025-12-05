@@ -19,6 +19,7 @@ import stat
 import subprocess
 import time
 from abc import ABC, abstractmethod
+from enum import Enum
 from typing import Optional, Dict, Any
 
 from planet_auth.auth_exception import AuthException
@@ -96,8 +97,14 @@ class ObjectStorageProvider(ABC):
 class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
     """
     Storage provider geared around backing a single object in a single file
-    with paths take from the root of the local file system.
+    with paths taken from the root of the local file system.
     """
+
+    _STORAGE_TYPE_KEY = "___SOPSAwareFilesystemObjectStorageProvider__storage_type"
+
+    class _StorageType(Enum):
+        PLAINTEXT = "plaintext"
+        SOPS = "sops"
 
     def __init__(self, root: Optional[pathlib.Path] = None):
         if root:
@@ -116,12 +123,17 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         return obj_path
 
     @staticmethod
-    def _is_sops_path(file_path):
+    def _is_sops_path(file_path: pathlib.Path) -> bool:
         # TODO: Could be ".json.sops", or ".sops.json", depending on file
         #   level or field level encryption, respectively.  We currently
         #   only look for and support field level encryption in json
         #   files with a ".sops.json" suffix.
         return bool(file_path.suffixes == [".sops", ".json"])
+
+    @staticmethod
+    def _filter_write_object(data: dict) -> dict:
+        final_data = {k: v for k, v in data.items() if not (isinstance(k, str) and k.startswith("__"))}
+        return final_data
 
     @staticmethod
     def _read_json(file_path: pathlib.Path):
@@ -137,7 +149,7 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
 
     @staticmethod
     def _write_json(file_path: pathlib.Path, data: dict):
-        auth_logger.debug(msg="Writing JSON data to file {}".format(file_path))
+        auth_logger.debug(msg="Writing JSON data to cleartext file {}".format(file_path))
         with open(file_path, mode="w", encoding="UTF-8") as file_w:
             os.chmod(file_path, stat.S_IREAD | stat.S_IWRITE)
             _no_none_data = {key: value for key, value in data.items() if value is not None}
@@ -155,26 +167,54 @@ class _SOPSAwareFilesystemObjectStorageProvider(ObjectStorageProvider):
         #         ['sops', '-e', '--input-type', 'json', '--output-type',
         #          'json', '--output', file_path, '/dev/stdin'],
         #         stdin=data_f)
-        auth_logger.debug(msg="Writing JSON data to SOPS encrypted file {}".format(file_path))
         _SOPSAwareFilesystemObjectStorageProvider._write_json(file_path, data)
+        auth_logger.debug(msg="Writing JSON data to SOPS encrypted file {}".format(file_path))
         subprocess.check_call(["sops", "-e", "--input-type", "json", "--output-type", "json", "-i", file_path])
 
     @staticmethod
     def _load_file(file_path: pathlib.Path) -> dict:
         if _SOPSAwareFilesystemObjectStorageProvider._is_sops_path(file_path):
             new_data = _SOPSAwareFilesystemObjectStorageProvider._read_json_sops(file_path)
+            new_data[_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY] = (
+                _SOPSAwareFilesystemObjectStorageProvider._StorageType.SOPS.value
+            )
         else:
             new_data = _SOPSAwareFilesystemObjectStorageProvider._read_json(file_path)
+            new_data[_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY] = (
+                _SOPSAwareFilesystemObjectStorageProvider._StorageType.PLAINTEXT.value
+            )
 
         return new_data
 
     @staticmethod
+    def _do_sops(file_path: pathlib.Path, data: dict) -> bool:
+        if _SOPSAwareFilesystemObjectStorageProvider._is_sops_path(file_path):
+            return True
+        if (
+            data
+            and data.get(_SOPSAwareFilesystemObjectStorageProvider._STORAGE_TYPE_KEY)
+            == _SOPSAwareFilesystemObjectStorageProvider._StorageType.SOPS.value
+        ):
+            auth_logger.warning(msg=f"Data sourced from SOPS being written cleartext to the file {file_path}.")
+            # Upgrading to SOPS would be great, but also problematic.
+            # The problem is that if we are writing to SOPS we should use a
+            # SOPS file name so that we know we should read it as a SOPS file
+            # later.  We can't change the name here because the caller would
+            # not know what we did, and may not be able to find the object
+            # later.
+
+        return False
+
+    @staticmethod
     def _save_file(file_path: pathlib.Path, data: dict):
         file_path.parent.mkdir(parents=True, exist_ok=True)
-        if _SOPSAwareFilesystemObjectStorageProvider._is_sops_path(file_path):
-            _SOPSAwareFilesystemObjectStorageProvider._write_json_sops(file_path, data)
+        do_sops = _SOPSAwareFilesystemObjectStorageProvider._do_sops(file_path, data)
+        write_data = _SOPSAwareFilesystemObjectStorageProvider._filter_write_object(data)
+
+        if do_sops:
+            _SOPSAwareFilesystemObjectStorageProvider._write_json_sops(file_path, write_data)
         else:
-            _SOPSAwareFilesystemObjectStorageProvider._write_json(file_path, data)
+            _SOPSAwareFilesystemObjectStorageProvider._write_json(file_path, write_data)
 
     def load_obj(self, key: ObjectStorageProvider_KeyType) -> dict:
         obj_filepath = self._obj_filepath(key)
