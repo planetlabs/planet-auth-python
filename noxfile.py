@@ -4,7 +4,7 @@ import sys
 import nox
 
 nox.options.stop_on_first_error = False
-what nox.options.reuse_existing_virtualenvs = True
+nox.options.reuse_existing_virtualenvs = True
 
 # Default sessions - all tests, but not packaging
 nox.options.sessions = [
