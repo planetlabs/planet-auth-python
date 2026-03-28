@@ -153,7 +153,7 @@ class OidcMultiIssuerValidator:
             by a network or configuration problem impacting a single auth server.
 
             The multi-validator requires foreknowledge of all the issuers for
-            proper initialization. So, without this assumption it would be unavoidable
+            proper initialization. So, without this assumption, it would be unavoidable
             to introduce network risk into the constructor.  This assumption
             allows us to push all network errors to runtime, and avoids
             possible initialization time errors.
