@@ -48,6 +48,15 @@ logging.basicConfig(format="%(message)s", level=logging.DEBUG)
 # secret) that is permitted client credentials OAuth flow and grant type.
 # This is not the only possibility.
 
+# Trust is established as (issuer, audience) pairs.  Each entry must specify
+# exactly one audience.  To trust multiple audiences from the same issuer,
+# provide separate entries for each (issuer, audience) pair.
+#
+# Note: The "audiences" config field is a list because the underlying client
+# config schema is shared with OAuth clients that request tokens, where
+# multiple audiences can be meaningful.  For services validating tokens,
+# each trust entry must map to exactly one (issuer, audience) pair.
+
 # TODO: we should have an example of how to use a built-in provider to provide
 #     named application server trust environments through use of the
 #     planet_auth_utils.PlanetAuthFactory.initialize_resource_server_validator

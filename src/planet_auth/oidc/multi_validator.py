@@ -132,7 +132,7 @@ class OidcMultiIssuerValidator:
     @staticmethod
     def from_auth_server_urls(
         trusted_auth_server_urls: List[str],
-        audience: str = None,
+        audience: str,
         log_result: bool = True,
     ):
         """
