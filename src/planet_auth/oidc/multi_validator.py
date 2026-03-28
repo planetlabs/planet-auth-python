@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import jwt
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, NamedTuple, Optional, Tuple
 
 import planet_auth.logging.auth_logger
 from planet_auth import ExpiredTokenException, TokenValidatorException, InvalidArgumentException
@@ -24,6 +24,14 @@ from planet_auth.logging.events import AuthEvent
 from planet_auth.oidc.api_clients.introspect_api_client import IntrospectionApiClient
 from planet_auth.oidc.auth_client import OidcAuthClient
 
+
+class TrustEntry(NamedTuple):
+    """An (issuer, audience) pair representing a trusted token authority."""
+
+    issuer: str
+    audience: str
+
+
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 
@@ -33,6 +41,11 @@ class OidcMultiIssuerValidator:
     to trust multiple token issuers. This is not expected to be a normal
     operating mode for most services. This was developed to support migration
     use cases.
+
+    Trust is configured as a set of (issuer, audience) pairs. The same
+    issuer may appear multiple times with different audiences, allowing
+    a service to accept tokens from the same authorization server that
+    were issued for different audiences.
 
     This is a higher level utility class, and is built on top of
     [planet_auth.AuthClient][] classes.  For a lower level utilities,
@@ -67,16 +80,17 @@ class OidcMultiIssuerValidator:
         Create a new multi issuer validator using the provided auth clients.
         The auth clients are expected to be any Auth that implements OIDC functionality.
 
-        Since the expected audience could be different for each issuer,
-        the expectation is that the provided Auth contexts will be configured
-        with an audience, even though that is an optional configuration parameter
-        for most implementing classes.
+        Trust is established as (issuer, audience) pairs.  Each provided Auth
+        context must be configured with an audience.  The same issuer may
+        appear multiple times as long as the audience differs, enabling
+        services to accept tokens from one authorization server that were
+        minted for different audiences.
 
         Parameters:
             trusted:
             log_result:
         """
-        self._trusted: Dict[str, Auth] = {}
+        self._trusted: Dict[TrustEntry, Auth] = {}
         self._log_result = log_result
 
         def _check_auth_client(auth_client: AuthClient) -> OidcAuthClient:
@@ -87,17 +101,32 @@ class OidcMultiIssuerValidator:
                 raise AuthException(
                     message="Auth Providers used for OIDC token validation must have the audiences configuration value set."
                 )
+            if len(auth_client._oidc_client_config.audiences()) > 1:
+                raise AuthException(
+                    message=(
+                        "Each trusted auth provider must be configured with exactly one audience"
+                        " when used for token validation. To trust multiple audiences from the"
+                        " same issuer, provide separate entries for each (issuer, audience) pair."
+                        " The 'audiences' configuration field is a list because the underlying"
+                        " client configuration schema is shared with OAuth clients that request"
+                        " tokens, where multiple audiences can be meaningful."
+                    )
+                )
             return auth_client
 
         for auth_provider in trusted:
             if auth_provider:
                 auth_client = _check_auth_client(auth_provider.auth_client())
                 issuer = auth_client._issuer()
-                if issuer in self._trusted:
+                audience = auth_client._oidc_client_config.audiences()[0]
+                trust_key = TrustEntry(issuer=issuer, audience=audience)
+                if trust_key in self._trusted:
                     raise AuthException(
-                        message="Cannot configure multiple auth providers for the same issuer '{}'".format(issuer)
+                        message="Cannot configure multiple auth providers for the same issuer '{}' and audience '{}'".format(
+                            issuer, audience
+                        )
                     )
-                self._trusted[issuer] = auth_provider
+                self._trusted[trust_key] = auth_provider
 
     # TODO: we should probably deprecate this method...
     @staticmethod
@@ -149,6 +178,74 @@ class OidcMultiIssuerValidator:
         )
 
     @staticmethod
+    def from_issuer_audience_pairs(
+        trusted: List["TrustEntry"],
+        log_result: bool = True,
+    ):
+        """
+        Create a new multi issuer validator from a list of
+        [planet_auth.TrustEntry][] named tuples.  This is the simplest way
+        to configure the multi-validator for local-only token validation,
+        and makes the trust model explicit.
+
+        Each entry represents a single trusted (issuer, audience) pair.
+        The same issuer may appear multiple times with different audiences,
+        enabling a service to accept tokens from one authorization server
+        that were minted for different audiences.
+
+        For advanced use cases that require remote token validation (e.g.
+        revocation checks), use ``from_auth_server_configs`` instead, which
+        allows specifying client credentials and other auth client
+        configuration.
+
+        Warning:
+            This method assumes that the auth server URL and the issuer
+            (as burned into signed access tokens) are the same.  This is
+            normally true, but not universally required.  See
+            ``from_auth_server_urls`` for a discussion of the implications.
+
+        Parameters:
+            trusted: A list of [planet_auth.TrustEntry][] named tuples.
+                Each entry represents a single trusted authority.  Falsy
+                entries are ignored.
+            log_result: Control whether successful token validations should
+                be logged.
+
+        Example:
+            ```python
+            from planet_auth import OidcMultiIssuerValidator, TrustEntry
+
+            auth_validator = OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[
+                    TrustEntry(issuer="https://oauth_server.example.com/oauth2/server_id", audience="https://api.example.com/"),
+                    # Same issuer, different audience:
+                    TrustEntry(issuer="https://oauth_server.example.com/oauth2/server_id", audience="https://internal-api.example.com/"),
+                    # Different issuer:
+                    TrustEntry(issuer="https://other-oauth.example.com/oauth2/server_id", audience="https://api.example.com/"),
+                ],
+            )
+            ```
+        """
+        auth_providers = []
+        for entry in trusted:
+            if entry:
+                auth_providers.append(
+                    Auth.initialize_from_config_dict(
+                        client_config={
+                            "client_type": "oidc_client_validator",
+                            "auth_server": entry.issuer,
+                            "issuer": entry.issuer,
+                            "audiences": [entry.audience],
+                        }
+                    )
+                )
+
+        return OidcMultiIssuerValidator(
+            trusted=auth_providers,
+            log_result=log_result,
+        )
+
+    @staticmethod
     def from_auth_server_configs(
         trusted_auth_server_configs: List[dict],
         log_result: bool = True,
@@ -162,8 +259,11 @@ class OidcMultiIssuerValidator:
                 Unless remote validation is required, the configuration dictionaries
                 may be sparse, containing only the `auth_server` and `audiences` properties.
                 `auth_server` is expected to be a single string, containing the URL
-                of the OAuth issuer.  `audiences` is expected to be an array, and contain
-                a list of supported audiences.
+                of the OAuth issuer.  `audiences` is expected to be an array containing
+                a single audience string.  The same auth server may appear in multiple
+                configuration entries with different audiences, enabling a service to
+                accept tokens from one authorization server that were minted for
+                different audiences.
             log_result: Control whether successful token validations against
                 trusted auth servers should be logged.
 
@@ -174,6 +274,11 @@ class OidcMultiIssuerValidator:
                     {
                         "auth_server": "https://oauth_server.example.com/oauth2/auth_server_id",
                         "audiences": ["https://api.example.com/"],
+                    },
+                    # Same issuer, different audience:
+                    {
+                        "auth_server": "https://oauth_server.example.com/oauth2/auth_server_id",
+                        "audiences": ["https://internal-api.example.com/"],
                     },
                 ],
             )
@@ -222,6 +327,22 @@ class OidcMultiIssuerValidator:
 
         return local_validation, remote_validation
 
+    @staticmethod
+    def _get_token_audiences(unverified_decoded_token: dict) -> List[str]:
+        """
+        Extract audiences from an unverified token.  Per the OIDC/OAuth2 spec,
+        the ``aud`` claim may be a single string or a list of strings.
+        Returns a list in either case, or an empty list when ``aud`` is absent.
+        """
+        aud = unverified_decoded_token.get("aud")
+        if aud is None:
+            return []
+        if isinstance(aud, str):
+            return [aud]
+        if isinstance(aud, list):
+            return [a for a in aud if isinstance(a, str)]
+        return []
+
     def _select_validator(self, token) -> Auth:
         # WARNING: Treat unverified token claims like toxic waste.
         #          Nothing can be trusted until the token is verified.
@@ -236,11 +357,16 @@ class OidcMultiIssuerValidator:
                 message=f"Issuer claim ('iss') must be a of string type. '{type(issuer).__name__}' type was detected."
             )
 
-        validator = self._trusted.get(issuer)
-        if validator:
-            return validator
+        token_audiences = self._get_token_audiences(unverified_decoded_token)
+        for aud in token_audiences:
+            validator = self._trusted.get(TrustEntry(issuer=issuer, audience=aud))
+            if validator:
+                return validator
+
         raise AuthException(
-            message="Rejecting token from an unrecognized issuer '{}'".format(issuer),
+            message="Rejecting token from an unrecognized issuer/audience combination. issuer='{}' audiences={}".format(
+                issuer, token_audiences
+            ),
             event=AuthEvent.TOKEN_INVALID_BAD_ISSUER,
         )
 

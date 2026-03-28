@@ -16,9 +16,10 @@ When a service is acting on behalf of one of its clients...
 ## Verifying OAuth Clients
 The [planet_auth.OidcMultiIssuerValidator][] class is provided to assist with
 common OAuth client authentication scenarios.  This class can be configured
-with a single authority for normal operations, and may optionally be configured
-with a secondary authorities.  This allows for complex deployments such as
-the seamless migration between auth servers over time.
+with one or more trusted issuing authorities, each represented as an
+(issuer, audience) pair.  This allows for complex deployments such as
+the seamless migration between auth servers over time, or accepting tokens
+minted for different audiences by the same authorization server.
 
 This utility class may be configured for entirely local token validation,
 or may be configured to check token validity against the OAuth token inspection
