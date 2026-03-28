@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.0 - 2026-03-30
+- `OidcMultiIssuerValidator` now models trust as explicit (issuer, audience) pairs,
+  allowing the same issuer to appear with different audiences.
+
 ## 2.3.1 - 2025-12-10
 - Fix a bug where sops protected files would be rewritten without preserving
   their sops protection.

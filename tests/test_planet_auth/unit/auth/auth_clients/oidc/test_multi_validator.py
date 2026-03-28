@@ -731,6 +731,18 @@ class TestMultiValidator:
         )
         assert len(under_test._trusted) == 1
 
+    def test_issuer_audience_pairs_rejects_empty_issuer(self):
+        with pytest.raises(TypeError, match="non-empty"):
+            OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[TrustEntry(issuer="", audience=TEST_AUDIENCE)],
+            )
+
+    def test_issuer_audience_pairs_rejects_empty_audience(self):
+        with pytest.raises(TypeError, match="non-empty"):
+            OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience="")],
+            )
+
     def test_reject_unknown_issuer(self):
         # QE TC15
         test_case_name = inspect.currentframe().f_code.co_name

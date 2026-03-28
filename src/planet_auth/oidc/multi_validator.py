@@ -158,22 +158,8 @@ class OidcMultiIssuerValidator:
             allows us to push all network errors to runtime, and avoids
             possible initialization time errors.
         """
-        trusted = []
-        for auth_server_url in trusted_auth_server_urls:
-            if auth_server_url:
-                trusted.append(
-                    Auth.initialize_from_config_dict(
-                        client_config={
-                            "client_type": "oidc_client_validator",
-                            "auth_server": auth_server_url,
-                            "issuer": auth_server_url,
-                            "audiences": [audience],
-                        }
-                    )
-                )
-
-        return OidcMultiIssuerValidator(
-            trusted=trusted,
+        return OidcMultiIssuerValidator.from_issuer_audience_pairs(
+            trusted=[TrustEntry(issuer=url, audience=audience) for url in trusted_auth_server_urls if url],
             log_result=log_result,
         )
 
@@ -229,6 +215,8 @@ class OidcMultiIssuerValidator:
         auth_providers = []
         for entry in trusted:
             if entry:
+                if not entry.issuer or not entry.audience:
+                    raise TypeError("TrustEntry must have non-empty issuer and audience values.")
                 auth_providers.append(
                     Auth.initialize_from_config_dict(
                         client_config={
