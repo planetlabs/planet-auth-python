@@ -224,12 +224,14 @@ class TokenValidator:
         # Invalid tokens never get this far.  To get this far, all the basics of authentication
         # have been passed, and it's a question of the proper grants not having been given.
         if scopes_anyof:
-            if validated_claims.get(_SCOPE_CLAIM_RFC8693):
+            rfc8693_scopes = validated_claims.get(_SCOPE_CLAIM_RFC8693)
+            okta_scopes = validated_claims.get(_SCOPE_CLAIM_OKTA)
+            if rfc8693_scopes:
                 # RFC 8693 places scopes in a space delimited string.
-                token_scopes = validated_claims.get(_SCOPE_CLAIM_RFC8693).split()
-            elif validated_claims.get(_SCOPE_CLAIM_OKTA):
+                token_scopes = rfc8693_scopes.split()
+            elif okta_scopes:
                 # No split.  Okta places a list of strings in the token.
-                token_scopes = validated_claims.get(_SCOPE_CLAIM_OKTA)
+                token_scopes = okta_scopes
             else:
                 raise InvalidTokenException(
                     message="No OAuth2 Scopes claim could be found in the access token",
