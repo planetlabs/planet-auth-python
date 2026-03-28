@@ -433,9 +433,12 @@ class TestResourceServerValidatorInitHelper(TestWithHomeDirProfiles, unittest.Te
 
         # Check if the issuers match the passed custom configuration
         for priority, config in zip(ISSUER_PRIORITIES, [VALID_PRIMARY_CONFIGS, VALID_SECONDARY_CONFIGS]):
-            issuers = list(test_validator_vars[priority].keys())
-            self.assertEqual(len(issuers), 1)
-            self.assertEqual(issuers[0], config[0]["auth_server"])
+            trust_keys = list(test_validator_vars[priority].keys())
+            self.assertEqual(len(trust_keys), 1)
+            self.assertEqual(
+                trust_keys[0],
+                planet_auth.TrustEntry(issuer=config[0]["auth_server"], audience=config[0]["audiences"][0]),
+            )
 
     def test_custom_invalid_configs(self):
         with self.assertRaises(planet_auth.AuthException) as context:
