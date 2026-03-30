@@ -564,7 +564,7 @@ class OidcAuthClient(AuthClient, ABC):
                 )
             if len(conf_audiences) != 1:
                 raise AuthClientException(
-                    message="When using the auth client config's audiences as the source for required token audience during validaiton, only one audience may be specified."
+                    message="When using the auth client config's audiences as the source for required token audience during validation, only one audience may be specified."
                 )
             required_audience = conf_audiences[0]
 

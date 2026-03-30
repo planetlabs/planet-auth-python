@@ -112,7 +112,7 @@ from .oidc.token_validator import (
     TokenValidatorException,
     UnknownSigningKeyTokenException,
 )
-from .oidc.multi_validator import OidcMultiIssuerValidator
+from .oidc.multi_validator import OidcMultiIssuerValidator, TrustEntry
 from .planet_legacy.auth_client import PlanetLegacyAuthClientConfig, PlanetLegacyAuthClient
 from .static_api_key.auth_client import (
     StaticApiKeyAuthClientConfig,
@@ -186,6 +186,7 @@ __all__ = [
     "OidcClientValidatorAuthClientConfig",
     "OidcClientValidatorAuthClient",
     "OidcMultiIssuerValidator",
+    "TrustEntry",
     "NoOpAuthClient",
     "NoOpAuthClientConfig",
     "PlanetLegacyAuthClient",

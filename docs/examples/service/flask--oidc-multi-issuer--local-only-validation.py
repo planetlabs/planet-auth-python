@@ -49,6 +49,15 @@ logging.basicConfig(format="%(message)s", level=logging.DEBUG)
 # Do not cross the streams.
 # Seriously.  Don't do it.
 
+# Trust is established as (issuer, audience) pairs.  Each entry must specify
+# exactly one audience.  The same issuer may appear multiple times with
+# different audiences if the auth server issues tokens for more than one
+# audience that this service should accept.
+#
+# Note: The "audiences" config field is a list because the underlying client
+# config schema is shared with OAuth clients that request tokens, where
+# multiple audiences can be meaningful.  For services validating tokens,
+# each trust entry must map to exactly one (issuer, audience) pair.
 auth_validator = planet_auth.OidcMultiIssuerValidator.from_auth_server_configs(
     trusted_auth_server_configs=[
         {

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+import json
 import jwt.utils
 import secrets
 import time
@@ -28,7 +29,7 @@ from planet_auth.auth_client import AuthClient, AuthClientConfig
 from planet_auth.oidc.auth_clients.client_validator import OidcClientValidatorAuthClient
 from planet_auth.oidc.auth_clients.client_credentials_flow import ClientCredentialsClientSecretAuthClient
 from planet_auth.auth_exception import AuthException, InvalidTokenException
-from planet_auth.oidc.multi_validator import OidcMultiIssuerValidator
+from planet_auth.oidc.multi_validator import OidcMultiIssuerValidator, TrustEntry
 from tests.test_planet_auth.unit.auth.util import StubOidcAuthClient, StubOidcClientConfig, FakeTokenBuilder
 from tests.test_planet_auth.util import tdata_resource_file_path
 
@@ -46,6 +47,7 @@ TEST_UNTRUSTED_SIGNING_KEY = tdata_resource_file_path("keys/keypair3_priv_nopass
 TEST_UNTRUSTED_PUB_KEY = tdata_resource_file_path("keys/keypair3_pub_jwk.json")
 
 TEST_AUDIENCE = "test_audience"
+TEST_AUDIENCE_ALT = "test_audience_alt"
 
 TEST_TOKEN_TTL = 60
 
@@ -137,6 +139,17 @@ secondary_issuer_config_dict = {
 }
 secondary_issuer_config = StubOidcClientConfig(**secondary_issuer_config_dict)
 
+primary_issuer_alt_audience_config_dict = {
+    "auth_server": TEST_PRIMARY_ISSUER,
+    "scopes": ["test_scp0", "test_scp1"],
+    "audiences": [TEST_AUDIENCE_ALT],
+    "stub_authority_ttl": TEST_TOKEN_TTL,
+    "stub_authority_access_token_audience": TEST_AUDIENCE_ALT,
+    "stub_authority_signing_key_file": TEST_PRIMARY_SIGNING_KEY,
+    "stub_authority_pub_key_file": TEST_PRIMARY_PUB_KEY,
+}
+primary_issuer_alt_audience_config = StubOidcClientConfig(**primary_issuer_alt_audience_config_dict)
+
 untrusted_issuer_config_dict = {
     "auth_server": TEST_UNTRUSTED_ISSUER,
     "scopes": ["test_scp0", "test_scp2"],
@@ -159,7 +172,9 @@ bad_config_1_dict = {
 }
 bad_config_1 = StubOidcClientConfig(**bad_config_1_dict)
 
+
 primary_issuer = StubOidcAuthClient(primary_issuer_config)
+primary_issuer_alt_audience = StubOidcAuthClient(primary_issuer_alt_audience_config)
 secondary_issuer = StubOidcAuthClient(secondary_issuer_config)
 untrusted_issuer = StubOidcAuthClient(untrusted_issuer_config)
 bad_validator_1 = StubOidcAuthClient(bad_config_1)
@@ -190,11 +205,11 @@ class TestMultiValidator:
     #       This would also let us maybe handle other auth mechanisms beyond oauth?
     @staticmethod
     def _patch_primary(under_test: OidcMultiIssuerValidator, patched_auth_client: AuthClient):
-        under_test._trusted[TEST_PRIMARY_ISSUER]._auth_client = patched_auth_client
+        under_test._trusted[(TEST_PRIMARY_ISSUER, TEST_AUDIENCE)]._auth_client = patched_auth_client
 
     @staticmethod
     def _patch_secondary(under_test: OidcMultiIssuerValidator, patched_auth_client: AuthClient):
-        under_test._trusted[TEST_SECONDARY_ISSUER]._auth_client = patched_auth_client
+        under_test._trusted[(TEST_SECONDARY_ISSUER, TEST_AUDIENCE)]._auth_client = patched_auth_client
 
     def under_test__only_primary_validator(self, log_primary=True):
         under_test = OidcMultiIssuerValidator(
@@ -287,6 +302,7 @@ class TestMultiValidator:
                 "fake_claim_1": "test claim value",
                 "fake_claim_2": "test claim value",
                 "iss": primary_issuer.token_builder.issuer,
+                "aud": TEST_AUDIENCE,
             },
             header={
                 "alg": primary_issuer.token_builder.signing_key_algorithm,
@@ -322,16 +338,22 @@ class TestMultiValidator:
         under_test.validate_access_token(token=test_jwt)  # No throw
 
         # TC 1
-        # Use the real signing key, but make the iss an invalid type.
-        # You can make the argument this is still valid, because the signature is still
-        # from a trusted issuer. But, we reject it based on bad structure.
-        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        # Token with iss set to an invalid type (list instead of string).
+        # Newer versions of PyJWT prevent encoding non-string iss claims,
+        # so we use FakeTokenBuilder to craft the malformed token directly.
+        # The issuer type check happens before signature verification.
+        fake_jwt = FakeTokenBuilder.fake_token(
+            body={
+                **token_body,
+                "iss": [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer],
+            },
+            header=token_header,
+        )
         with pytest.raises(
             InvalidTokenException,
             match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
         ):
-            under_test.validate_access_token(token=test_jwt)
+            under_test.validate_access_token(token=fake_jwt)
 
         # TC 2
         # Liar token.  Untrusted issuer signing key claiming to be valid issuer
@@ -344,13 +366,22 @@ class TestMultiValidator:
 
         # TC 3
         # Double-talk liar.  Using the untrusted signing key, claiming to be ourselves and the trusted issuer.
-        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        # We encode a valid token with the untrusted key, then tamper the payload
+        # post-signing to inject a list iss.  This produces a token with a real
+        # (but untrusted) signature that no longer matches the modified payload —
+        # a more realistic attack than pure garbage signatures.
+        legit_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        header_b64, payload_b64, signature_b64 = legit_jwt.split(".")
+        payload_bytes = jwt.utils.base64url_decode(payload_b64)
+        payload = json.loads(payload_bytes)
+        payload["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
+        tampered_payload_b64 = jwt.utils.base64url_encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
+        tampered_jwt = f"{header_b64}.{tampered_payload_b64}.{signature_b64}"
         with pytest.raises(
             InvalidTokenException,
             match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
         ):
-            under_test.validate_access_token(token=test_jwt)
+            under_test.validate_access_token(token=tampered_jwt)
 
     def test_missing_signature(self):
         # QE TC11 - JWT without a signature
@@ -560,7 +591,8 @@ class TestMultiValidator:
                 ],
             )
 
-    def test_no_repeat_issuers(self):
+    def test_no_repeat_issuer_audience_pairs(self):
+        # Same issuer + same audience should be rejected
         with pytest.raises(AuthException):
             OidcMultiIssuerValidator(
                 trusted=[Auth.initialize_from_client(primary_issuer), Auth.initialize_from_client(primary_issuer)],
@@ -573,6 +605,65 @@ class TestMultiValidator:
                     Auth.initialize_from_client(primary_issuer),
                 ],
             )
+
+    def test_same_issuer_different_audience_allowed(self):
+        # Same issuer with different audiences should be allowed
+        under_test = OidcMultiIssuerValidator(
+            trusted=[
+                Auth.initialize_from_client(primary_issuer),
+                Auth.initialize_from_client(primary_issuer_alt_audience),
+            ],
+        )
+        assert len(under_test._trusted) == 2
+        assert (TEST_PRIMARY_ISSUER, TEST_AUDIENCE) in under_test._trusted
+        assert (TEST_PRIMARY_ISSUER, TEST_AUDIENCE_ALT) in under_test._trusted
+
+    def test_same_issuer_different_audience_routes_correctly(self):
+        # Tokens minted for different audiences by the same issuer
+        # should each be validated by the correct auth provider.
+        test_case_name = inspect.currentframe().f_code.co_name
+        test_username = self.username(test_case_name)
+
+        under_test = OidcMultiIssuerValidator(
+            trusted=[
+                Auth.initialize_from_client(primary_issuer),
+                Auth.initialize_from_client(primary_issuer_alt_audience),
+            ],
+        )
+
+        # Token for the primary audience
+        access_token = primary_issuer.login(username=test_username, extra_claims={"test_case": test_case_name})
+        local_validation, remote_validation = under_test.validate_access_token(
+            access_token.access_token(), do_remote_revocation_check=False
+        )
+        assert TEST_AUDIENCE == local_validation.get("aud")
+        assert TEST_PRIMARY_ISSUER == local_validation.get("iss")
+
+        # Token for the alt audience
+        access_token_alt = primary_issuer_alt_audience.login(
+            username=test_username, extra_claims={"test_case": test_case_name}
+        )
+        local_validation_alt, remote_validation_alt = under_test.validate_access_token(
+            access_token_alt.access_token(), do_remote_revocation_check=False
+        )
+        assert TEST_AUDIENCE_ALT == local_validation_alt.get("aud")
+        assert TEST_PRIMARY_ISSUER == local_validation_alt.get("iss")
+
+    def test_same_issuer_wrong_audience_rejected(self):
+        # When trust is configured for issuer+audience_A, a token from
+        # the same issuer but for audience_B should be rejected.
+        test_case_name = inspect.currentframe().f_code.co_name
+        test_username = self.username(test_case_name)
+
+        # Only trust primary issuer with the primary audience (not alt)
+        under_test = self.under_test__only_primary_validator()
+
+        # Issue a token for the alt audience from the same issuer
+        access_token_alt = primary_issuer_alt_audience.login(
+            username=test_username, extra_claims={"test_case": test_case_name}
+        )
+        with pytest.raises(AuthException):
+            under_test.validate_access_token(access_token_alt.access_token(), do_remote_revocation_check=False)
 
     def test_ignore_falsy_issuers_in_direct_construction(self):
         under_test = OidcMultiIssuerValidator(
@@ -619,6 +710,55 @@ class TestMultiValidator:
         )
         assert len(under_test._trusted) == 2
 
+    def test_issuer_audience_pairs_construction_happy(self):
+        under_test = OidcMultiIssuerValidator.from_issuer_audience_pairs(
+            trusted=[
+                TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE),
+                TrustEntry(issuer=TEST_SECONDARY_ISSUER, audience=TEST_AUDIENCE),
+            ],
+        )
+        assert len(under_test._trusted) == 2
+        assert TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE) in under_test._trusted
+        assert TrustEntry(issuer=TEST_SECONDARY_ISSUER, audience=TEST_AUDIENCE) in under_test._trusted
+
+    def test_issuer_audience_pairs_same_issuer_different_audiences(self):
+        under_test = OidcMultiIssuerValidator.from_issuer_audience_pairs(
+            trusted=[
+                TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE),
+                TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE_ALT),
+            ],
+        )
+        assert len(under_test._trusted) == 2
+        assert TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE) in under_test._trusted
+        assert TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE_ALT) in under_test._trusted
+
+    def test_issuer_audience_pairs_rejects_duplicate(self):
+        with pytest.raises(AuthException):
+            OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[
+                    TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE),
+                    TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE),
+                ],
+            )
+
+    def test_issuer_audience_pairs_ignores_falsy(self):
+        under_test = OidcMultiIssuerValidator.from_issuer_audience_pairs(
+            trusted=["", TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience=TEST_AUDIENCE), None],
+        )
+        assert len(under_test._trusted) == 1
+
+    def test_issuer_audience_pairs_rejects_empty_issuer(self):
+        with pytest.raises(TypeError, match="non-empty"):
+            OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[TrustEntry(issuer="", audience=TEST_AUDIENCE)],
+            )
+
+    def test_issuer_audience_pairs_rejects_empty_audience(self):
+        with pytest.raises(TypeError, match="non-empty"):
+            OidcMultiIssuerValidator.from_issuer_audience_pairs(
+                trusted=[TrustEntry(issuer=TEST_PRIMARY_ISSUER, audience="")],
+            )
+
     def test_reject_unknown_issuer(self):
         # QE TC15
         test_case_name = inspect.currentframe().f_code.co_name
@@ -638,6 +778,34 @@ class TestMultiValidator:
         primary_issuer.login(username=test_username, extra_claims={"test_case": test_case_name})
         with pytest.raises(AuthException):
             self.under_test__bad_client_1()
+
+    def test_reject_multiple_audiences_in_config_dict(self):
+        # Each trust entry must have exactly one audience.
+        # Multiple audiences in a single entry should be rejected.
+        test_conf_dict = {
+            "auth_server": TEST_PRIMARY_ISSUER,
+            "audiences": [TEST_AUDIENCE, TEST_AUDIENCE_ALT],
+        }
+        with pytest.raises(AuthException):
+            OidcMultiIssuerValidator.from_auth_server_configs(
+                trusted_auth_server_configs=[test_conf_dict],
+            )
+
+    def test_reject_multiple_audiences_mixed_with_valid(self):
+        # A valid single-audience entry alongside an invalid multi-audience
+        # entry should still be rejected.
+        valid_conf_dict = {
+            "auth_server": TEST_PRIMARY_ISSUER,
+            "audiences": [TEST_AUDIENCE],
+        }
+        invalid_conf_dict = {
+            "auth_server": TEST_SECONDARY_ISSUER,
+            "audiences": [TEST_AUDIENCE, TEST_AUDIENCE_ALT],
+        }
+        with pytest.raises(AuthException):
+            OidcMultiIssuerValidator.from_auth_server_configs(
+                trusted_auth_server_configs=[valid_conf_dict, invalid_conf_dict],
+            )
 
     def test_config_dict_construction_happy(self):
         test_conf_dict_1 = {
@@ -663,9 +831,12 @@ class TestMultiValidator:
         }
         under_test = OidcMultiIssuerValidator.from_auth_server_configs(trusted_auth_server_configs=[test_conf_dict])
         assert len(under_test._trusted) == 1
-        assert isinstance(under_test._trusted[TEST_PRIMARY_ISSUER].auth_client(), OidcClientValidatorAuthClient)
+        assert isinstance(
+            under_test._trusted[(TEST_PRIMARY_ISSUER, TEST_AUDIENCE)].auth_client(), OidcClientValidatorAuthClient
+        )
         assert (
-            under_test._trusted[TEST_PRIMARY_ISSUER].auth_client()._oidc_client_config.issuer() == TEST_PRIMARY_ISSUER
+            under_test._trusted[(TEST_PRIMARY_ISSUER, TEST_AUDIENCE)].auth_client()._oidc_client_config.issuer()
+            == TEST_PRIMARY_ISSUER
         )
 
         test_conf_dict["client_type"] = "oidc_client_credentials_secret"
@@ -674,8 +845,14 @@ class TestMultiValidator:
         test_conf_dict["issuer"] = "__test_dummy__"
         under_test = OidcMultiIssuerValidator.from_auth_server_configs(trusted_auth_server_configs=[test_conf_dict])
         assert len(under_test._trusted) == 1
-        assert isinstance(under_test._trusted["__test_dummy__"].auth_client(), ClientCredentialsClientSecretAuthClient)
-        assert under_test._trusted["__test_dummy__"].auth_client()._oidc_client_config.issuer() == "__test_dummy__"
+        assert isinstance(
+            under_test._trusted[("__test_dummy__", TEST_AUDIENCE)].auth_client(),
+            ClientCredentialsClientSecretAuthClient,
+        )
+        assert (
+            under_test._trusted[("__test_dummy__", TEST_AUDIENCE)].auth_client()._oidc_client_config.issuer()
+            == "__test_dummy__"
+        )
 
     @mock.patch("planet_auth.logging.auth_logger.AuthLogger.warning")
     @mock.patch("planet_auth.logging.auth_logger.AuthLogger.info")

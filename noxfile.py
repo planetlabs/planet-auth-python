@@ -3,8 +3,8 @@ import sys
 
 import nox
 
-nox.options.stop_on_first_error = True
-nox.options.reuse_existing_virtualenvs = False
+nox.options.stop_on_first_error = False
+nox.options.reuse_existing_virtualenvs = True
 
 # Default sessions - all tests, but not packaging
 nox.options.sessions = [
