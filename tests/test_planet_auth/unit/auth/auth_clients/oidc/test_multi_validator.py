@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import inspect
+import json
 import jwt.utils
 import secrets
 import time
@@ -337,16 +338,22 @@ class TestMultiValidator:
         under_test.validate_access_token(token=test_jwt)  # No throw
 
         # TC 1
-        # Use the real signing key, but make the iss an invalid type.
-        # You can make the argument this is still valid, because the signature is still
-        # from a trusted issuer. But, we reject it based on bad structure.
-        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        # Token with iss set to an invalid type (list instead of string).
+        # Newer versions of PyJWT prevent encoding non-string iss claims,
+        # so we use FakeTokenBuilder to craft the malformed token directly.
+        # The issuer type check happens before signature verification.
+        fake_jwt = FakeTokenBuilder.fake_token(
+            body={
+                **token_body,
+                "iss": [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer],
+            },
+            header=token_header,
+        )
         with pytest.raises(
             InvalidTokenException,
             match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
         ):
-            under_test.validate_access_token(token=test_jwt)
+            under_test.validate_access_token(token=fake_jwt)
 
         # TC 2
         # Liar token.  Untrusted issuer signing key claiming to be valid issuer
@@ -359,13 +366,22 @@ class TestMultiValidator:
 
         # TC 3
         # Double-talk liar.  Using the untrusted signing key, claiming to be ourselves and the trusted issuer.
-        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        # We encode a valid token with the untrusted key, then tamper the payload
+        # post-signing to inject a list iss.  This produces a token with a real
+        # (but untrusted) signature that no longer matches the modified payload —
+        # a more realistic attack than pure garbage signatures.
+        legit_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        header_b64, payload_b64, signature_b64 = legit_jwt.split(".")
+        payload_bytes = jwt.utils.base64url_decode(payload_b64)
+        payload = json.loads(payload_bytes)
+        payload["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
+        tampered_payload_b64 = jwt.utils.base64url_encode(json.dumps(payload).encode("utf-8")).decode("utf-8")
+        tampered_jwt = f"{header_b64}.{tampered_payload_b64}.{signature_b64}"
         with pytest.raises(
             InvalidTokenException,
             match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
         ):
-            under_test.validate_access_token(token=test_jwt)
+            under_test.validate_access_token(token=tampered_jwt)
 
     def test_missing_signature(self):
         # QE TC11 - JWT without a signature
