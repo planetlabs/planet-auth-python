@@ -18,7 +18,6 @@ from typing import Any, Callable, Optional
 
 from planet_auth_utils.constants import EnvironmentVariables
 
-
 _click_option_decorator_type = Callable[..., Any]
 
 

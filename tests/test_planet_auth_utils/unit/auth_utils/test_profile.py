@@ -23,7 +23,6 @@ from planet_auth.static_api_key.auth_client import StaticApiKeyAuthClientConfig
 from planet_auth_utils.profile import Profile, ProfileException
 from tests.test_planet_auth_utils.util import tdata_resource_file_path, TestWithHomeDirProfiles
 
-
 PROFILE1_NAME = "profile1_static_api_key"
 PROFILE2_NAME = "profile2_invalid"
 PROFILE3_NAME = "profile3_empty"

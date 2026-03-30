@@ -58,7 +58,7 @@ examples = [
     # "planet-auth-config >= 2.0.0"
 ]
 test = [
-    "black < 26.0.0",
+    "black",
     "coverage[toml]",
     "freezegun",
     "mypy",

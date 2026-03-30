@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.1 - 2026-03-30
+- Cleanup
+
 ## 2.4.0 - 2026-03-30
 - `OidcMultiIssuerValidator` now models trust as explicit (issuer, audience) pairs,
   allowing the same issuer to appear with different audiences.

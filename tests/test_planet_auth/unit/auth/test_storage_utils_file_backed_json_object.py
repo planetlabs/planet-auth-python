@@ -35,7 +35,6 @@ from planet_auth.storage_utils import (
 from tests.test_planet_auth.unit.auth.util import MockObjectStorageProvider, MockStorageObjectNotFound
 from tests.test_planet_auth.util import tdata_resource_file_path
 
-
 # class MockFileBackedEntity(FileBackedJsonObject):
 #     def __init__(self, data=None, file_path=None):
 #         super().__init__(data=data, file_path=file_path)

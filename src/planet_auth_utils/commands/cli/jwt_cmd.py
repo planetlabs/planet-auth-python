@@ -107,7 +107,7 @@ def print_jwt_parts(raw, header, body, signature, human_readable):
 def hazmat_print_jwt(token_str, human_readable):
     print("UNTRUSTED JWT Decoding\n")
     if token_str:
-        (hazmat_header, hazmat_body, hazmat_signature) = TokenValidator.hazmat_unverified_decode(token_str)
+        hazmat_header, hazmat_body, hazmat_signature = TokenValidator.hazmat_unverified_decode(token_str)
         print_jwt_parts(
             raw=token_str,
             header=hazmat_header,
@@ -186,7 +186,7 @@ def cmd_jwt_validate_oauth(ctx, token, token_file, audience, issuer, human_reada
     trust with what audiences MUST be controlled by the service operator.
     """
     token_to_validate = _get_token_or_fail(token_opt=token, token_file_opt=token_file)
-    (hazmat_header, hazmat_body, hazmat_signature) = TokenValidator.hazmat_unverified_decode(token_to_validate)
+    hazmat_header, hazmat_body, hazmat_signature = TokenValidator.hazmat_unverified_decode(token_to_validate)
 
     if issuer:
         validation_iss = issuer
