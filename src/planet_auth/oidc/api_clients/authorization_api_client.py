@@ -29,7 +29,7 @@ from planet_auth.oidc.api_clients.api_client import OidcApiClientException
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 DEFAULT_REDIRECT_LISTEN_PORT = 80
-AUTH_TIMEOUT = 60
+AUTH_TIMEOUT = 300
 
 
 class AuthorizationApiException(OidcApiClientException):
