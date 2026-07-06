@@ -30,7 +30,6 @@ from planet_auth.oidc.api_clients.token_api_client import TokenApiClient
 from planet_auth.oidc.oidc_credential import FileBackedOidcCredential
 import planet_auth.logging.auth_logger
 
-
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 

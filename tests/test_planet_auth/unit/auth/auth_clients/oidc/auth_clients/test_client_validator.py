@@ -22,7 +22,6 @@ from planet_auth.oidc.auth_clients.client_validator import (
 )
 from planet_auth.request_authenticator import ForbiddenRequestAuthenticator
 
-
 TEST_AUTH_SERVER_BASE = "https://auth.unittest.planet.com"
 
 

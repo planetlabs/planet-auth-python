@@ -7,7 +7,6 @@ import re
 from flask import Flask, make_response, request
 from functools import wraps
 
-
 #############################################################################
 # Logging Configuration
 #############################################################################

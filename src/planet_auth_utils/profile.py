@@ -25,7 +25,6 @@ from planet_auth.constants import (
 )
 from planet_auth.storage_utils import ObjectStorageProvider
 
-
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 
