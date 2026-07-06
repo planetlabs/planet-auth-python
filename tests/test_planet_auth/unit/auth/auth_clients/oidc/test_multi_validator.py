@@ -346,7 +346,6 @@ class TestMultiValidator:
         ):
             under_test.validate_access_token(token=test_jwt)
 
-
     def test_missing_signature(self):
         # QE TC11 - JWT without a signature
         test_case_name = inspect.currentframe().f_code.co_name
