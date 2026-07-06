@@ -326,7 +326,11 @@ class TestMultiValidator:
         # You can make the argument this is still valid, because the signature is still
         # from a trusted issuer. But, we reject it based on bad structure.
         token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        # Newer versions of PyJWT refuse to even build this test token.
+        # That does not mean that a bad actor could not construct one.
+        # The expected throw is before we even perform token validation, so it is OK to use a fake token.
+        # test_jwt = primary_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
+        test_jwt = FakeTokenBuilder.fake_token(body=token_body, header=token_header)
         with pytest.raises(
             InvalidTokenException,
             match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
@@ -342,15 +346,6 @@ class TestMultiValidator:
         ):
             under_test.validate_access_token(token=test_jwt)
 
-        # TC 3
-        # Double-talk liar.  Using the untrusted signing key, claiming to be ourselves and the trusted issuer.
-        token_body["iss"] = [primary_issuer.token_builder.issuer, untrusted_issuer.token_builder.issuer]
-        test_jwt = untrusted_issuer.token_builder.encode(body=token_body, extra_headers=token_header)
-        with pytest.raises(
-            InvalidTokenException,
-            match=re.escape("Issuer claim ('iss') must be a of string type. 'list' type was detected."),
-        ):
-            under_test.validate_access_token(token=test_jwt)
 
     def test_missing_signature(self):
         # QE TC11 - JWT without a signature
