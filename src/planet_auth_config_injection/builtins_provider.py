@@ -15,7 +15,6 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-
 # Unlike other environment variables, AUTH_BUILTIN_PROVIDER is not name-spaced.
 # It is intended for libraries and applications to inject configuration by
 # being set within the program.  It's not expected to be set by end-users.

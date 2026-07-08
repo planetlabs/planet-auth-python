@@ -15,7 +15,6 @@
 from typing import Dict
 from planet_auth.oidc.api_clients.api_client import OidcApiClient
 
-
 # class UserinfoApiException(OidcApiClientException):
 #    def __init__(self, **kwargs):
 #        super().__init__(**kwargs)

@@ -39,7 +39,6 @@ from planet_auth.oidc.auth_client_default_authenticators import (
     OidcAuthClientWithRefreshingOidcTokenRequestAuthenticator,
 )
 
-
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 

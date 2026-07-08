@@ -19,7 +19,6 @@ from planet_auth.storage_utils import FileBackedJsonObject, ObjectStorageProvide
 from planet_auth.constants import USER_CONFIG_FILE
 from planet_auth.logging.auth_logger import getAuthLogger
 
-
 auth_logger = getAuthLogger()
 
 

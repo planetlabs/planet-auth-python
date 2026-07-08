@@ -226,7 +226,11 @@ class TokenValidator:
         if scopes_anyof:
             if validated_claims.get(_SCOPE_CLAIM_RFC8693):
                 # RFC 8693 places scopes in a space delimited string.
-                token_scopes = validated_claims.get(_SCOPE_CLAIM_RFC8693).split()
+                _claim = validated_claims.get(_SCOPE_CLAIM_RFC8693)
+                if isinstance(_claim, str):
+                    token_scopes = validated_claims.get(_SCOPE_CLAIM_RFC8693).split()  # type: ignore
+                else:
+                    token_scopes = []
             elif validated_claims.get(_SCOPE_CLAIM_OKTA):
                 # No split.  Okta places a list of strings in the token.
                 token_scopes = validated_claims.get(_SCOPE_CLAIM_OKTA)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.2 - 2026-07-08
+- Increase default timeout for auth code flow callback listener.
+- Test updates and formatting related to upstream project changes.
+
 ## 2.3.1 - 2025-12-10
 - Fix a bug where sops protected files would be rewritten without preserving
   their sops protection.

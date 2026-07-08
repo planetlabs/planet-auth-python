@@ -26,7 +26,6 @@ from planet_auth_utils.profile import Profile
 
 from tests.test_planet_auth.unit.auth.util import MockObjectStorageProvider, TestTokenBuilder
 
-
 # This isn't the best unit test of Auth.  Rather, this tests how several
 # things come together to make the request_authenticator_is_ready() work as
 # expected in the Auth class.  We run this test for a number of common

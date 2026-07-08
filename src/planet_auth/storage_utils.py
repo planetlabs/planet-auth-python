@@ -25,7 +25,6 @@ from typing import Optional, Dict, Any
 from planet_auth.auth_exception import AuthException
 from planet_auth.util import auth_logger
 
-
 ObjectStorageProvider_KeyType = pathlib.Path
 """
 Key type for object storage.  Paths are currently used in part because of

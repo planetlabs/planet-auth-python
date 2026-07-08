@@ -63,7 +63,7 @@ class FileBackedOidcCredential(Credential):
         try:
             access_token_str = self.access_token()
             if access_token_str:
-                (_, jwt_hazmat_body, _) = TokenValidator.hazmat_unverified_decode(access_token_str)
+                _, jwt_hazmat_body, _ = TokenValidator.hazmat_unverified_decode(access_token_str)
             else:
                 jwt_hazmat_body = None
         except InvalidArgumentException:
