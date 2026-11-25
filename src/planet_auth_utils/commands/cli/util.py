@@ -33,6 +33,7 @@ from .prompts import prompt_and_change_user_default_profile_if_different
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
 
 _AUTH_CONTEXT_OPTIONS = ("auth_profile", "auth_client_id", "auth_client_secret", "auth_api_key")
+_SECRET_AUTH_CONTEXT_OPTIONS = {"auth_client_secret", "auth_api_key"}
 
 
 def monkeypatch_hide_click_cmd_options(cmd, hide_options: List[str]):
@@ -76,6 +77,13 @@ def print_obj(obj):
     print(json_str)
 
 
+def _describe_auth_option(name: str, value: Optional[str]) -> str:
+    flag = "--" + name.replace("_", "-")
+    if name in _SECRET_AUTH_CONTEXT_OPTIONS:
+        return flag
+    return f'{flag} "{value}"'
+
+
 def login_auth_context(ctx: click.Context) -> planet_auth.Auth:
     """
     Resolve the auth context for a login command.  Auth options given on the
@@ -93,20 +101,41 @@ def login_auth_context(ctx: click.Context) -> planet_auth.Auth:
         return root_auth_context
 
     options: Dict[str, Optional[str]] = {}
+    option_sources: Dict[str, Optional[ParameterSource]] = {}
     parent = ctx.parent
     while parent is not None:
         for name in _AUTH_CONTEXT_OPTIONS:
             if options.get(name) is None and parent.params.get(name) is not None:
                 options[name] = parent.params[name]
+                option_sources[name] = parent.get_parameter_source(name)
         parent = parent.parent
+
+    for name, value in login_options.items():
+        if options.get(name) is None or options[name] == value:
+            continue
+        msg = (
+            f"{_describe_auth_option(name, value)} given to the {ctx.info_name} command overrides"
+            f" {_describe_auth_option(name, options[name])} given to the parent command."
+        )
+        if option_sources.get(name) == ParameterSource.COMMANDLINE:
+            auth_logger.warning(msg=msg)
+        else:
+            auth_logger.info(msg=msg)
     options.update(login_options)
 
-    return PlanetAuthFactory.initialize_auth_client_context(
+    auth_context = PlanetAuthFactory.initialize_auth_client_context(
         auth_profile_opt=options.get("auth_profile"),
         auth_client_id_opt=options.get("auth_client_id"),
         auth_client_secret_opt=options.get("auth_client_secret"),
         auth_api_key_opt=options.get("auth_api_key"),
     )
+
+    if root_auth_context is not None and root_auth_context.profile_name() != auth_context.profile_name():
+        auth_logger.info(
+            msg=f'The {ctx.info_name} command is using auth profile "{auth_context.profile_name()}"'
+            f' in place of auth profile "{root_auth_context.profile_name()}" selected by the parent command.'
+        )
+    return auth_context
 
 
 def login_extra_params(extra: Optional[List[str]], project: Optional[str], organization: Optional[str]) -> dict:
