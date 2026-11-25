@@ -40,20 +40,25 @@ from .options import (
     opt_username,
     opt_yes_no,
 )
-from .util import recast_exceptions_to_click, post_login_cmd_helper, print_obj
+from .util import recast_exceptions_to_click, login_cmd_helper, print_obj
 from .jwt_cmd import json_dumps_for_jwt_dict, hazmat_print_jwt
 
 
 def _check_client_type(ctx):
-    if not isinstance(ctx.obj["AUTH"].auth_client(), OidcAuthClient):
+    _check_auth_context_client_type(ctx.obj["AUTH"])
+
+
+def _check_auth_context_client_type(auth_context):
+    if not isinstance(auth_context.auth_client(), OidcAuthClient):
         raise click.ClickException(
             f'"oauth" auth commands can only be used with OAuth type auth profiles.'
-            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+            f' The current profile "{auth_context.profile_name()}" is of type "{auth_context.auth_client()._auth_client_config.meta()["client_type"]}".'
         )
 
 
 @click.group("oauth", invoke_without_command=True)
 @click.pass_context
+@recast_exceptions_to_click(AuthException)
 def cmd_oauth(ctx):
     """
     OAuth2 authentication commands.
@@ -61,6 +66,13 @@ def cmd_oauth(ctx):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
         sys.exit(0)
+
+    if ctx.obj.get("AUTH") is None:
+        # The root command deferred an auth profile error.  Login may be
+        # given options that resolve it.  Other commands cannot proceed.
+        if ctx.invoked_subcommand == "login":
+            return
+        raise ctx.obj["AUTH_INIT_ERROR"]
 
     _check_client_type(ctx)
 
@@ -100,35 +112,23 @@ def cmd_oauth_login(
     """
     Perform an initial login using OAuth.
     """
-    login_extra = {}
-    if extra:
-        for extra_opt in extra:
-            key, value = extra_opt.split("=", 1)
-            login_extra[key] = value
-    if project:
-        # Planet Labs OAuth extension to request a token for a particular project
-        login_extra["project_id"] = project
-    if organization:
-        # Used by Auth0's OAuth implementation to support their concept of selecting
-        # a particular organization at login when the user belongs to more than one.
-        login_extra["organization"] = organization
-
-    current_auth_context = ctx.obj["AUTH"]
-    print(f"Logging in with authentication profile {current_auth_context.profile_name()}...")
-    current_auth_context.login(
-        requested_scopes=scope,
-        requested_audiences=audience,
-        allow_open_browser=open_browser,
-        allow_tty_prompt=True,
-        display_qr_code=show_qr_code,
+    login_cmd_helper(
+        ctx,
+        scope=scope,
+        audience=audience,
+        open_browser=open_browser,
+        show_qr_code=show_qr_code,
+        organization=organization,
+        project=project,
+        extra=extra,
         username=username,
         password=password,
-        client_id=auth_client_id,
-        client_secret=auth_client_secret,
-        extra=login_extra,
+        auth_client_id=auth_client_id,
+        auth_client_secret=auth_client_secret,
+        sops=sops,
+        yes=yes,
+        check_auth_context=_check_auth_context_client_type,
     )
-    print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 @cmd_oauth.command("refresh")

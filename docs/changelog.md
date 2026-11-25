@@ -30,7 +30,15 @@
   - `profile list` and `profile set` note incomplete profiles.
   - Commands that manage profiles remain usable when the selected profile
     is incomplete.
+  - `login` and `oauth login` now share an implementation, and select the
+    auth profile the same way.  Auth options given to the login command are
+    combined with those given to the root command, and take priority.  This
+    lets `--auth-client-id` and `--auth-client-secret` complete a template
+    profile selected with the root `--auth-profile` option.  `login` gains
+    the `--extra` option.
 - **Behavior changes**:
+  - `login` no longer ignores the `--auth-profile` option given to the
+    root command.
   - When settings come from environment variables or the user config file,
     the profile, client credentials, and API key are now resolved with the
     same priority used for command line options.  Previously, a profile

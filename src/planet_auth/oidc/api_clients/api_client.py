@@ -22,6 +22,7 @@ from urllib3.util.retry import Retry
 from planet_auth.auth_client import AuthClientException
 from planet_auth.constants import X_PLANET_APP_HEADER, X_PLANET_APP
 from planet_auth.util import parse_content_type
+# from . import http_debug
 
 EnricherPayloadType = Dict
 # EnricherAudType = str

@@ -25,14 +25,18 @@ from planet_auth import (
 )
 
 from .options import opt_password, opt_sops, opt_username, opt_yes_no
-from .util import recast_exceptions_to_click, post_login_cmd_helper
+from .util import recast_exceptions_to_click, login_cmd_helper
 
 
 def _check_client_type_pllegacy(ctx):
-    if not isinstance(ctx.obj["AUTH"].auth_client(), PlanetLegacyAuthClient):
+    _check_auth_context_client_type_pllegacy(ctx.obj["AUTH"])
+
+
+def _check_auth_context_client_type_pllegacy(auth_context):
+    if not isinstance(auth_context.auth_client(), PlanetLegacyAuthClient):
         raise click.ClickException(
             f'"legacy" auth commands can only be used with "{PlanetLegacyAuthClientConfig.meta()["client_type"]}" type auth profiles.'
-            f' The current profile "{ctx.obj["AUTH"].profile_name()}" is of type "{ctx.obj["AUTH"].auth_client()._auth_client_config.meta()["client_type"]}".'
+            f' The current profile "{auth_context.profile_name()}" is of type "{auth_context.auth_client()._auth_client_config.meta()["client_type"]}".'
         )
 
 
@@ -73,15 +77,23 @@ def cmd_pllegacy_login(ctx, username, password, sops, yes):
     """
     Perform an initial login using Planet's legacy authentication interfaces.
     """
-    _check_client_type_pllegacy(ctx)
-    current_auth_context = ctx.obj["AUTH"]
-    current_auth_context.login(
-        allow_tty_prompt=True,
+    login_cmd_helper(
+        ctx,
+        scope=None,
+        audience=None,
+        open_browser=False,
+        show_qr_code=False,
+        organization=None,
+        project=None,
+        extra=None,
         username=username,
         password=password,
+        auth_client_id=None,
+        auth_client_secret=None,
+        sops=sops,
+        yes=yes,
+        check_auth_context=_check_auth_context_client_type_pllegacy,
     )
-    print("Login succeeded.")  # Errors should throw.
-    post_login_cmd_helper(override_auth_context=current_auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 @cmd_pllegacy.command("print-api-key")

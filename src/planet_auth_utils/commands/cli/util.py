@@ -15,7 +15,8 @@
 import click
 import functools
 import json
-from typing import List, Optional
+from click.core import ParameterSource
+from typing import Callable, Dict, List, Optional
 
 import planet_auth.logging.auth_logger
 import planet_auth
@@ -25,10 +26,13 @@ from planet_auth.storage_utils import _SOPSAwareFilesystemObjectStorageProvider
 from planet_auth.util import custom_json_class_dumper
 
 from planet_auth_utils.builtins import Builtins
+from planet_auth_utils.plauth_factory import PlanetAuthFactory
 from planet_auth_utils.profile import Profile
 from .prompts import prompt_and_change_user_default_profile_if_different
 
 auth_logger = planet_auth.logging.auth_logger.getAuthLogger()
+
+_AUTH_CONTEXT_OPTIONS = ("auth_profile", "auth_client_id", "auth_client_secret", "auth_api_key")
 
 
 def monkeypatch_hide_click_cmd_options(cmd, hide_options: List[str]):
@@ -70,6 +74,99 @@ def recast_exceptions_to_click(*exceptions, **params):  # pylint: disable=W0613
 def print_obj(obj):
     json_str = json.dumps(obj, indent=2, sort_keys=True, default=custom_json_class_dumper)
     print(json_str)
+
+
+def login_auth_context(ctx: click.Context) -> planet_auth.Auth:
+    """
+    Resolve the auth context for a login command.  Auth options given on the
+    command line to the login command are combined with the auth options
+    given to its parent commands, and take priority over them.  Without such
+    options, the auth context created by the root command is used.
+    """
+    login_options = {
+        name: ctx.params[name]
+        for name in _AUTH_CONTEXT_OPTIONS
+        if ctx.params.get(name) is not None and ctx.get_parameter_source(name) == ParameterSource.COMMANDLINE
+    }
+    root_auth_context = (ctx.obj or {}).get("AUTH")
+    if not login_options and root_auth_context is not None:
+        return root_auth_context
+
+    options: Dict[str, Optional[str]] = {}
+    parent = ctx.parent
+    while parent is not None:
+        for name in _AUTH_CONTEXT_OPTIONS:
+            if options.get(name) is None and parent.params.get(name) is not None:
+                options[name] = parent.params[name]
+        parent = parent.parent
+    options.update(login_options)
+
+    return PlanetAuthFactory.initialize_auth_client_context(
+        auth_profile_opt=options.get("auth_profile"),
+        auth_client_id_opt=options.get("auth_client_id"),
+        auth_client_secret_opt=options.get("auth_client_secret"),
+        auth_api_key_opt=options.get("auth_api_key"),
+    )
+
+
+def login_extra_params(extra: Optional[List[str]], project: Optional[str], organization: Optional[str]) -> dict:
+    login_extra = {}
+    for extra_opt in extra or []:
+        if "=" not in extra_opt:
+            raise click.BadParameter(f'"{extra_opt}" is not in the form <key>=<value>.', param_hint="--extra")
+        key, value = extra_opt.split("=", 1)
+        login_extra[key] = value
+    if project:
+        # Planet Labs OAuth extension to request a token for a particular project
+        login_extra["project_id"] = project
+    if organization:
+        # Used by Auth0's OAuth implementation to support their concept of selecting
+        # a particular organization at login when the user belongs to more than one.
+        login_extra["organization"] = organization
+    return login_extra
+
+
+def login_cmd_helper(
+    ctx: click.Context,
+    scope,
+    audience,
+    open_browser,
+    show_qr_code,
+    organization,
+    project,
+    extra,
+    username,
+    password,
+    auth_client_id,
+    auth_client_secret,
+    sops,
+    yes,
+    check_auth_context: Optional[Callable[[planet_auth.Auth], None]] = None,
+):
+    """
+    Common implementation of the login commands.
+    """
+    login_extra = login_extra_params(extra=extra, project=project, organization=organization)
+    auth_context = login_auth_context(ctx)
+    if check_auth_context:
+        check_auth_context(auth_context)
+
+    print(f"Logging in with authentication profile {auth_context.profile_name()}...")
+    auth_context.login(
+        requested_scopes=scope,
+        requested_audiences=audience,
+        allow_open_browser=open_browser,
+        allow_tty_prompt=True,
+        display_qr_code=show_qr_code,
+        username=username,
+        password=password,
+        client_id=auth_client_id,
+        client_secret=auth_client_secret,
+        extra=login_extra,
+    )
+    print("Login succeeded.")  # Errors should throw.
+
+    post_login_cmd_helper(override_auth_context=auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 def post_login_cmd_helper(

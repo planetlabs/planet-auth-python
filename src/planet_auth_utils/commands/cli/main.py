@@ -48,19 +48,20 @@ from .options import (
     opt_audience,
     opt_scope,
     opt_yes_no,
+    opt_extra,
 )
 from .oauth_cmd import cmd_oauth
 from .planet_legacy_auth_cmd import cmd_pllegacy
 from .profile_cmd import cmd_profile
 from .jwt_cmd import cmd_jwt
-from .util import recast_exceptions_to_click, post_login_cmd_helper
+from .util import recast_exceptions_to_click, login_cmd_helper
 
 auth_logger = getAuthLogger()
 
 
 # These commands do not depend on the root command's auth context, or
 # tolerate its absence, so that users may fix profile problems.
-_CMDS_TOLERANT_OF_PROFILE_ERRORS = {"login", "profile", "reset", "version"}
+_CMDS_TOLERANT_OF_PROFILE_ERRORS = {"login", "oauth", "profile", "reset", "version"}
 
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
@@ -187,8 +188,9 @@ def cmd_plauth_reset():
 @opt_password()
 @opt_sops()
 @opt_yes_no()
+@opt_extra()
 @click.pass_context
-@recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError)
+@recast_exceptions_to_click(AuthException, FileNotFoundError, PermissionError, ValueError)
 def cmd_plauth_login(
     ctx,
     scope,
@@ -205,6 +207,7 @@ def cmd_plauth_login(
     password,
     sops,
     yes,
+    extra,
 ):
     """
     Perform an initial login.
@@ -213,45 +216,28 @@ def cmd_plauth_login(
     and saves access tokens for the selected authentication profile.
     The specific process used depends on the selected options and
     authentication profile.
+
+    Auth profile, client, and API key options given to this command are
+    combined with those given to parent commands, and take priority.
     """
-    extra = {}
-    if project:
-        # Planet Labs OAuth extension to request a token for a particular project
-        extra["project_id"] = project
-    if organization:
-        # Used by Auth0's OAuth implementation to support their concept of selecting
-        # a particular organization at login when the user belongs to more than one.
-        extra["organization"] = organization
-
-    # Arguments to login commands may imply an override to the default/root
-    # command auth provider in a way that is different from what we expect
-    # in most non-root commands.
-    # root_cmd_auth_context = ctx.obj["AUTH"]
-    override_auth_context = PlanetAuthFactory.initialize_auth_client_context(
-        auth_profile_opt=auth_profile,
-        auth_client_id_opt=auth_client_id,
-        auth_client_secret_opt=auth_client_secret,
-        auth_api_key_opt=auth_api_key,
-        # auth_username_opt=auth_username,
-        # auth_password_opt=auth_password,
-    )
-
-    print(f"Logging in with authentication profile {override_auth_context.profile_name()}...")
-    _ = override_auth_context.login(
-        requested_scopes=scope,
-        requested_audiences=audience,
-        allow_open_browser=open_browser,
-        allow_tty_prompt=True,
-        display_qr_code=show_qr_code,
+    # Options are consumed via the click context by login_auth_context().
+    _ = (auth_profile, auth_api_key)
+    login_cmd_helper(
+        ctx,
+        scope=scope,
+        audience=audience,
+        open_browser=open_browser,
+        show_qr_code=show_qr_code,
+        organization=organization,
+        project=project,
+        extra=extra,
         username=username,
         password=password,
-        client_id=auth_client_id,
-        client_secret=auth_client_secret,
-        extra=extra,
+        auth_client_id=auth_client_id,
+        auth_client_secret=auth_client_secret,
+        sops=sops,
+        yes=yes,
     )
-    print("Login succeeded.")  # Errors should throw.
-
-    post_login_cmd_helper(override_auth_context=override_auth_context, use_sops_opt=sops, prompt_pre_selection=yes)
 
 
 cmd_plauth.add_command(cmd_oauth)
