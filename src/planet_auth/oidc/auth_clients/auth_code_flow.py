@@ -15,7 +15,7 @@
 from abc import ABC
 from typing import List, Optional
 
-from planet_auth.auth_client import AuthClientConfigException, AuthClientException
+from planet_auth.auth_client import AuthClientException
 from planet_auth.oidc.auth_client import (
     OidcAuthClientConfig,
     OidcAuthClient,
@@ -59,12 +59,9 @@ class AuthCodeClientConfig(OidcAuthClientConfig):
         if local_redirect_uri and not redirect_uri:
             self._data["redirect_uri"] = local_redirect_uri
 
-    def check_data(self, data):
-        super().check_data(data)
-        if not (data.get("redirect_uri") or data.get("local_redirect_uri")):
-            raise AuthClientConfigException(
-                message="A redirect_uri or local_redirect_uri is required for auth code client."
-            )
+    @classmethod
+    def required_config_keys(cls):
+        return super().required_config_keys() + [["redirect_uri", "local_redirect_uri"]]
 
     def local_redirect_uri(self) -> str:
         return self.lazy_get("local_redirect_uri")

@@ -80,17 +80,12 @@ class OidcAuthClientConfig(AuthClientConfig, ABC):
         # Loaded JIT. Not in the serialized self._data representation.
         self._authorization_callback_acknowledgement_data: Optional[str] = None
 
+    @classmethod
+    def required_config_keys(cls):
+        return super().required_config_keys() + ["auth_server", "client_id"]
+
     def check_data(self, data):
         super().check_data(data)
-        if not data.get("auth_server"):
-            raise AuthClientConfigException(
-                message="auth_server must be configured for {} auth client".format(self.__class__.__name__)
-            )
-        if not data.get("client_id"):
-            raise AuthClientConfigException(
-                message="client_id must be configured for {} auth client".format(self.__class__.__name__)
-            )
-
         # Do we actually want this restriction in the auth client, or leave that as a local restriction
         # in the validator call, since that is the only place this is a problem?
         if data.get("audiences"):

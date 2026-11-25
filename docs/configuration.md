@@ -178,3 +178,28 @@ secrets to securely store this information on disk using SOPS encryption.
 Similarly, a `token.sops.json` file will take priority over a `token.json`
 file. The configuration of SOPS is outside the scope of this tooling, and
 left to the user.
+
+### Incomplete and Template Profiles
+
+A profile may be incomplete, lacking settings that are required to
+construct an auth client.  For example, a built-in profile for OAuth
+client credentials may specify an auth server, but not a client ID
+and secret.  Incomplete profiles may be loaded, copied, and saved.
+Completeness is only enforced when an auth client is constructed.
+`plauth profile check <profile>` reports what, if anything, a profile is missing.
+
+An incomplete profile may serve as a template.  `plauth profile copy` creates
+a new profile from a template, accepting missing settings as options
+or interactively:
+```shell
+plauth profile copy <template profile> <new profile> --auth-client-id <id> --auth-client-secret <secret>
+```
+
+An incomplete profile may also be completed at runtime with a client
+ID and secret supplied by command line options, environment variables,
+or the user config file.  See
+[planet_auth_utils.PlanetAuthFactory.initialize_auth_client_context][].
+In this case, the runtime profile is named `<profile>-<client id>`, so
+that tokens for different clients are stored separately.  Settings
+supplied this way only fill in what the profile is missing.  They never
+replace settings that the profile already has.

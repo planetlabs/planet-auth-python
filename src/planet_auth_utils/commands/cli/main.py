@@ -18,10 +18,18 @@ import importlib.metadata
 import sys
 import time
 
-from planet_auth import Auth, AuthException, setStructuredLogging, ObjectStorageProvider, ObjectStorageProvider_KeyType
+from planet_auth import (
+    Auth,
+    AuthClientConfigIncompleteException,
+    AuthException,
+    setStructuredLogging,
+    ObjectStorageProvider,
+    ObjectStorageProvider_KeyType,
+)
 from planet_auth.constants import USER_CONFIG_FILE
+from planet_auth.logging.auth_logger import getAuthLogger
 
-from planet_auth_utils.plauth_factory import PlanetAuthFactory
+from planet_auth_utils.plauth_factory import PlanetAuthFactory, ProfileConflictException
 from planet_auth_utils.profile import Profile
 
 from .options import (
@@ -47,6 +55,13 @@ from .profile_cmd import cmd_profile
 from .jwt_cmd import cmd_jwt
 from .util import recast_exceptions_to_click, post_login_cmd_helper
 
+auth_logger = getAuthLogger()
+
+
+# These commands do not depend on the root command's auth context, or
+# tolerate its absence, so that users may fix profile problems.
+_CMDS_TOLERANT_OF_PROFILE_ERRORS = {"login", "profile", "reset", "version"}
+
 
 @click.group("plauth", invoke_without_command=True, help="Planet authentication utility")
 @opt_loglevel()
@@ -68,10 +83,19 @@ def cmd_plauth(ctx, loglevel, auth_profile):
 
     ctx.ensure_object(dict)
 
-    ctx.obj["AUTH"] = PlanetAuthFactory.initialize_auth_client_context(
-        auth_profile_opt=auth_profile,
-        # token_file_opt=token_file,
-    )
+    try:
+        ctx.obj["AUTH"] = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt=auth_profile,
+            # token_file_opt=token_file,
+        )
+    except (AuthClientConfigIncompleteException, ProfileConflictException) as e:
+        # Commands that manage profiles or perform their own auth context
+        # initialization must remain usable so the user can fix the problem.
+        if ctx.invoked_subcommand not in _CMDS_TOLERANT_OF_PROFILE_ERRORS:
+            raise
+        auth_logger.debug(msg=f"Deferring auth profile error for command {ctx.invoked_subcommand}: {e}")
+        ctx.obj["AUTH"] = None
+        ctx.obj["AUTH_INIT_ERROR"] = e
 
 
 @click.group("plauth", invoke_without_command=True, help="Embedded PLAuth advanced authentication utility")

@@ -58,7 +58,7 @@ The primary interfaces implemented for users of this package are as follows:
 
 from .auth import Auth, AuthClientContextException
 from .auth_exception import AuthException
-from .auth_client import AuthClientConfig, AuthClient
+from .auth_client import AuthClientConfig, AuthClient, AuthClientConfigException, AuthClientConfigIncompleteException
 from .credential import Credential
 from .request_authenticator import RequestAuthenticator, CredentialRequestAuthenticator
 from .logging.auth_logger import setPyLoggerForAuthLogger, setStringLogging, setStructuredLogging
@@ -145,6 +145,8 @@ __all__ = [
     "Auth",
     "AuthClient",
     "AuthClientConfig",
+    "AuthClientConfigException",
+    "AuthClientConfigIncompleteException",
     "AuthClientContextException",
     "AuthCodeAuthClient",
     "AuthCodeClientConfig",

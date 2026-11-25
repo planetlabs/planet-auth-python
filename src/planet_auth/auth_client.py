@@ -37,6 +37,34 @@ class AuthClientConfigException(InvalidDataException):  # Audit
         super().__init__(**kwargs)
 
 
+class AuthClientConfigIncompleteException(AuthClientConfigException):
+    """
+    Raised when an auth client configuration is well-formed, but lacks
+    settings that are required before an auth client can be constructed.
+    The missing settings are available from `missing_fields()`, each a dict
+    with `config_key`, `config_key_name`, and `config_key_description` keys.
+    Requirements with alternatives are joined with "|" in `config_key`.
+    """
+
+    def __init__(
+        self, missing_fields: List[dict], client_type_name: str = "", profile_name: Optional[str] = None, **kwargs
+    ):
+        if "message" not in kwargs:
+            kwargs["message"] = "Auth client configuration{} is incomplete. Missing required settings: {}".format(
+                f" for {client_type_name}" if client_type_name else "",
+                ", ".join(f["config_key"] for f in missing_fields),
+            )
+        super().__init__(**kwargs)
+        self._missing_fields = missing_fields
+        self._profile_name = profile_name
+
+    def missing_fields(self) -> List[dict]:
+        return self._missing_fields
+
+    def profile_name(self) -> Optional[str]:
+        return self._profile_name
+
+
 class AuthClientConfig(FileBackedJsonObject, ABC):
     """
     Base class for auth client configuration objects. Each concrete auth
@@ -180,6 +208,67 @@ class AuthClientConfig(FileBackedJsonObject, ABC):
                 with a wizard of some sort.  This is distinct from a rigid schema for
                 the configuration type.
         """
+
+    @classmethod
+    def required_config_keys(cls) -> List[Union[str, List[str]]]:
+        """
+        Return the configuration keys that must be set for the configuration
+        to be complete enough to construct an auth client.  Each entry is
+        either a key, or a list of alternative keys of which at least one
+        must be set.
+
+        This is distinct from `check_data()`, which validates that data is
+        well-formed.  Incomplete configurations are valid to load, copy, and
+        save. They may serve as templates to be filled in.
+
+        Subclasses should extend the list returned by `super()`.
+        """
+        return []
+
+    def missing_required_fields(self, data: Optional[Dict] = None) -> List[dict]:
+        """
+        Return a list describing required configuration settings that are
+        not set.  Each entry is a dict with `config_key`, `config_key_name`,
+        and `config_key_description` keys, populated from the config hints
+        where available.  An empty list means the configuration is complete.
+        """
+        if data is None:
+            data = self._data or {}
+        hints = {h["config_key"]: h for h in (self.meta().get("config_hints") or [])}
+        missing = []
+        for requirement in self.required_config_keys():
+            alternatives = [requirement] if isinstance(requirement, str) else list(requirement)
+            if any(data.get(k) for k in alternatives):
+                continue
+            missing.append(
+                {
+                    "config_key": "|".join(alternatives),
+                    "config_key_name": " or ".join(hints.get(k, {}).get("config_key_name", k) for k in alternatives),
+                    "config_key_description": " / ".join(
+                        hints[k]["config_key_description"]
+                        for k in alternatives
+                        if hints.get(k, {}).get("config_key_description")
+                    ),
+                }
+            )
+        return missing
+
+    def is_complete(self) -> bool:
+        return not self.missing_required_fields()
+
+    def check_complete(self):
+        """
+        Raise AuthClientConfigIncompleteException if required settings
+        are missing.
+        """
+        missing = self.missing_required_fields()
+        if missing:
+            e = AuthClientConfigIncompleteException(
+                missing_fields=missing, client_type_name=str(self.meta().get("display_name") or "")
+            )
+            if self._file_path:
+                e.set_file_path(self._file_path)
+            raise e
 
 
 # TODO: Revisit this interface.  Since we've done some other refactoring,

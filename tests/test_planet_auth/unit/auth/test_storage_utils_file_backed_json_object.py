@@ -64,6 +64,37 @@ class TestEntity(FileBackedJsonObject):
                 )
 
 
+class TestEntityWithCompleteness(FileBackedJsonObject):
+    def check_complete(self):
+        if not self._data.get("needed_key"):
+            raise InvalidDataException("needed_key is not set")
+
+
+class TestFileBackedJsonObjectCompleteness(unittest.TestCase):
+    def test_base_check_complete_is_noop(self):
+        TestEntity(data={"test_key_1": "required_value_1"}).check()
+
+    def test_incomplete_data_may_be_set_and_saved(self):
+        storage = MockObjectStorageProvider(initial_mock_storage={})
+        under_test = TestEntityWithCompleteness(
+            data={}, file_path=pathlib.Path("/mock/incomplete.json"), storage_provider=storage
+        )
+        under_test.set_data({"other_key": "v"})
+        under_test.save()
+        self.assertEqual({"other_key": "v"}, storage.load_obj(pathlib.Path("/mock/incomplete.json")))
+
+    def test_check_applies_check_complete_with_file_path(self):
+        under_test = TestEntityWithCompleteness(
+            data={"other_key": "v"}, file_path=pathlib.Path("/mock/incomplete.json")
+        )
+        with self.assertRaises(InvalidDataException) as ctx:
+            under_test.check()
+        self.assertIn("/mock/incomplete.json", str(ctx.exception))
+
+        under_test.set_data({"needed_key": "v"})
+        under_test.check()
+
+
 class TestFileBackedJsonObjectException(unittest.TestCase):
     def test_str_without_filepath(self):
         under_test = FileBackedJsonObjectException(message="test message")

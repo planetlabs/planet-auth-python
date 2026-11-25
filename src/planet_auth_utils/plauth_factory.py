@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import re
 import warnings
 
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from planet_auth import (
     Auth,
     AuthClientConfig,
+    AuthClientConfigIncompleteException,
     AuthException,
     ObjectStorageProvider,
     OidcMultiIssuerValidator,
@@ -31,7 +34,7 @@ from planet_auth.constants import (
     AUTH_CONFIG_FILE_PLAIN,
 )
 
-from planet_auth_utils.profile import Profile
+from planet_auth_utils.profile import Profile, ProfileException
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfigEnhanced
 from planet_auth_utils.constants import EnvironmentVariables
@@ -119,43 +122,163 @@ class PlanetAuthFactory:
         )
 
     @staticmethod
-    def _init_context_from_oauth_svc_account(
-        client_id: str,
-        client_secret: str,
+    def derived_profile_name(base_profile_name: str, client_id: str) -> str:
+        """
+        Construct the name used for a profile derived from a base profile
+        and a client ID.  The result is safe for use as a directory name.
+        """
+        safe_client_id = re.sub(r"[^a-z0-9._-]+", "_", client_id.lower()).strip("._") or "client"
+        return f"{base_profile_name.lower()}-{safe_client_id}"
+
+    @staticmethod
+    def _missing_config_keys(auth_client_config: AuthClientConfig) -> Set[str]:
+        missing_keys: Set[str] = set()
+        for m in auth_client_config.missing_required_fields():
+            missing_keys.update(m["config_key"].split("|"))
+        return missing_keys
+
+    @staticmethod
+    def _profile_accepts_overrides(auth_client_config: AuthClientConfig, overrides: Dict[str, "_ResolvedSetting"]):
+        """
+        True if every override either fills in a required setting the profile
+        lacks, or matches what the profile already has.
+        """
+        missing_keys = PlanetAuthFactory._missing_config_keys(auth_client_config)
+        data = auth_client_config.data() or {}
+        return all(k in missing_keys or data.get(k) == s.value for k, s in overrides.items())
+
+    @staticmethod
+    def _warn_on_derived_profile_mismatch(profile_name: str, merged_config: dict):
+        """
+        A derived profile may share a name with one already saved on disk,
+        for example by a previous `login`.  The runtime configuration takes
+        priority over the saved one, as it always has.  Warn if they refer to
+        different clients or auth servers, since tokens saved under the
+        profile may not be valid for the runtime configuration.
+        """
+        try:
+            existing = Profile.load_auth_client_config(profile_name)
+            existing.lazy_load()
+        except FileNotFoundError:
+            return
+        except AuthException as e:
+            auth_logger.debug(msg=f'Ignoring unreadable saved profile "{profile_name}": {e}')
+            return
+        existing_data = existing.data() or {}
+        for key in ("client_type", "auth_server", "client_id"):
+            if existing_data.get(key) != merged_config.get(key):
+                auth_logger.warning(
+                    msg=f'Saved profile "{profile_name}" ("{existing.path()}") has a different {key}'
+                    f' ("{existing_data.get(key)}") than the runtime configuration ("{merged_config.get(key)}").'
+                    " The saved profile configuration is ignored."
+                )
+                return
+
+    @staticmethod
+    def _incomplete_profile_exception(
+        profile_name: str, e: AuthClientConfigIncompleteException
+    ) -> AuthClientConfigIncompleteException:
+        missing_fields = e.missing_fields()
+        message = (
+            f'Auth profile "{profile_name}" is incomplete. Missing required settings: '
+            + ", ".join(f'{m["config_key_name"]} ({m["config_key"]})' for m in missing_fields)
+            + "."
+        )
+        # Env var names depend on the built-in provider namespace, so build these lazily.
+        runtime_override_hints = {
+            "client_id": f"the client ID (--auth-client-id or {EnvironmentVariables.AUTH_CLIENT_ID})",
+            "client_secret": f"the client secret (--auth-client-secret or {EnvironmentVariables.AUTH_CLIENT_SECRET})",
+        }
+        hints = [
+            runtime_override_hints[m["config_key"]]
+            for m in missing_fields
+            if m["config_key"] in runtime_override_hints
+        ]
+        if hints and len(hints) == len(missing_fields):
+            message += " Supply " + " and ".join(hints) + ", or save"
+        else:
+            message += " Save"
+        message += f" a complete profile with `profile copy {profile_name} <new profile name>`."
+        return AuthClientConfigIncompleteException(
+            missing_fields=missing_fields, profile_name=profile_name, message=message
+        )
+
+    @staticmethod
+    def _init_context_from_profile_with_overrides(
+        base_profile_name: str,
+        base_config: AuthClientConfig,
+        overrides: Dict[str, "_ResolvedSetting"],
         token_file_opt: Optional[str] = None,
         save_token_file: bool = True,
-        # profile_name: Optional[str] = None, # TODO? Always currently ad-hoc with this initializer's use.
         save_profile_config: bool = False,
-        # storage_provider: Optional[ObjectStorageProvider] = None,  # not yet supported here.
     ) -> Auth:
-        # TODO: support oauth service accounts that use pubkey, and not just client secrets.
-        # TODO: Can we handle different trust realms when initializing a M2M client with
-        #       just the Client ID and secret? (akin to how Auth0 implements AUTH0_DOMAIN usage.)
-        m2m_realm_name = Builtins.builtin_default_profile_name(client_type="oidc_client_credentials_secret")
-        base_client_config = Builtins.builtin_profile_auth_client_config_dict(m2m_realm_name)
-        constructed_client_config_dict = {
-            **base_client_config,
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
+        """
+        Initialize from a base profile, combined with override settings.
+        Overrides only fill required settings that the base profile is
+        missing; they never replace values it already has.  Ignored overrides
+        are logged with their source.
 
-        adhoc_profile_name = f"{m2m_realm_name}-{client_id}"
+        When an override supplies the client ID, the runtime profile is given a
+        derived name (see `derived_profile_name()`), so that template profiles
+        such as built-in M2M profiles are never shadowed.  When nothing is
+        merged, the base profile is used as is.
+        """
+        base_config.lazy_load()
+        base_data = dict(base_config.data() or {})
+        missing_keys = PlanetAuthFactory._missing_config_keys(base_config)
+
+        merged_data = dict(base_data)
+        applied: Dict[str, _ResolvedSetting] = {}
+        for key, setting in overrides.items():
+            if key in missing_keys:
+                merged_data[key] = setting.value
+                applied[key] = setting
+            elif base_data.get(key) != setting.value:
+                reason = f"already sets {key}" if base_data.get(key) else f"does not use {key}"
+                auth_logger.info(msg=f'{setting.describe()} ignored. Profile "{base_profile_name}" {reason}.')
+
+        if applied:
+            merged_data.pop("_hidden", None)
+            runtime_config = AuthClientConfig.from_dict(merged_data)
+        else:
+            runtime_config = base_config
+
+        try:
+            runtime_config.check_complete()
+        except AuthClientConfigIncompleteException as e:
+            raise PlanetAuthFactory._incomplete_profile_exception(base_profile_name, e) from e
+
+        runtime_profile_name = base_profile_name
+        if applied:
+            if "client_id" in applied:
+                runtime_profile_name = PlanetAuthFactory.derived_profile_name(
+                    base_profile_name, merged_data["client_id"]
+                )
+            if Builtins.is_builtin_profile(runtime_profile_name):
+                raise ProfileConflictException(
+                    message=f'Profile "{base_profile_name}" cannot be combined with '
+                    + ", ".join(s.describe() for s in applied.values())
+                    + f' without shadowing built-in profile "{runtime_profile_name}".'
+                    f" Create a custom profile with `profile copy {base_profile_name} <new name>` instead."
+                )
+            PlanetAuthFactory._warn_on_derived_profile_mismatch(runtime_profile_name, merged_data)
+            auth_logger.debug(
+                msg=f'Combined profile "{base_profile_name}" with '
+                + ", ".join(s.describe() for s in applied.values())
+                + f' as runtime profile "{runtime_profile_name}"'
+            )
 
         token_file_path = PlanetAuthFactory._token_file_path(
-            profile_name=adhoc_profile_name, overide_path=token_file_opt, save_token_file=save_token_file
+            profile_name=runtime_profile_name, overide_path=token_file_opt, save_token_file=save_token_file
         )
-
-        auth_logger.debug(msg=f"Initializing Auth for service account {m2m_realm_name}:{client_id}")
-        plauth_context = Auth.initialize_from_config_dict(
-            client_config=constructed_client_config_dict,
+        auth_logger.debug(msg=f"Initializing Auth from profile {runtime_profile_name}")
+        plauth_context = Auth.initialize_from_config(
+            client_config=runtime_config,
             token_file=token_file_path,
-            profile_name=adhoc_profile_name,
+            profile_name=runtime_profile_name,
         )
-        if save_profile_config:
-            PlanetAuthFactory._update_saved_profile_config(
-                plauth_context=plauth_context,
-                # storage_provider=storage_provider,  # Not yet supported here
-            )
+        if save_profile_config and applied:
+            PlanetAuthFactory._update_saved_profile_config(plauth_context=plauth_context)
 
         return plauth_context
 
@@ -275,18 +398,31 @@ class PlanetAuthFactory:
         - Values from configuration file.
         - Built-in defaults.
 
-        In constructing the returned Auth context, the following priority is applied, from
-        highest to lowest:
+        Each of the profile, OAuth client ID, OAuth client secret, and API key
+        settings is resolved independently using the priority above.  The
+        resolved settings are then combined to construct the returned Auth context:
 
-        - A user selected auth profile, as specified by `auth_profile_opt`. This may either
-          specify a built-in profile name, or a fully custom profile defined by files in
-          a `~/.planet/<profile name>` directory.
-        - A user selected OAuth service account, as specified by `auth_client_id_opt` and `auth_client_secret_opt`.
-        - A user specified API key, as specified by `auth_api_key_opt`
-        - A user selected auth profile, as determined from either environment variables or config files.
-        - A user selected OAuth service account, as determined from either environment variables or config files.
-        - A user selected API key, as determined from either environment variables or config files.
-        - A built-in default auth profile, which may require interactive user authentication.
+        - If a profile was selected and it can accept the resolved client
+          credentials, they are combined.  A profile can accept credentials
+          when they fill in required settings it lacks (for example, a built-in
+          M2M profile that serves as a template and has no client ID or secret),
+          or when they match the values it already has.  Credentials never
+          replace values a profile already has; ignored settings are logged.
+          When the client ID is supplied this way, the runtime profile is named
+          `<profile>-<client id>`.  Such derived names will never shadow a
+          built-in profile.  If a saved profile of the same name exists, the
+          runtime configuration takes priority, and a warning is logged if the
+          saved profile refers to a different client or auth server.
+        - Otherwise, the profile, a complete set of client credentials, or the
+          API key is used, whichever came from the highest priority source.  Ties
+          go to the profile, then to client credentials, then to the API key.
+          Client credentials used without a profile are combined with the
+          default built-in M2M profile.
+        - A user selected profile that is incomplete is an error if it was
+          explicitly selected.  If it was selected by environment or config
+          file, a warning is logged and other options are considered.
+        - If no other selection has been made, a built-in default auth profile
+          is used, which may require interactive user authentication.
 
         Example:
             ```python
@@ -321,98 +457,128 @@ class PlanetAuthFactory:
             use_configfile: Whether to use configuration files to determine configuration values.
         """
         #
-        # Initialize from explicit user selected options
-        #
-        if auth_profile_opt:
-            return PlanetAuthFactory._init_context_from_profile(
-                profile_name=auth_profile_opt,
-                token_file_opt=token_file_opt,
-                save_token_file=save_token_file,
-            )
-
-        if auth_client_id_opt and auth_client_secret_opt:
-            return PlanetAuthFactory._init_context_from_oauth_svc_account(
-                client_id=auth_client_id_opt,
-                client_secret=auth_client_secret_opt,
-                token_file_opt=token_file_opt,
-                save_token_file=save_token_file,
-                # profile_name="",  # Always ad-hoc in this path
-                save_profile_config=save_profile_config,
-            )
-
-        if auth_api_key_opt:
-            return PlanetAuthFactory._init_context_from_api_key(
-                api_key=auth_api_key_opt,
-            )
-
-        #
-        # Initialize from implicit user selected options (env and config files)
+        # Each setting is resolved independently, with the priority
+        # explicit argument > environment > config file.  Settings are then
+        # combined: credentials are merged into the selected profile when the
+        # profile can accept them (i.e., they fill in what a template profile
+        # is missing).  When they cannot be combined, the setting from the
+        # higher priority source wins.
         #
         user_config_file = PlanetAuthUserConfigEnhanced()
+
+        def _resolve(label: str, env_var: str, override_value: Optional[str], secret: bool = False):
+            return _ResolvedSetting.resolve(
+                label=label,
+                env_var=env_var,
+                override_value=override_value,
+                user_config_file=user_config_file,
+                use_env=use_env,
+                use_configfile=use_configfile,
+                secret=secret,
+            )
+
+        profile_setting = _resolve("profile", EnvironmentVariables.AUTH_PROFILE, auth_profile_opt)
+        _cred_settings = {
+            "client_id": _resolve("client ID", EnvironmentVariables.AUTH_CLIENT_ID, auth_client_id_opt),
+            "client_secret": _resolve(
+                "client secret", EnvironmentVariables.AUTH_CLIENT_SECRET, auth_client_secret_opt, secret=True
+            ),
+        }
+        cred_overrides: Dict[str, _ResolvedSetting] = {k: v for k, v in _cred_settings.items() if v}
+        api_key_setting = _resolve("API key", EnvironmentVariables.AUTH_API_KEY, auth_api_key_opt, secret=True)
+        if not api_key_setting:
+            # For backwards compatibility, we know the old SDK used this in json files.
+            api_key_setting = _ResolvedSetting.resolve(
+                label="API key",
+                env_var="key",
+                override_value=None,
+                user_config_file=user_config_file,
+                use_env=False,
+                use_configfile=use_configfile,
+                secret=True,
+            )
+
+        #
+        # Load the selected profile, if any.  An explicitly selected profile
+        # that cannot be loaded is an error.  A profile selected implicitly
+        # (env or config file) that cannot be loaded produces a warning, and
+        # we fall through to other options.
+        #
         log_fallback_warning = False
-        effective_user_selected_profile = user_config_file.effective_conf_value(
-            config_key=EnvironmentVariables.AUTH_PROFILE,
-            override_value=auth_profile_opt,
-            use_env=use_env,
-            use_configfile=use_configfile,
-        )
-        if effective_user_selected_profile:
+        profile_name = None
+        profile_config: Optional[AuthClientConfig] = None
+        if profile_setting:
             try:
-                return PlanetAuthFactory._init_context_from_profile(
-                    profile_name=effective_user_selected_profile,
-                    token_file_opt=token_file_opt,
-                    save_token_file=save_token_file,
+                profile_name, profile_config = PlanetAuthFactory.load_auth_client_config_from_profile(
+                    profile_setting.value
                 )
+                profile_config.lazy_load()
             except Exception as e:
+                if profile_setting.rank == _ResolvedSetting.RANK_EXPLICIT:
+                    raise
                 auth_logger.warning(
-                    msg=f'Unable to initialize user selected profile "{effective_user_selected_profile}".'
-                    f' Profile was selected from {EnvironmentVariables.AUTH_PROFILE} environment variable or "{user_config_file.path()}" configuration file.'
+                    msg=f'Unable to load user selected profile "{profile_setting.value}" ({profile_setting.source}).'
                     f" Error: {e}"
                 )
+                profile_config = None
                 log_fallback_warning = True
 
-        effective_user_selected_client_id = user_config_file.effective_conf_value(
-            config_key=EnvironmentVariables.AUTH_CLIENT_ID,
-            override_value=auth_client_id_opt,
-            use_env=use_env,
-            use_configfile=use_configfile,
-        )
-        effective_user_selected_client_secret = user_config_file.effective_conf_value(
-            config_key=EnvironmentVariables.AUTH_CLIENT_SECRET,
-            override_value=auth_client_secret_opt,
-            use_env=use_env,
-            use_configfile=use_configfile,
-        )
-        if effective_user_selected_client_id and effective_user_selected_client_secret:
-            return PlanetAuthFactory._init_context_from_oauth_svc_account(
-                client_id=effective_user_selected_client_id,
-                client_secret=effective_user_selected_client_secret,
+        have_full_creds = "client_id" in cred_overrides and "client_secret" in cred_overrides
+        cred_rank = min(s.rank for s in cred_overrides.values()) if have_full_creds else None
+
+        # Choose by source priority (lower rank wins).  A profile that can
+        # absorb the credentials is combined with them, so it is never in
+        # conflict with them.  Ties preserve the historical order:
+        # profile, then OAuth client credentials, then API key.
+        candidates = []
+        if profile_config is not None and profile_setting:
+            profile_rank = profile_setting.rank
+            if cred_overrides and PlanetAuthFactory._profile_accepts_overrides(profile_config, cred_overrides):
+                profile_rank = min([profile_rank] + [s.rank for s in cred_overrides.values()])
+            candidates.append((profile_rank, 0, "profile"))
+        if have_full_creds:
+            candidates.append((cred_rank, 1, "creds"))
+        if api_key_setting:
+            candidates.append((api_key_setting.rank, 2, "api_key"))
+        selected = min(candidates)[2] if candidates else None
+
+        if selected == "profile":
+            try:
+                return PlanetAuthFactory._init_context_from_profile_with_overrides(
+                    base_profile_name=profile_name,  # type: ignore
+                    base_config=profile_config,  # type: ignore
+                    overrides=cred_overrides,
+                    token_file_opt=token_file_opt,
+                    save_token_file=save_token_file,
+                    save_profile_config=save_profile_config,
+                )
+            except AuthClientConfigIncompleteException as e:
+                if profile_setting.rank == _ResolvedSetting.RANK_EXPLICIT:  # type: ignore
+                    raise
+                auth_logger.warning(msg=f"{e} The profile was selected by {profile_setting.source}.")  # type: ignore
+                log_fallback_warning = True
+                selected = "creds" if have_full_creds else ("api_key" if api_key_setting else None)
+
+        if selected == "creds":
+            if profile_config is not None and profile_setting:
+                auth_logger.info(
+                    msg=f'Profile "{profile_name}" ({profile_setting.source}) ignored in favor of'
+                    f" {cred_overrides['client_id'].describe()}."
+                )
+            # TODO: support oauth service accounts that use pubkey, and not just client secrets.
+            m2m_realm_name = Builtins.builtin_default_profile_name(client_type="oidc_client_credentials_secret")
+            return PlanetAuthFactory._init_context_from_profile_with_overrides(
+                base_profile_name=m2m_realm_name,
+                base_config=Builtins.load_builtin_auth_client_config(m2m_realm_name),
+                overrides=cred_overrides,
                 token_file_opt=token_file_opt,
                 save_token_file=save_token_file,
-                # profile_name="",  # Always ad-hoc in this path
                 save_profile_config=save_profile_config,
             )
 
-        effective_user_selected_api_key = user_config_file.effective_conf_value(
-            config_key=EnvironmentVariables.AUTH_API_KEY,
-            override_value=auth_api_key_opt,
-            use_env=use_env,
-            use_configfile=use_configfile,
-        )
-        if effective_user_selected_api_key:
+        if selected == "api_key":
             return PlanetAuthFactory._init_context_from_api_key(
-                api_key=effective_user_selected_api_key,
-            )
-
-        effective_user_selected_api_key = user_config_file.effective_conf_value(
-            config_key="key",  # For backwards compatibility, we know the old SDK used this in json files.
-            override_value=auth_api_key_opt,
-            use_env=False,
-            use_configfile=use_configfile,
-        )
-        if effective_user_selected_api_key:
-            return PlanetAuthFactory._init_context_from_api_key(
-                api_key=effective_user_selected_api_key,
+                api_key=api_key_setting.value,  # type: ignore
             )
 
         #
@@ -526,3 +692,61 @@ class PlanetAuthFactory:
 
 class MissingArgumentException(AuthException):
     """Raised when not all custom environment arguments are specified."""
+
+
+class ProfileConflictException(ProfileException):
+    """
+    Raised when combining a profile with other settings would shadow a
+    built-in profile.
+    """
+
+
+class _ResolvedSetting:
+    """
+    A configuration value, and a record of where it came from.
+    Lower ranks are higher priority.
+    """
+
+    RANK_EXPLICIT = 0
+    RANK_ENV = 1
+    RANK_CONFIG_FILE = 2
+
+    def __init__(self, label: str, value: str, rank: int, source: str, secret: bool = False):
+        self.label = label
+        self.value = value
+        self.rank = rank
+        self.source = source
+        self.secret = secret
+
+    def describe(self) -> str:
+        if self.secret:
+            return f"{self.label} from {self.source}"
+        return f'{self.label} "{self.value}" from {self.source}'
+
+    @staticmethod
+    def resolve(
+        label: str,
+        env_var: str,
+        override_value: Optional[str],
+        user_config_file: PlanetAuthUserConfigEnhanced,
+        use_env: bool,
+        use_configfile: bool,
+        secret: bool = False,
+    ) -> Optional["_ResolvedSetting"]:
+        if override_value:
+            return _ResolvedSetting(label, override_value, _ResolvedSetting.RANK_EXPLICIT, "explicit option", secret)
+        if use_env and os.getenv(env_var):
+            return _ResolvedSetting(
+                label, os.getenv(env_var), _ResolvedSetting.RANK_ENV, f"environment variable {env_var}", secret  # type: ignore
+            )
+        if use_configfile:
+            value = user_config_file.effective_conf_value(config_key=env_var, use_env=False, use_configfile=True)
+            if value:
+                return _ResolvedSetting(
+                    label,
+                    value,
+                    _ResolvedSetting.RANK_CONFIG_FILE,
+                    f'"{env_var}" in config file "{user_config_file.path()}"',
+                    secret,
+                )
+        return None

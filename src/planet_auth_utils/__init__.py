@@ -64,6 +64,7 @@ from .commands.cli.profile_cmd import (
     cmd_profile_create,
     # cmd_profile_edit,
     cmd_profile_copy,
+    cmd_profile_check,
     cmd_profile_set,
     cmd_profile_show,
 )
@@ -98,7 +99,7 @@ from .commands.cli.options import (
 )
 from .commands.cli.util import recast_exceptions_to_click, monkeypatch_hide_click_cmd_options
 from planet_auth_utils.constants import EnvironmentVariables
-from planet_auth_utils.plauth_factory import PlanetAuthFactory
+from planet_auth_utils.plauth_factory import PlanetAuthFactory, ProfileConflictException
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.profile import Profile
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
@@ -134,6 +135,7 @@ __all__ = [
     "cmd_profile_create",
     # "cmd_profile_edit",
     "cmd_profile_copy",
+    "cmd_profile_check",
     "cmd_profile_set",
     "cmd_profile_show",
     "opt_api_key",
@@ -165,6 +167,7 @@ __all__ = [
     "Builtins",
     "EnvironmentVariables",
     "PlanetAuthFactory",
+    "ProfileConflictException",
     "Profile",
     "PlanetAuthUserConfig",
 ]

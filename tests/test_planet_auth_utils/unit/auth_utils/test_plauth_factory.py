@@ -23,7 +23,7 @@ from planet_auth.constants import AUTH_CONFIG_FILE_PLAIN
 from planet_auth_config_injection import AUTH_BUILTIN_PROVIDER
 from planet_auth_utils.builtins import Builtins
 from planet_auth_utils.constants import EnvironmentVariables
-from planet_auth_utils.plauth_factory import PlanetAuthFactory, MissingArgumentException
+from planet_auth_utils.plauth_factory import PlanetAuthFactory, MissingArgumentException, ProfileConflictException
 from planet_auth_utils.plauth_user_config import PlanetAuthUserConfig
 from planet_auth_utils.profile import Profile
 
@@ -372,6 +372,238 @@ class TestAuthClientContextInitHelpers(TestWithHomeDirProfiles, unittest.TestCas
                 Profile.get_profile_file_path(profile=utest_profile_name, filename=AUTH_CONFIG_FILE_PLAIN)
             )
         )
+
+
+class TestAuthClientContextProfileCombining(TestWithHomeDirProfiles, unittest.TestCase):
+    """
+    Template profiles (e.g. built-in M2M profiles that lack a client ID and
+    secret) may be combined with credentials from options, env, or config file.
+    """
+
+    def setUp(self):
+        os.environ[AUTH_BUILTIN_PROVIDER] = (
+            "tests.test_planet_auth_utils.unit.auth_utils.builtins_test_impl.BuiltinConfigurationProviderMockTestImpl"
+        )
+        Builtins._builtin = None
+        self.setUp_testHomeDir()
+        for v in [
+            EnvironmentVariables.AUTH_PROFILE,
+            EnvironmentVariables.AUTH_API_KEY,
+            EnvironmentVariables.AUTH_CLIENT_ID,
+            EnvironmentVariables.AUTH_CLIENT_SECRET,
+        ]:
+            os.environ.pop(v, None)
+
+    def tearDown(self) -> None:
+        self.tearDown_testHomeDir()
+        os.environ.pop(EnvironmentVariables.AUTH_PROFILE, None)
+        os.environ.pop(EnvironmentVariables.AUTH_API_KEY, None)
+        os.environ.pop(EnvironmentVariables.AUTH_CLIENT_ID, None)
+        os.environ.pop(EnvironmentVariables.AUTH_CLIENT_SECRET, None)
+
+    def write_test_conf_file(self, data):
+        PlanetAuthUserConfig(data=data).save()
+
+    def save_profile(self, profile_name, config_dict):
+        conf = planet_auth.AuthClientConfig.from_dict(config_dict)
+        conf.set_path(Profile.get_profile_file_path(profile=profile_name, filename=AUTH_CONFIG_FILE_PLAIN))
+        conf.save()
+
+    def assert_m2m_context(self, under_test, profile_name, client_id, client_secret, auth_server):
+        self.assertEqual(profile_name, under_test.profile_name())
+        conf = under_test.auth_client().config()
+        self.assertEqual(client_id, conf.client_id())
+        self.assertEqual(client_secret, conf.client_secret())
+        self.assertEqual(auth_server, conf.auth_server())
+        self.assertIsInstance(under_test.auth_client(), planet_auth.ClientCredentialsClientSecretAuthClient)
+
+    def test_explicit_template_profile_with_explicit_creds(self):
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="utest-m2m-staging", auth_client_id_opt="cid1", auth_client_secret_opt="secret1"
+        )
+        self.assert_m2m_context(
+            under_test,
+            "utest-m2m-staging-cid1",
+            "cid1",
+            "secret1",
+            MockStagingEnv.PRIMARY_OAUTH_AUTHORITY_M2M["auth_server"],
+        )
+        self.assertEqual(
+            Profile.get_profile_file_path(profile="utest-m2m-staging-cid1", filename="token.json"),
+            under_test.token_file_path(),
+        )
+
+    def test_template_profile_alias_with_creds(self):
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="utest-m2m-prod", auth_client_id_opt="cid1", auth_client_secret_opt="secret1"
+        )
+        self.assertEqual("utest-m2m-cid1", under_test.profile_name())
+
+    def test_derived_profile_name_is_filesystem_safe(self):
+        self.assertEqual(
+            "utest-m2m-staging-a_b_c",
+            PlanetAuthFactory.derived_profile_name("UTest-M2M-Staging", "A/B C"),
+        )
+        self.assertEqual("base-client", PlanetAuthFactory.derived_profile_name("base", "../"))
+
+    def test_explicit_template_profile_with_env_creds(self):
+        # CI style: secrets in the environment, environment selected by option.
+        os.environ[EnvironmentVariables.AUTH_CLIENT_ID] = "env_cid"
+        os.environ[EnvironmentVariables.AUTH_CLIENT_SECRET] = "env_secret"
+        under_test = PlanetAuthFactory.initialize_auth_client_context(auth_profile_opt="utest-m2m-staging")
+        self.assert_m2m_context(
+            under_test,
+            "utest-m2m-staging-env_cid",
+            "env_cid",
+            "env_secret",
+            MockStagingEnv.PRIMARY_OAUTH_AUTHORITY_M2M["auth_server"],
+        )
+
+    def test_conffile_template_profile_with_explicit_creds(self):
+        # The user's default is staging. Credentials given by option should
+        # not silently switch them to the default (prod) M2M realm.
+        self.write_test_conf_file({EnvironmentVariables.AUTH_PROFILE: "utest-m2m-staging"})
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_client_id_opt="cid1", auth_client_secret_opt="secret1"
+        )
+        self.assertEqual("utest-m2m-staging-cid1", under_test.profile_name())
+
+    def test_complete_conffile_profile_loses_to_explicit_creds(self):
+        # The default profile is a complete user profile.  It cannot accept the
+        # client credentials, and the explicit option has higher priority.
+        self.write_test_conf_file({EnvironmentVariables.AUTH_PROFILE: "utest-user"})
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_client_id_opt="cid1", auth_client_secret_opt="secret1"
+        )
+        self.assertEqual("utest-m2m-cid1", under_test.profile_name())
+
+    def test_complete_explicit_profile_ignores_env_creds(self):
+        os.environ[EnvironmentVariables.AUTH_CLIENT_ID] = "env_cid"
+        os.environ[EnvironmentVariables.AUTH_CLIENT_SECRET] = "env_secret"
+        under_test = PlanetAuthFactory.initialize_auth_client_context(auth_profile_opt="utest-user")
+        self.assertEqual("utest-user", under_test.profile_name())
+        self.assertEqual("TestMocke5yWHbTxzgMX9nFfn6jaEVy3", under_test.auth_client().config().client_id())
+
+    def test_explicit_template_profile_without_creds_is_actionable_error(self):
+        with self.assertRaises(planet_auth.AuthClientConfigIncompleteException) as cm:
+            PlanetAuthFactory.initialize_auth_client_context(auth_profile_opt="utest-m2m-staging")
+        self.assertEqual("utest-m2m-staging", cm.exception.profile_name())
+        self.assertEqual(["client_id", "client_secret"], [m["config_key"] for m in cm.exception.missing_fields()])
+        self.assertIn('"utest-m2m-staging"', str(cm.exception))
+        self.assertIn("Client ID (client_id)", str(cm.exception))
+
+    def test_explicit_template_profile_with_partial_creds_is_actionable_error(self):
+        with self.assertRaises(planet_auth.AuthClientConfigIncompleteException) as cm:
+            PlanetAuthFactory.initialize_auth_client_context(
+                auth_profile_opt="utest-m2m-staging", auth_client_id_opt="cid1"
+            )
+        self.assertEqual(["client_secret"], [m["config_key"] for m in cm.exception.missing_fields()])
+
+    def test_implicit_template_profile_without_creds_falls_back(self):
+        os.environ[EnvironmentVariables.AUTH_PROFILE] = "utest-m2m-staging"
+        under_test = PlanetAuthFactory.initialize_auth_client_context()
+        self.assertEqual(Builtins.builtin_default_profile_name(), under_test.profile_name())
+
+    def test_on_disk_template_keeps_secret_only_override_name(self):
+        # Filling in only a secret does not change identity; keep the name.
+        self.save_profile(
+            "my-m2m",
+            {
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://utest.example.com/auth",
+                "client_id": "saved_cid",
+            },
+        )
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="my-m2m", auth_client_secret_opt="secret1"
+        )
+        self.assert_m2m_context(under_test, "my-m2m", "saved_cid", "secret1", "https://utest.example.com/auth")
+
+    def test_matching_creds_on_complete_profile_are_accepted(self):
+        self.save_profile(
+            "my-m2m",
+            {
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://utest.example.com/auth",
+                "client_id": "saved_cid",
+                "client_secret": "saved_secret",
+            },
+        )
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="my-m2m", auth_client_id_opt="saved_cid"
+        )
+        self.assertEqual("my-m2m", under_test.profile_name())
+        self.assertEqual("saved_secret", under_test.auth_client().config().client_secret())
+
+    def test_derived_profile_reuses_matching_saved_profile(self):
+        self.save_profile(
+            "utest-m2m-staging-cid1",
+            {
+                **Builtins.builtin_profile_auth_client_config_dict("utest-m2m-staging"),
+                "client_id": "cid1",
+                "client_secret": "old_secret",
+            },
+        )
+        under_test = PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="utest-m2m-staging", auth_client_id_opt="cid1", auth_client_secret_opt="new_secret"
+        )
+        self.assertEqual("utest-m2m-staging-cid1", under_test.profile_name())
+        self.assertEqual("new_secret", under_test.auth_client().config().client_secret())
+
+    def test_derived_profile_mismatched_saved_profile_warns_and_uses_runtime_config(self):
+        self.save_profile(
+            "utest-m2m-staging-cid1",
+            {
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://some-other-server.example.com/",
+                "client_id": "cid1",
+                "client_secret": "s",
+            },
+        )
+        with self.assertLogs(level="WARNING") as logs:
+            under_test = PlanetAuthFactory.initialize_auth_client_context(
+                auth_profile_opt="utest-m2m-staging", auth_client_id_opt="cid1", auth_client_secret_opt="s"
+            )
+        self.assert_m2m_context(
+            under_test,
+            "utest-m2m-staging-cid1",
+            "cid1",
+            "s",
+            MockStagingEnv.PRIMARY_OAUTH_AUTHORITY_M2M["auth_server"],
+        )
+        self.assertTrue(any("auth_server" in m and "utest-m2m-staging-cid1" in m for m in logs.output))
+
+    def test_derived_profile_never_shadows_builtin(self):
+        # "utest-m2m" + "staging" would produce built-in name "utest-m2m-staging"
+        with self.assertRaises(ProfileConflictException):
+            PlanetAuthFactory.initialize_auth_client_context(
+                auth_profile_opt="utest-m2m", auth_client_id_opt="staging", auth_client_secret_opt="s"
+            )
+
+    def test_save_profile_config_saves_derived_profile(self):
+        PlanetAuthFactory.initialize_auth_client_context(
+            auth_profile_opt="utest-m2m-staging",
+            auth_client_id_opt="cid1",
+            auth_client_secret_opt="secret1",
+            save_profile_config=True,
+        )
+        saved = Profile.load_auth_client_config("utest-m2m-staging-cid1")
+        saved.lazy_load()
+        self.assertEqual("cid1", saved.client_id())
+        self.assertNotIn("_hidden", saved.data())
+
+    def test_unchanged_profile_keeps_loaded_config_path(self):
+        self.save_profile(
+            "my-m2m",
+            {
+                "client_type": "oidc_client_credentials_secret",
+                "auth_server": "https://utest.example.com/auth",
+                "client_id": "saved_cid",
+                "client_secret": "saved_secret",
+            },
+        )
+        under_test = PlanetAuthFactory.initialize_auth_client_context(auth_profile_opt="my-m2m")
+        self.assertIsNotNone(under_test.auth_client().config().path())
 
 
 ISSUER_PRIORITIES = ["_trusted"]

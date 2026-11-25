@@ -21,7 +21,7 @@ from urllib3.util.retry import Retry
 from typing import Optional, Union
 
 import planet_auth.logging.auth_logger
-from planet_auth.auth_client import AuthClientConfig, AuthClient, AuthClientException, AuthClientConfigException
+from planet_auth.auth_client import AuthClientConfig, AuthClient, AuthClientException
 from planet_auth.constants import X_PLANET_APP_HEADER, X_PLANET_APP
 from planet_auth.credential import Credential
 from planet_auth.planet_legacy.legacy_api_key import FileBackedPlanetLegacyApiKey
@@ -44,12 +44,9 @@ class PlanetLegacyAuthClientConfig(AuthClientConfig):
         if legacy_auth_endpoint:
             self._data["legacy_auth_endpoint"] = legacy_auth_endpoint
 
-    def check_data(self, data):
-        super().check_data(data)
-        if not data.get("legacy_auth_endpoint"):
-            raise AuthClientConfigException(
-                message="legacy_auth_endpoint must be configured for Planet Legacy auth clients."
-            )
+    @classmethod
+    def required_config_keys(cls):
+        return super().required_config_keys() + ["legacy_auth_endpoint"]
 
     def api_key(self) -> str:
         return self.lazy_get("api_key")

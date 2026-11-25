@@ -46,13 +46,9 @@ class OidcAuthClientWithPubKeyClientConfig(OidcAuthClientConfig, ABC):
         # Loaded JIT. Not in the serialized self._data representation.
         self._client_privkey_data = None
 
-    def check_data(self, data):
-        super().check_data(data)
-        if not data.get("client_privkey") and not data.get("client_privkey_file"):
-            raise AuthClientConfigException(
-                message="One of client_privkey or client_privkey_file must be"
-                " configured for {} client".format(self.__class__.__name__)
-            )
+    @classmethod
+    def required_config_keys(cls):
+        return super().required_config_keys() + [["client_privkey", "client_privkey_file"]]
 
     def client_privkey(self) -> str:
         return self.lazy_get("client_privkey")

@@ -282,6 +282,11 @@ class FileBackedJsonObject:
     been set, either by calling set_data() or by loading data from a storage,
     it is only permitted to be set to valid values.
 
+    Validation has two levels.  check_data() rejects malformed data, and is
+    applied implicitly whenever data is set, loaded, or saved.  check_complete()
+    rejects well-formed data that is not complete enough to be used, and is
+    applied only by an explicit call to check().
+
     Saving to the backing is also optional. Uses in this way, this class
     behaves as a validating in-memory json object holder.  To disable
     saving to storage, construct objects with a None file_path.
@@ -446,16 +451,33 @@ class FileBackedJsonObject:
                 )
             )
 
+    def check_complete(self):
+        """
+        Check that the current data is complete enough to be used.  Throws
+        an exception if it is not.  This is distinct from check_data(), which
+        is applied implicitly whenever data is set, loaded, or saved, and
+        should only reject malformed data.  Data that is well-formed but
+        incomplete may be stored and handled (for example, as a template to
+        be filled in), and is only rejected by an explicit call to check().
+
+        The base implementation performs no checks.  Child classes that
+        distinguish incomplete data from invalid data should override this
+        method, and raise a FileBackedJsonObjectException.
+        """
+
     def check(self):
         """
-        Run check_data against our current state.  An exception will be thrown
-        if the current data is found to be invalid.  Subclasses should not
-        need to override this method, as they are expected to implement
-        check_data().  This method will not perform a load() before checking
-        the data. That is considered an application responsibility.
+        Run check_data() and check_complete() against our current state.
+        An exception will be thrown if the current data is found to be
+        invalid or incomplete.  Subclasses should not need to override this
+        method, as they are expected to implement check_data() and,
+        optionally, check_complete().  This method will not perform a load()
+        before checking the data. That is considered an application
+        responsibility.
         """
         try:
             self.check_data(self._data)
+            self.check_complete()
         except FileBackedJsonObjectException as e:
             if self._file_path:
                 e.set_file_path(self._file_path)

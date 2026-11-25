@@ -19,6 +19,7 @@ from typing import List, Optional
 
 import planet_auth.logging.auth_logger
 import planet_auth
+from planet_auth import ObjectStorageProvider
 from planet_auth.constants import AUTH_CONFIG_FILE_SOPS, AUTH_CONFIG_FILE_PLAIN
 from planet_auth.storage_utils import _SOPSAwareFilesystemObjectStorageProvider
 from planet_auth.util import custom_json_class_dumper
@@ -123,7 +124,7 @@ def post_login_cmd_helper(
         #       The way things are currently structured, options added to the
         #       login command (like --scope) are not pushed down into the profile,
         #       but considered runtime overrides.
-        if not new_profile_config_file_path.exists():
+        if not ObjectStorageProvider._default_storage_provider().obj_exists(new_profile_config_file_path):
             override_auth_context.auth_client().config().set_path(new_profile_config_file_path)
             # No need to specify provider. The CLI is only concerned with the
             # default file based storage provider for now.

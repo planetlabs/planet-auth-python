@@ -15,7 +15,6 @@
 from abc import ABC
 
 from planet_auth.oidc.api_clients.api_client import EnricherPayloadType, EnricherReturnType
-from planet_auth.auth_client import AuthClientConfigException
 from planet_auth.oidc.api_clients.oidc_request_auth import (
     prepare_client_secret_request_auth,
     prepare_client_secret_auth_payload,
@@ -37,12 +36,9 @@ class OidcAuthClientWithClientSecretClientConfig(OidcAuthClientConfig, ABC):
     def client_secret(self) -> str:
         return self.lazy_get("client_secret")
 
-    def check_data(self, data):
-        super().check_data(data)
-        if not data.get("client_secret"):
-            raise AuthClientConfigException(
-                message="client_secret must be configured for {} client.".format(self.__class__.__name__)
-            )
+    @classmethod
+    def required_config_keys(cls):
+        return super().required_config_keys() + ["client_secret"]
 
     @classmethod
     def meta(cls):
